@@ -96,6 +96,7 @@ export interface XtermTerminalProps {
   fileBrowserUsername?: string;
   fileBrowserPassword?: string;
   enableFileUpload?: boolean;
+  isVisible?: boolean;
 }
 
 // ============================================================================
@@ -116,6 +117,7 @@ export function XtermTerminal({
   fileBrowserUsername,
   fileBrowserPassword,
   enableFileUpload = true,
+  isVisible = true,
 }: XtermTerminalProps) {
   // =========================================================================
   // State & Refs
@@ -124,6 +126,7 @@ export function XtermTerminal({
   const fileDropContainerRef = useRef<HTMLDivElement>(null); // Wrapper for file drop events
   const containerRef = useRef<HTMLDivElement>(null); // Xterm.js container
   const terminalRef = useRef<ITerminal | null>(null);
+  const fitAddonRef = useRef<FitAddon | null>(null);
   const hasNewContentRef = useRef(false);
   const newLineCountRef = useRef(0);
 
@@ -289,7 +292,6 @@ export function XtermTerminal({
     if (!containerRef.current || !wsUrl) return;
 
     let terminal: ITerminal | null = null;
-    let fitAddon: FitAddon | null = null;
     let socket: WebSocket | null = null;
     let webglAddon: WebglAddon | null = null;
     let canvasAddon: CanvasAddon | null = null;
@@ -521,15 +523,15 @@ export function XtermTerminal({
         terminal = new xtermModule.Terminal(terminalOptions);
         terminalRef.current = terminal;
 
-        fitAddon = new fitAddonModule.FitAddon();
-        terminal.loadAddon(fitAddon);
+        fitAddonRef.current = new fitAddonModule.FitAddon();
+        terminal.loadAddon(fitAddonRef.current);
         terminal.loadAddon(new webLinksModule.WebLinksAddon());
 
         terminal.open(containerRef.current);
 
         requestAnimationFrame(() => {
           if (!isMounted) return;
-          fitAddon?.fit();
+          fitAddonRef.current?.fit();
         });
 
         requestAnimationFrame(() => {
@@ -603,7 +605,7 @@ export function XtermTerminal({
           }, 10);
         });
 
-        const handleResize = () => fitAddon?.fit();
+        const handleResize = () => fitAddonRef.current?.fit();
         window.addEventListener('resize', handleResize);
 
         stableOnReady();
@@ -646,9 +648,22 @@ export function XtermTerminal({
 
       terminal?.dispose();
       terminalRef.current = null;
+      fitAddonRef.current = null; // Clear fitAddonRef on cleanup
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wsUrl]);
+
+  // Handle visibility changes
+  useEffect(() => {
+    if (isVisible && terminalRef.current && containerRef.current) {
+      // Small delay to ensure container has dimensions
+      requestAnimationFrame(() => {
+        fitAddonRef.current?.fit();
+      });
+    }
+  }, [isVisible]);
+
+
 
   // =========================================================================
   // Render

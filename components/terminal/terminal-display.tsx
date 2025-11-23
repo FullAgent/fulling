@@ -39,6 +39,7 @@ export interface TerminalDisplayProps {
   fileBrowserUrl?: string | null;
   fileBrowserUsername?: string;
   fileBrowserPassword?: string;
+  isVisible?: boolean;
 }
 
 type ConnectionStatus = 'connecting' | 'connected' | 'error';
@@ -55,6 +56,7 @@ export function TerminalDisplay({
   fileBrowserUrl,
   fileBrowserUsername,
   fileBrowserPassword,
+  isVisible = true,
 }: TerminalDisplayProps) {
   // =========================================================================
   // State Management
@@ -143,6 +145,7 @@ export function TerminalDisplay({
             fileBrowserUsername={fileBrowserUsername}
             fileBrowserPassword={fileBrowserPassword}
             enableFileUpload={true}
+            isVisible={isVisible}
           />
         </div>
 

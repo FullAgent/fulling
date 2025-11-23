@@ -12,6 +12,7 @@ import {
   Shield,
   Terminal,
 } from 'lucide-react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { cn } from '@/lib/utils';
@@ -88,7 +89,7 @@ export default function ProjectSidebar({ project }: ProjectSidebarProps) {
               const isActive = pathname === section.href;
 
               return (
-                <a
+                <Link
                   key={section.id}
                   href={section.href}
                   className={cn(
@@ -98,7 +99,7 @@ export default function ProjectSidebar({ project }: ProjectSidebarProps) {
                 >
                   <Icon className="h-4 w-4 mr-2 text-muted-foreground group-hover:text-sidebar-foreground shrink-0 transition-colors" />
                   <span className={cn("truncate flex-1 font-semibold", isActive ? "text-card-foreground" : "text-foreground")}>{section.label}</span>
-                </a>
+                </Link>
               );
             })}
           </div>
@@ -111,7 +112,7 @@ export default function ProjectSidebar({ project }: ProjectSidebarProps) {
               const isActive = pathname === section.href;
 
               return (
-                <a
+                <Link
                   key={section.id}
                   href={section.href}
                   className={cn(
@@ -121,7 +122,7 @@ export default function ProjectSidebar({ project }: ProjectSidebarProps) {
                 >
                   <Icon className="h-4 w-4 mr-2 text-muted-foreground group-hover:text-sidebar-foreground shrink-0 transition-colors" />
                   <span className={cn("truncate flex-1 font-semibold", isActive ? "text-card-foreground" : "text-foreground")}>{section.label}</span>
-                </a>
+                </Link>
               );
             })}
           </div>

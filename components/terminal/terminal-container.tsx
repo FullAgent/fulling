@@ -36,13 +36,14 @@ type Sandbox = Prisma.SandboxGetPayload<object>;
 export interface TerminalContainerProps {
   project: Project;
   sandbox: Sandbox | undefined;
+  isVisible?: boolean;
 }
 
 // ============================================================================
 // Component
 // ============================================================================
 
-export function TerminalContainer({ project, sandbox }: TerminalContainerProps) {
+export function TerminalContainer({ project, sandbox, isVisible = true }: TerminalContainerProps) {
   // =========================================================================
   // Tab State Management
   // =========================================================================
@@ -144,6 +145,7 @@ export function TerminalContainer({ project, sandbox }: TerminalContainerProps) 
               fileBrowserUrl={sandbox?.fileBrowserUrl}
               fileBrowserUsername={fileBrowserCredentials?.username}
               fileBrowserPassword={fileBrowserCredentials?.password}
+              isVisible={isVisible && tab.id === activeTabId}
             />
           </div>
         ))}

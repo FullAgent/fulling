@@ -6,6 +6,7 @@ import PrimarySidebar from '@/components/sidebars/primary-sidebar';
 import ProjectSidebar from '@/components/sidebars/project-sidebar-new';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { ProjectContentWrapper } from '@/components/layout/project-content-wrapper';
 
 export default async function ProjectLayout({
   children,
@@ -54,7 +55,9 @@ export default async function ProjectLayout({
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
-          {children}
+          <ProjectContentWrapper project={project} sandbox={project.sandboxes[0]}>
+            {children}
+          </ProjectContentWrapper>
         </div>
       </div>
       
