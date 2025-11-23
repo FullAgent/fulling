@@ -1,12 +1,12 @@
 import { redirect } from 'next/navigation';
 import { notFound } from 'next/navigation';
 
+import { ProjectContentWrapper } from '@/components/layout/project-content-wrapper';
 import { StatusBar } from '@/components/layout/status-bar';
 import PrimarySidebar from '@/components/sidebars/primary-sidebar';
 import ProjectSidebar from '@/components/sidebars/project-sidebar-new';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { ProjectContentWrapper } from '@/components/layout/project-content-wrapper';
 
 export default async function ProjectLayout({
   children,

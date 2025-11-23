@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+
 import { TerminalContainer, type TerminalContainerProps } from '@/components/terminal/terminal-container';
 
 interface ProjectContentWrapperProps extends TerminalContainerProps {
