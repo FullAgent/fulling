@@ -20,7 +20,7 @@ Fulling automatically sets up the following for your project, ready in a minute:
 
 ![fulling-frame](https://github.com/user-attachments/assets/5b535c93-8bf0-4014-8984-ef835d548dbc)
 
-<img width="1200" height="768" alt="image" src="https://github.com/user-attachments/assets/45aca3d0-f722-401c-9d63-9ca14957d338" />
+<img width="3022" height="1532" alt="project_details" src="https://github.com/user-attachments/assets/b100a833-fa3d-459e-83d9-3b590beb79a3" />
 
 
 ### ✨ Key Features
