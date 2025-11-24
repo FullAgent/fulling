@@ -30,8 +30,8 @@ export function ProjectContentWrapper({
         />
       </div>
       <div 
-        className="w-full h-full"
-        style={{ display: !isTerminalPage ? 'block' : 'none' }}
+        className="w-full h-full flex flex-col overflow-hidden min-h-0"
+        style={{ display: !isTerminalPage ? 'flex' : 'none' }}
       >
         {children}
       </div>
