@@ -93,7 +93,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-primary hover:bg-primary-hover text-primary-foreground"
+              className="w-full bg-primary hover:bg-primary-hover text-primary-foreground rounded-md"
               size="lg"
             >
               <User className="mr-2 h-5 w-5" />
@@ -117,7 +117,7 @@ export default function LoginPage() {
 
           <Button
             onClick={() => signIn('github', { callbackUrl: '/projects' })}
-            className="w-full bg-secondary text-secondary-foreground hover:bg-muted"
+            className="w-full bg-secondary text-secondary-foreground hover:bg-muted rounded-md"
             size="lg"
             variant="outline"
           >

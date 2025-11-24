@@ -57,7 +57,7 @@ const PageHeader = memo(({ projectsCount, className }: PageHeaderProps) => {
           <Button
             size="sm"
             onClick={() => setShowCreateProject(true)}
-            className="bg-primary hover:bg-primary-hover text-primary-foreground text-xs rounded-none h-8 px-3"
+            className="bg-primary hover:bg-primary-hover text-primary-foreground text-xs rounded-md h-8 px-3"
           >
             <Plus className="mr-1 h-4 w-4" />
             New Project

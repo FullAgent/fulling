@@ -37,7 +37,7 @@ interface ProjectCardProps {
 const ProjectCard = memo(({ project }: ProjectCardProps) => {
   return (
     <Link href={`/projects/${project.id}`} className="block">
-      <Card className="rounded-none py-4 gap-4 transition-all hover:border-primary cursor-pointer h-full">
+      <Card className="rounded-md py-4 gap-4 transition-all hover:border-primary cursor-pointer h-full">
         <CardHeader className="px-4 pb-3">
           <div className="flex flex-row items-center justify-between space-y-0 mb-1">
             <CardTitle className="line-clamp-1 flex-1 text-left">

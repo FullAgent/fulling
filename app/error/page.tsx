@@ -69,7 +69,7 @@ function ErrorContent() {
         <Link href="/login" className="block">
           <Button
             size="lg"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white justify-start gap-3"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white justify-start gap-3 rounded-md"
           >
             <RefreshCw className="h-5 w-5" />
             <span>Try Again</span>
@@ -79,7 +79,7 @@ function ErrorContent() {
           <Button
             size="lg"
             variant="outline"
-            className="w-full border-gray-700 text-gray-300 hover:bg-gray-900 hover:text-white justify-start gap-3"
+            className="w-full border-gray-700 text-gray-300 hover:bg-gray-900 hover:text-white justify-start gap-3 rounded-md"
           >
             <Home className="h-5 w-5" />
             <span>Go to Home</span>
@@ -89,7 +89,7 @@ function ErrorContent() {
           <Button
             size="lg"
             variant="ghost"
-            className="w-full text-gray-400 hover:text-white hover:bg-gray-900 justify-start gap-3"
+            className="w-full text-gray-400 hover:text-white hover:bg-gray-900 justify-start gap-3 rounded-md"
           >
             <ArrowLeft className="h-5 w-5" />
             <span>Back to Projects</span>

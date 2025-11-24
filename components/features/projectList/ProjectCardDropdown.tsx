@@ -70,7 +70,7 @@ export default function ProjectCardDropdown({ project }: ProjectCardDropdownProp
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="rounded-none">
+        <DropdownMenuContent align="end" className="rounded-md">
           {availableActions.includes('START') && (
             <DropdownMenuItem
               onClick={(e) => {

@@ -118,7 +118,7 @@ export function HomePage() {
               size="lg"
               onClick={handleGetStarted}
               disabled={isButtonDisabled}
-              className="bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed rounded-md"
               aria-busy={isAuthenticating}
             >
               {getButtonText()}
@@ -126,7 +126,7 @@ export function HomePage() {
             <Button
               size="lg"
               variant="outline"
-              className="hover:bg-accent"
+              className="hover:bg-accent rounded-md"
               title="Learn more about FullStack Agent (Coming Soon)"
             >
               Learn More
