@@ -120,6 +120,52 @@
   --shadow-2xl: 0px 4px 8px -1px hsl(0 0% 0% / 0.25);
 }
 
+.stealth {
+  --background: #1e1e1e;
+  --foreground: #cccccc;
+  --card: #1e1e1e;
+  --card-foreground: #cccccc;
+  --popover: #2d2d30;
+  --popover-foreground: #cccccc;
+  --primary: #007acc;
+  --primary-foreground: #ffffff;
+  --primary-hover: #0062a3;
+  --secondary: #2d2d30;
+  --secondary-foreground: #dcdcdc;
+  --muted: #2d2d30;
+  --muted-foreground: #858585;
+  --accent: #264f78;
+  --accent-foreground: #ffffff;
+  --destructive: #7f1d1d;
+  --destructive-foreground: #ffffff;
+  --border: #3e3e42;
+  --input: #3e3e42;
+  --ring: #007fd4;
+  --chart-1: #007acc;
+  --chart-2: #57a64a;
+  --chart-3: #d69d85;
+  --chart-4: #569cd6;
+  --chart-5: #b5cea8;
+  --sidebar: #2d2d30;
+  --sidebar-foreground: #dcdcdc;
+  --sidebar-background: #2d2d30;
+  --sidebar-project-background: #1e1e1e;
+  --sidebar-primary: #007acc;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #264f78;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #1e1e1e;
+  --sidebar-ring: #007fd4;
+  --destructive-foreground: #ffffff;
+  --content-background: #1e1e1e;
+  --tabs-background: #2d2d30;
+  --tab-background: #2d2d30;
+  --tab-foreground: #969696;
+  --tab-active-background: #1e1e1e;
+  --tab-active-foreground: #ffffff;
+  --tab-hover-background: #3e3e42;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -186,7 +232,7 @@
   }
 
   body {
-    @apply bg-background text-foreground/90;
+    @apply bg-background text-foreground;
   }
 
   h1 {
