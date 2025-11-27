@@ -24,25 +24,57 @@ export const MatrixRain: React.FC = () => {
     
     // VS Code-ish palette for the rain
     // Using a mix of green (comments), blue (keywords), and generic code colors
-    const colors = ['#6a9955', '#4ec9b0', '#569cd6', '#dcdcaa'];
+    const colors = ['#6a9955', '#dcdcaa'];
     
-    // Characters: Katakana + Numbers + Operators
-    const chars = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ1234567890<>{}[];:+-*/";
+    // Characters: Katakana + Numbers + Operators + FULLING
+    const chars = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ1234567890<>{}[];:+-*/FULLING";
+    const targetWord = "FULLING";
+
+    // Track sequence progress for each column. -1 means no sequence active.
+    const sequences: number[] = new Array(columns).fill(-1);
 
     const draw = () => {
       // Create fade effect
       // Use the VS Code background color (#1e1e1e) with high transparency
       ctx.fillStyle = 'rgba(30, 30, 30, 0.05)'; 
+      ctx.shadowBlur = 0; // Reset shadow to prevent it affecting the background fade
       ctx.fillRect(0, 0, width, height);
 
       ctx.font = `${fontSize}px 'Consolas', 'Monaco', monospace`;
 
       for (let i = 0; i < drops.length; i++) {
-        // Pick a random character
-        const text = chars[Math.floor(Math.random() * chars.length)];
-        
+        let text = '';
+        let isTarget = false;
+
+        // Logic for "FULLING" sequence
+        if (sequences[i] >= 0) {
+           // We are in a sequence
+           text = targetWord[sequences[i]];
+           isTarget = true;
+           sequences[i]++;
+           if (sequences[i] >= targetWord.length) {
+             sequences[i] = -1; // Sequence complete
+           }
+        } else {
+           // Random character
+           text = chars[Math.floor(Math.random() * chars.length)];
+           
+           // Chance to start a sequence
+           // Adjust probability as needed. 0.005 is 0.5% chance per frame per column.
+           if (Math.random() < 0.005) {
+             sequences[i] = 0;
+           }
+        }
+
         // Pick a random color from our palette to make it look like syntax highlighted code
-        ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+        if (isTarget) {
+          ctx.fillStyle = '#ffffff'; // Bright white for the target word
+          ctx.shadowColor = '#ffffff';
+          ctx.shadowBlur = 8;
+        } else {
+          ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+          ctx.shadowBlur = 0;
+        }
         
         // Draw the character
         ctx.fillText(text, i * fontSize, drops[i] * fontSize);
@@ -51,6 +83,7 @@ export const MatrixRain: React.FC = () => {
         // Randomness ensures drops don't fall in a perfect line
         if (drops[i] * fontSize > height && Math.random() > 0.975) {
           drops[i] = 0;
+          sequences[i] = -1; // Reset sequence if drop resets
         }
 
         drops[i]++;
