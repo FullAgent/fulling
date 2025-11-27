@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ArrowRight, ExternalLink } from 'lucide-react';
 
 import { authenticateWithSealos } from '@/app/actions/sealos-auth';
 import { Button } from '@/components/ui/button';
@@ -110,7 +109,7 @@ export function HomePage() {
             <p className="text-xl text-primary mb-12">AI-Powered Full-Stack Development Platform</p>
             <p className="text-lg text-foreground/80 mb-8 max-w-2xl mx-auto">
               Create, develop, and deploy production-ready web applications using natural language.
-              Powered by <span className="text-[#d97757] bg-[#d97757]/10 px-1 py-0.5 rounded-md font-mono border-x border-[#d97757]">Claude Code</span> in isolated sandbox environments.
+              Powered by <span className="text-[#d97757] bg-[#d97757]/10 px-1 py-0.5 rounded-md font-mono">Claude Code</span> in isolated sandbox environments.
             </p>
           </div>
 
@@ -139,7 +138,6 @@ export function HomePage() {
               className="w-48"
             >
               {getButtonText()}
-              <ArrowRight className="h-4 w-4" />
             </Button>
             <Button
               size="lg"
@@ -148,7 +146,6 @@ export function HomePage() {
               className="w-48"
             >
               Learn More
-              <ExternalLink className="h-4 w-4" />
             </Button>
           </div>
         </div>
