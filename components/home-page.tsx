@@ -88,7 +88,7 @@ export function HomePage() {
         {/* Matrix Background Effect */}
         <MatrixRain />
 
-        <div className="max-w-4xl mx-auto px-4 py-12 text-center flex flex-col items-center space-y-8 bg-background/80 backdrop-blur-sm rounded-xl border border-border/20 shadow-2xl">
+        <div className="max-w-4xl mx-auto px-4 py-12 text-center flex flex-col items-center space-y-8 bg-card backdrop-blur-sm rounded-xl border border-border/20 shadow-2xl">
 
           {/* Hero Section: Logo and Title */}
           <div className="flex flex-col items-center justify-center gap-4">

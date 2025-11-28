@@ -1,51 +1,20 @@
 /**
  * Projects Page
  *
- * Displays list of user projects with automatic polling
- * Uses React Query for state management
+ * Server component that displays the list of user projects
  */
 
-'use client';
-
-import NoProject from '@/components/features/projectList/NoProject';
-import PageHeader from '@/components/features/projectList/PageHeader';
-import ProjectCard from '@/components/features/projectList/ProjectCard';
-import { Spinner } from '@/components/ui/spinner';
-import { useProjects } from '@/hooks/use-projects';
+import ProjectListHeader from '@/components/features/projectList/ProjectListHeader';
+import ProjectListContent from '@/components/features/projectList/ProjectListContent';
 
 export default function ProjectsPage() {
-  // Fetch projects with automatic polling (every 3 seconds)
-  // Namespace is automatically determined from user's kubeconfig
-  const { data: projects, isLoading } = useProjects();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex items-center gap-3">
-          <Spinner className="h-5 w-5 text-primary" />
-          <span className="text-sm text-muted-foreground">Loading projects...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex-1 flex flex-col p-6 sm:p-10 max-w-7xl mx-auto w-full z-10 overflow-y-auto">
       {/* Header Bar */}
-      <PageHeader projectsCount={projects?.length || 0} />
+      <ProjectListHeader />
 
       {/* Content */}
-      <div className="p-6">
-        {!projects || projects.length === 0 ? (
-          <NoProject />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {projects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
-        )}
-      </div>
+      <ProjectListContent />
     </div>
   );
 }

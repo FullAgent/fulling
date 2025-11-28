@@ -37,24 +37,26 @@ interface ProjectCardProps {
 const ProjectCard = memo(({ project }: ProjectCardProps) => {
   return (
     <Link href={`/projects/${project.id}`} className="block">
-      <Card className="rounded-md py-4 gap-4 transition-all hover:border-primary cursor-pointer h-full">
-        <CardHeader className="px-4 pb-3">
-          <div className="flex flex-row items-center justify-between space-y-0 mb-1">
-            <CardTitle className="line-clamp-1 flex-1 text-left">
-              {project.name}
-            </CardTitle>
+      <Card className="group bg-card border border-border rounded-md p-5 hover:border-primary/50 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 cursor-pointer flex flex-col gap-4 h-full">
+        <CardHeader className="px-0 pt-0 pb-2">
+          <div className="flex justify-between items-start">
+            <div className="flex flex-col gap-1">
+              <CardTitle className="font-semibold text-lg group-hover:text-primary transition-colors line-clamp-1">
+                {project.name}
+              </CardTitle>
+            </div>
             <ProjectCardDropdown project={project} />
           </div>
           
-          <CardDescription className="line-clamp-2 min-h-8">
+          <CardDescription className="line-clamp-2 min-h-10 text-sm mt-2">
             {project.description || 'No description'}
           </CardDescription>
         </CardHeader>
 
         {/* Horizontal divider matching content width */}
-        <div className="border-t border-border mx-4" />
+        <div className="border-t border-border" />
 
-        <CardFooter className="flex items-center justify-between px-4">
+        <CardFooter className="flex items-center justify-between px-0">
           <div className="flex items-center gap-x-2">
             <Badge
               className={cn(
