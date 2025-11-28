@@ -1,8 +1,8 @@
 'use client';
 
 
-import ProjectCard from '@/components/features/projectList/ProjectCard';
 import EmptyProjectCard from '@/components/features/projectList/EmptyProjectCard';
+import ProjectCard from '@/components/features/projectList/ProjectCard';
 import { Spinner } from '@/components/ui/spinner';
 import { useProjects } from '@/hooks/use-projects';
 

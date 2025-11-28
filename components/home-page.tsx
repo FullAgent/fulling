@@ -6,10 +6,9 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
 import { authenticateWithSealos } from '@/app/actions/sealos-auth';
+import { MatrixRain } from '@/components/MatrixRain';
 import { Button } from '@/components/ui/button';
 import { useSealos } from '@/provider/sealos';
-
-import { MatrixRain } from '@/components/MatrixRain';
 
 /**
  * Home page client component with unified rendering.

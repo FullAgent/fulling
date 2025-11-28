@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
+
+import CreateProjectDialog from '@/components/dialog/create-project-dialog';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import CreateProjectDialog from '@/components/dialog/create-project-dialog';
 
 export default function EmptyProjectCard() {
   const [createModalOpen, setCreateModalOpen] = useState(false);

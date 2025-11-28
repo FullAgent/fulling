@@ -4,8 +4,8 @@
  * Server component that displays the list of user projects
  */
 
-import ProjectListHeader from '@/components/features/projectList/ProjectListHeader';
 import ProjectListContent from '@/components/features/projectList/ProjectListContent';
+import ProjectListHeader from '@/components/features/projectList/ProjectListHeader';
 
 export default function ProjectsPage() {
   return (

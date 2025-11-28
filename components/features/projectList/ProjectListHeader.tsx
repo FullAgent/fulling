@@ -7,7 +7,7 @@
 'use client';
 
 import { memo, useState } from 'react';
-import { Plus, Search, User } from 'lucide-react';
+import { Plus, User } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 
 import CreateProjectDialog from '@/components/dialog/create-project-dialog';
@@ -25,14 +25,14 @@ const ProjectListHeader = memo(({ className }: ProjectListHeaderProps) => {
   const [showCreateProject, setShowCreateProject] = useState(false);
 
   // Get user initials for avatar fallback
-  const getUserInitials = () => {
-    if (!session?.user?.name) return 'U';
-    const names = session.user.name.split(' ');
-    if (names.length >= 2) {
-      return `${names[0][0]}${names[1][0]}`.toUpperCase();
-    }
-    return session.user.name[0].toUpperCase();
-  };
+  // const getUserInitials = () => {
+  //   if (!session?.user?.name) return 'U';
+  //   const names = session.user.name.split(' ');
+  //   if (names.length >= 2) {
+  //     return `${names[0][0]}${names[1][0]}`.toUpperCase();
+  //   }
+  //   return session.user.name[0].toUpperCase();
+  // };
 
   return (
     <>
