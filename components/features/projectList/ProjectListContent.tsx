@@ -1,7 +1,8 @@
 'use client';
 
-import NoProject from '@/components/features/projectList/NoProject';
+
 import ProjectCard from '@/components/features/projectList/ProjectCard';
+import EmptyProjectCard from '@/components/features/projectList/EmptyProjectCard';
 import { Spinner } from '@/components/ui/spinner';
 import { useProjects } from '@/hooks/use-projects';
 
@@ -23,15 +24,12 @@ export default function ProjectListContent() {
 
   return (
     <div className="mt-6">
-      {!projects || projects.length === 0 ? (
-        <NoProject />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {projects?.map((project) => (
+          <ProjectCard key={project.id} project={project} />
+        ))}
+        <EmptyProjectCard />
+      </div>
     </div>
   );
 }

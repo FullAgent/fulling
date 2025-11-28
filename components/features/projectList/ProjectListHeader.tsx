@@ -42,14 +42,15 @@ const ProjectListHeader = memo(({ className }: ProjectListHeaderProps) => {
           <p className="text-muted-foreground/70 mt-1">Manage your full-stack applications</p>
         </div>
         <div className="flex gap-3 w-full sm:w-auto items-center">
-           <div className="relative flex-1 sm:w-64">
+          {/* TODO: to be implemented */}
+           {/* <div className="relative flex-1 sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={16} />
               <input 
                 type="text" 
                 placeholder="Search projects..." 
                 className="w-full bg-secondary/50 border border-border rounded-md pl-9 pr-4 py-2 text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-muted-foreground/40"
               />
-           </div>
+           </div> */}
            <Button 
              variant="default" 
              onClick={() => setShowCreateProject(true)}
