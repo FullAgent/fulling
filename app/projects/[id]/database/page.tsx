@@ -7,11 +7,11 @@
 import { Info } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
 
+import { ConfigLayout } from '@/components/config/config-layout';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
 import { ConnectionString } from './connection-string';
-import { ConfigLayout } from '@/components/config/config-layout';
 
 export default async function DatabasePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
