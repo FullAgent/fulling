@@ -88,11 +88,11 @@ function AuthPageContent() {
 
   return (
     <ConfigLayout
-      title="Authentication Configuration"
-      description="Configure OAuth providers and other authentication settings"
+      title="Auth Configuration"
+      description="Configure auth configuration settings for this project."
       loading={envLoading || projectLoading}
     >
-      <div className="space-y-8">
+      <div>
         {/* GitHub OAuth Section */}
         <div>
           <div className="flex items-center justify-between mb-4">
