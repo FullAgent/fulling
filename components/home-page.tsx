@@ -108,7 +108,7 @@ export function HomePage() {
             <p className="text-xl text-primary mb-12">AI-Powered Full-Stack Development Platform</p>
             <p className="text-lg text-foreground/80 mb-8 max-w-2xl mx-auto">
               Create, develop, and deploy production-ready web applications using natural language.
-              Powered by <span className="text-[#d97757] bg-[#d97757]/10 px-1 py-0.5 rounded-md font-mono">Claude Code</span> in isolated sandbox environments.
+              Powered by <span className="text-brand-claude bg-brand-claude/10 px-1 py-0.5 rounded-md font-mono">Claude Code</span> in isolated sandbox environments.
             </p>
           </div>
 

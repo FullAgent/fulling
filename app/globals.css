@@ -19,6 +19,7 @@
   --muted-foreground: oklch(0.55 0.02 264.41);
   --accent: oklch(0.95 0.03 233.56);
   --accent-foreground: oklch(0.38 0.14 265.59);
+  --brand-claude: #d97757;
   --destructive: oklch(0.64 0.21 25.39);
   --border: oklch(0.93 0.01 261.82);
   --input: oklch(0.93 0.01 261.82);
@@ -32,12 +33,8 @@
   --sidebar-foreground: oklch(0.14 0 0);
   --sidebar-background: oklch(1.0 0 0);
   --sidebar-project-background: oklch(1.0 0 0);
-  --sidebar-primary: oklch(0.20 0 0);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
   --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.20 0 0);
   --sidebar-border: oklch(0.92 0 0);
-  --sidebar-ring: oklch(0.71 0 0);
   --destructive-foreground: oklch(1.0000 0 0);
   --content-background: oklch(1.00 0 0);
   --font-serif: Source Serif 4, serif;
@@ -93,12 +90,8 @@
   --sidebar-foreground: oklch(0.99 0 0);
   --sidebar-background: #333333;
   --sidebar-project-background: #242426;
-  --sidebar-primary: oklch(0.49 0.24 264.40);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
   --sidebar-accent: #2B2D2E;
-  --sidebar-accent-foreground: oklch(0.99 0 0);
   --sidebar-border: oklch(1.00 0 0 / 10%);
-  --sidebar-ring: oklch(0.55 0.02 285.93);
   --content-background: #1E1E1E;
   --tabs-background: #252526;
   --tab-background: #292929;
@@ -121,43 +114,57 @@
 }
 
 .stealth {
+  /* === Base Colors === */
   --background: #1e1e1e;
   --foreground: #cccccc;
+
+  /* === UI Components === */
   --card: #252526;
   --card-foreground: #cccccc;
   --popover: #2d2d30;
   --popover-foreground: #cccccc;
+
+  /* === Brand Colors === */
   --primary: #007acc;
   --primary-foreground: #ffffff;
   --primary-hover: #0062a3;
+
   --secondary: #2d2d30;
   --secondary-foreground: #dcdcdc;
-  --muted: #2d2d30;
-  --muted-foreground: #858585;
+
   --accent: #264f78;
   --accent-foreground: #ffffff;
+
+  --muted: #2d2d30;
+  --muted-foreground: #858585;
+
   --destructive: #7f1d1d;
   --destructive-foreground: #ffffff;
+
+  /* === Borders & Inputs === */
   --border: #3e3e42;
   --input: #3e3e42;
   --ring: #007fd4;
+
+  /* === Sidebar (VS Code Style) === */
+  --sidebar: #2d2d30;
+  --sidebar-foreground: #dcdcdc;
+  --sidebar-background: #2d2d30;
+  --sidebar-project-background: #252526;
+  --sidebar-accent: #264f78;
+  --sidebar-border: #1e1e1e;
+
+  /* === Charts === */
   --chart-1: #007acc;
   --chart-2: #57a64a;
   --chart-3: #d69d85;
   --chart-4: #569cd6;
   --chart-5: #b5cea8;
-  --sidebar: #2d2d30;
-  --sidebar-foreground: #dcdcdc;
-  --sidebar-background: #2d2d30;
-  --sidebar-project-background: #1e1e1e;
-  --sidebar-primary: #007acc;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #264f78;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #1e1e1e;
-  --sidebar-ring: #007fd4;
-  --destructive-foreground: #ffffff;
+
+  /* === Custom/Specific Overrides === */
   --content-background: #1e1e1e;
+
+  /* Tabs */
   --tabs-background: #2d2d30;
   --tab-background: #2d2d30;
   --tab-foreground: #969696;
@@ -182,6 +189,7 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-brand-claude: var(--brand-claude);
   --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
@@ -195,12 +203,10 @@
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-background: var(--sidebar-background);
   --color-sidebar-project-background: var(--sidebar-project-background);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+
   --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+
   --color-destructive-foreground: var(--destructive-foreground);
   --color-content-background: var(--content-background);
   --color-tabs-background: var(--tabs-background);
