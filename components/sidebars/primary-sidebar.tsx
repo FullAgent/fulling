@@ -61,7 +61,7 @@ export default function PrimarySidebar({ currentProjectId }: PrimarySidebarProps
         {/* Home Link */}
         <Link
           href="/projects"
-          className="group flex items-center h-8 px-3 hover:bg-sidebar-accent transition-colors"
+          className="group flex items-center h-8 px-3 hover:bg-sidebar-accent/10 transition-colors"
         >
           <Home className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-foreground shrink-0 transition-colors" />
           {isExpanded && (
