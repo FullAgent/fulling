@@ -24,7 +24,7 @@ export default function RootLayout({
       <body className={`${geist.className} bg-background antialiased`}>
         <Providers>{children}</Providers>
         <Toaster
-          position="top-right"
+          position="bottom-right"
           theme="dark"
           toastOptions={{
             classNames: {
