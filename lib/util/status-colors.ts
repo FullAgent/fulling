@@ -105,7 +105,7 @@ export function getStatusIconColor(status: Status): string {
     case 'STOPPED':
     case 'TERMINATED':
     default:
-      return 'text-[#858585]'
+      return ''
   }
 }
 

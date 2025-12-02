@@ -28,12 +28,12 @@ export function StatusBar({ project }: StatusBarProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1 hover:bg-card-foreground/10 px-1 rounded cursor-pointer transition-colors">
+        <div className="flex items-center gap-1 px-1 rounded cursor-pointer transition-colors">
           <Box className={`w-3 h-3 ${getStatusIconColor(sbStatus)}`} />
           <span>Sandbox: {sbStatus}</span>
         </div>
-        <div className="w-px h-3 bg-card-foreground/20 mx-1" />
-        <div className="flex items-center gap-1 hover:bg-card-foreground/10 px-1 rounded cursor-pointer transition-colors">
+        <div className="w-px h-3 bg-card-foreground/60 mx-1" />
+        <div className="flex items-center gap-1 px-1 rounded cursor-pointer transition-colors">
           <Database className={`w-3 h-3 ${getStatusIconColor(dbStatus)}`} />
           <span>Database: {dbStatus}</span>
         </div>
