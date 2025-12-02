@@ -132,14 +132,14 @@
   --secondary: #2d2d30;
   --secondary-foreground: #dcdcdc;
 
-  --accent: #264f78;
+  --accent: #2d2d30;
   --accent-foreground: #ffffff;
 
   --muted: #2d2d30;
   --muted-foreground: #858585;
 
-  --destructive: #7f1d1d;
-  --destructive-foreground: #ffffff;
+  --destructive: #F14C4C;
+  --destructive-foreground: #F14C4C;
 
   /* === Borders & Inputs === */
   --border: #3e3e42;
@@ -151,7 +151,7 @@
   --sidebar-foreground: #dcdcdc;
   --sidebar-background: #2d2d30;
   --sidebar-project-background: #252526;
-  --sidebar-accent: #264f78;
+  --sidebar-accent: #2d2d30;
   --sidebar-border: #1e1e1e;
 
   /* === Charts === */
