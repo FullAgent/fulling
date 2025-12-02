@@ -98,7 +98,7 @@ docker run -d \
 docker run -d \
   -p 7681:7681 \
   -p 3000:3000 \
-  -v $(pwd)/workspace:/home/agent/workspace \
+  -v $(pwd)/workspace:/home/fulling/workspace \
   -e ANTHROPIC_AUTH_TOKEN="your-token" \
   ghcr.io/{owner}/fullstack-web-runtime:latest
 ```
@@ -264,16 +264,16 @@ When submitting changes:
 - Container tools (Buildah, Podman)
 - Development tools
 
-**Stage 2: User Environment** (as agent user)
+**Stage 2: User Environment** (as fulling user)
 - Next.js project initialization
 - shadcn/ui components installation
 - User-specific configurations
 
 ### Runtime Configuration
 
-- **User**: agent (UID 1001, GID 1001)
-- **Home**: `/home/agent`
-- **Working Directory**: `/home/agent/next` (auto-cd on shell start)
+- **User**: fulling (UID 1001, GID 1001)
+- **Home**: `/home/fulling`
+- **Working Directory**: `/home/fulling/next` (auto-cd on shell start)
 - **Shell**: bash with custom prompt
 - **Entrypoint**: ttyd web terminal
 
@@ -282,13 +282,13 @@ When submitting changes:
 - **Driver**: VFS (for compatibility)
 - **Runtime**: crun
 - **Cgroup Manager**: cgroupfs
-- **Storage Root**: `/home/agent/.local/share/containers/storage`
+- **Storage Root**: `/home/fulling/.local/share/containers/storage`
 
 ## Security Considerations
 
 ### Container Security
-1. **Non-Root User**: Runs as `agent` user (UID 1001)
-2. **Sudo Access**: Agent has passwordless sudo for development flexibility
+1. **Non-Root User**: Runs as `fulling` user (UID 1001)
+2. **Sudo Access**: fulling has passwordless sudo for development flexibility
 3. **Rootless Containers**: Buildah/Podman configured for rootless operation
 
 ### Network Security
@@ -362,7 +362,7 @@ docker exec <container-id> which claude
 
 **Problem**: Buildah permission denied
 ```bash
-# Ensure running as agent user
+# Ensure running as fulling user
 docker exec <container-id> whoami
 
 # Check storage configuration

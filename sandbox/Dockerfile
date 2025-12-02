@@ -195,7 +195,7 @@ RUN set -eux; \
     ttyd --version || true
 
 # Set working directory for application
-WORKDIR /home/fulling
+WORKDIR /home/fulling/next
 
 # -----------------------------------------------------------------------------
 # Copy configuration files (placed before user switch for better caching)
