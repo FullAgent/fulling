@@ -778,6 +778,80 @@ exec filebrowser --database /database/filebrowser.db
                   },
                 ],
               },
+              {
+                name: 'filebrowser',
+                image: 'filebrowser/filebrowser:latest',
+                command: ['/bin/sh', '-c'],
+                args: [
+                  `
+set -e
+
+echo "=== FileBrowser Initialization ==="
+
+# Only initialize if database doesn't exist
+if [ ! -f /database/filebrowser.db ]; then
+  echo "→ Database not found, initializing..."
+
+  # Initialize config and database
+  filebrowser config init \
+    --database /database/filebrowser.db \
+    --root /srv \
+    --address 0.0.0.0 \
+    --port 8080
+
+  echo "✓ Config initialized"
+
+  # Add user with plaintext password (filebrowser will hash it)
+  filebrowser users add "$FILE_BROWSER_USERNAME" "$FILE_BROWSER_PASSWORD" \
+    --database /database/filebrowser.db \
+    --perm.admin
+
+  echo "✓ User created: $FILE_BROWSER_USERNAME"
+else
+  echo "✓ Database already exists, skipping initialization"
+fi
+
+echo "→ Starting FileBrowser..."
+# Start filebrowser
+exec filebrowser --database /database/filebrowser.db
+                  `.trim(),
+                ],
+                env: [
+                  {
+                    name: 'FILE_BROWSER_USERNAME',
+                    value: containerEnv['FILE_BROWSER_USERNAME'] || 'admin',
+                  },
+                  {
+                    name: 'FILE_BROWSER_PASSWORD',
+                    value: containerEnv['FILE_BROWSER_PASSWORD'] || 'admin',
+                  },
+                ],
+                ports: [{ containerPort: 8080, name: 'port-8080' }],
+                resources: {
+                  requests: {
+                    cpu: '50m',
+                    memory: '64Mi',
+                  },
+                  limits: {
+                    cpu: '500m',
+                    memory: '256Mi',
+                  },
+                },
+                volumeMounts: [
+                  {
+                    name: 'vn-homevn-agent',
+                    mountPath: '/srv',
+                  },
+                  {
+                    name: 'filebrowser-database',
+                    mountPath: '/database',
+                  },
+                  {
+                    name: 'filebrowser-config',
+                    mountPath: '/config',
+                  },
+                ],
+              },
             ],
             volumes: [
               {
