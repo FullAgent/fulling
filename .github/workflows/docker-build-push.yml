@@ -145,7 +145,7 @@ jobs:
             body += `| Build Status | ${buildSuccess ? '✅ Passed' : '❌ Failed'} |\n`;
             body += `| Platforms | linux/amd64 (PR validation) |\n`;
             body += `| Push to Registry | ⚠️ No (PR build only) |\n`;
-            body += `| Framework | Next.js 15 + Prisma |\n`;
+            body += `| Framework | Next.js 16 + Prisma |\n`;
             body += `| Base Image | node:current-alpine |\n\n`;
 
             if (buildSuccess) {
