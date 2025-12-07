@@ -89,6 +89,9 @@ importers:
       croner:
         specifier: ^9.1.0
         version: 9.1.0
+      ghostty-web:
+        specifier: ^0.3.0
+        version: 0.3.0
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.3
@@ -128,6 +131,9 @@ importers:
       tus-js-client:
         specifier: ^4.3.1
         version: 4.3.1
+      ws:
+        specifier: ^8.18.3
+        version: 8.18.3
       zod:
         specifier: ^4.1.12
         version: 4.1.13
@@ -147,6 +153,9 @@ importers:
       '@types/react-dom':
         specifier: 19.2.3
         version: 19.2.3(@types/react@19.2.7)
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
       eslint:
         specifier: ^9
         version: 9.39.1(jiti@2.6.1)
@@ -1238,6 +1247,9 @@ packages:
   '@types/stream-buffers@3.0.8':
     resolution: {integrity: sha512-J+7VaHKNvlNPJPEJXX/fKa9DZtR/xPMwuIbe+yNOwp1YB+ApUOBv2aUpEoBJEi8nJgbgs1x8e73ttg0r1rSUdw==}
 
+  '@types/ws@8.18.1':
+    resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
+
   '@typescript-eslint/eslint-plugin@8.48.1':
     resolution: {integrity: sha512-X63hI1bxl5ohelzr0LY5coufyl0LJNthld+abwxpCoo6Gq+hSqhKwci7MUWkXo67mzgUK6YFByhmaHmUcuBJmA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
@@ -2059,6 +2071,9 @@ packages:
 
   get-tsconfig@4.13.0:
     resolution: {integrity: sha512-1VKTZJCwBrvbd+Wn3AOgQP/2Av+TfTCOlE4AcRJE72W1ksZXbAx8PPBR9RzgTeSPzlPMHrbANMH3LbltH73wxQ==}
+
+  ghostty-web@0.3.0:
+    resolution: {integrity: sha512-SAdSHWYF20GMZUB0n8kh1N6Z4ljMnuUqT8iTB2n5FAPswEV10MejEpLlhW/769GL5+BQa1NYwEg9y/XCckV5+A==}
 
   giget@2.0.0:
     resolution: {integrity: sha512-L5bGsVkxJbJgdnwyuheIunkGatUF/zssUoxxjACCseZYAVbaqdh9Tsmmlkl8vYan09H7sbvKt4pS8GqKLBrEzA==}
@@ -4276,6 +4291,10 @@ snapshots:
     dependencies:
       '@types/node': 20.19.25
 
+  '@types/ws@8.18.1':
+    dependencies:
+      '@types/node': 20.19.25
+
   '@typescript-eslint/eslint-plugin@8.48.1(@typescript-eslint/parser@8.48.1(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
@@ -5260,6 +5279,8 @@ snapshots:
   get-tsconfig@4.13.0:
     dependencies:
       resolve-pkg-maps: 1.0.0
+
+  ghostty-web@0.3.0: {}
 
   giget@2.0.0:
     dependencies:

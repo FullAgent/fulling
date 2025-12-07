@@ -21,7 +21,7 @@ export type SealosJWT = z.infer<typeof sealosJWT>
  * @param secret JWT secret key
  * @returns Parsed JWT payload
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export function parseJWT<T = any>(token: string, secret: string): T {
   try {
     const decoded = jsonwebtoken.verify(token, secret) as T
@@ -74,7 +74,7 @@ export function verifyJWT(token: string, secret?: string): boolean {
  * @param token JWT token string
  * @returns Decoded JWT payload (unverified)
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export function decodeJWT<T = any>(token: string): T | null {
   try {
     const decoded = jsonwebtoken.decode(token) as T

@@ -126,7 +126,7 @@ export class KubernetesUtils {
       const coreV1Api = kc.makeApiClient(k8s.CoreV1Api)
       try {
         await coreV1Api.listNamespacedPod({ namespace, limit: 1 })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
       } catch (error: any) {
         logger.error(`Kubeconfig validation - namespace permission check failed: ${error}`)
 
@@ -149,7 +149,7 @@ export class KubernetesUtils {
         valid: true,
         namespace,
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
     } catch (error: any) {
       logger.error(`Kubeconfig validation - parse error: ${error}`)
       return {
