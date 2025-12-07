@@ -1,0 +1,38 @@
+/**
+ * ProjectContentWrapper Styles
+ *
+ * Controls visibility of terminal and content panels
+ * Uses data attributes for semantic clarity
+ */
+
+.wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.panel {
+  width: 100%;
+  height: 100%;
+}
+
+/* Hide panels when not visible */
+.panel[data-visible='false'] {
+  display: none;
+  content-visibility: hidden; /* Modern CSS optimization */
+}
+
+/* Terminal panel - block layout */
+.terminalPanel[data-visible='true'] {
+  display: block;
+  content-visibility: auto;
+}
+
+/* Content panel - flex layout */
+.contentPanel[data-visible='true'] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  content-visibility: auto;
+}
