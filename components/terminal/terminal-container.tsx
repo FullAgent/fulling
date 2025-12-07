@@ -36,6 +36,12 @@ type Sandbox = Prisma.SandboxGetPayload<object>;
 export interface TerminalContainerProps {
   project: Project;
   sandbox: Sandbox | undefined;
+  /**
+   * Controls whether the terminal is visible
+   * - Used to optimize performance by avoiding unnecessary fit() calls when hidden
+   * - Passed down to child components to coordinate visibility state
+   * - Default: true
+   */
   isVisible?: boolean;
 }
 
@@ -136,6 +142,12 @@ export function TerminalContainer({ project, sandbox, isVisible = true }: Termin
             }}
           >
             {/* Each tab maintains its own terminal instance */}
+            {/*
+              isVisible combines two conditions:
+              1. isVisible: Terminal page is visible (not hidden by routing)
+              2. tab.id === activeTabId: This specific tab is active
+              Only when both are true will the terminal fit() to correct dimensions
+            */}
             <TerminalDisplay
               key={tab.id}
               sandboxId={sandbox?.id ?? ''}

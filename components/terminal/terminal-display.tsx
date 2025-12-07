@@ -39,6 +39,13 @@ export interface TerminalDisplayProps {
   fileBrowserUrl?: string | null;
   fileBrowserUsername?: string;
   fileBrowserPassword?: string;
+  /**
+   * Indicates whether this terminal instance is currently visible to the user
+   * - Controls when to trigger terminal resize/fit operations
+   * - Prevents incorrect dimension calculations when container is hidden (display: none)
+   * - Passed down from TerminalContainer which combines route visibility and active tab state
+   * - Default: true
+   */
   isVisible?: boolean;
 }
 
@@ -110,6 +117,11 @@ export function TerminalDisplay({
 
         {/* Terminal Instance */}
         <div className="flex-1 w-full p-2">
+          {/*
+            Pass visibility state to XtermTerminal
+            - XtermTerminal will use this to decide when to call fit()
+            - Avoids fitting terminal when container dimensions are 0 (display: none)
+          */}
           <XtermTerminal
             key={`xterm-${tabId}`}
             wsUrl={ttydUrl}

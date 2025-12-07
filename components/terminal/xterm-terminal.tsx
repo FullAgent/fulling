@@ -96,6 +96,25 @@ export interface XtermTerminalProps {
   fileBrowserUsername?: string;
   fileBrowserPassword?: string;
   enableFileUpload?: boolean;
+  /**
+   * Indicates whether this terminal is currently visible in the UI
+   *
+   * Purpose:
+   * - Triggers terminal fit() when visibility changes from hidden to visible
+   * - Prevents calling fit() when container has zero dimensions (display: none)
+   * - Avoids the known xterm.js FitAddon issue where fitting a hidden terminal results in 1x1 dimensions
+   *
+   * Why this is needed:
+   * - FitAddon cannot auto-detect when a container changes from display:none to display:block
+   * - When hidden, container.offsetWidth and container.offsetHeight are 0
+   * - Fitting with zero dimensions causes terminal to render incorrectly (1x1 or 80x24 fallback)
+   * - requestAnimationFrame ensures fit() is called after browser layout completes
+   *
+   * Related resources:
+   * - GitHub Issue #5320: "wtf why it goes width=1?"
+   * - Community pattern: React + xterm.js visibility handling
+   * - Default: true
+   */
   isVisible?: boolean;
 }
 
@@ -129,6 +148,10 @@ export function XtermTerminal({
   const fitAddonRef = useRef<FitAddon | null>(null);
   const hasNewContentRef = useRef(false);
   const newLineCountRef = useRef(0);
+
+  // Cleanup function refs to prevent memory leaks
+  const resizeCleanupRef = useRef<(() => void) | null>(null);
+  const lineFeedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [hasNewContent, setHasNewContent] = useState(false);
   const [newLineCount, setNewLineCount] = useState(0);
@@ -590,10 +613,15 @@ export function XtermTerminal({
           }
         });
 
-        let lineFeedTimeout: NodeJS.Timeout | null = null;
+        // Track new line feed events with debounced scroll indicator
         terminal.onLineFeed(() => {
-          if (lineFeedTimeout) clearTimeout(lineFeedTimeout);
-          lineFeedTimeout = setTimeout(() => {
+          // Clear previous timeout to debounce rapid line feeds
+          if (lineFeedTimeoutRef.current) {
+            clearTimeout(lineFeedTimeoutRef.current);
+          }
+
+          // Schedule scroll indicator update
+          lineFeedTimeoutRef.current = setTimeout(() => {
             if (isAtBottom) {
               terminal?.scrollToBottom();
             } else {
@@ -605,8 +633,14 @@ export function XtermTerminal({
           }, 10);
         });
 
+        // Window resize handler: fit terminal when browser window size changes
         const handleResize = () => fitAddonRef.current?.fit();
         window.addEventListener('resize', handleResize);
+
+        // Store cleanup function in ref for later use
+        resizeCleanupRef.current = () => {
+          window.removeEventListener('resize', handleResize);
+        };
 
         stableOnReady();
         connectWebSocket();
@@ -626,6 +660,18 @@ export function XtermTerminal({
     return () => {
       console.log('[XtermTerminal] Cleaning up');
       isMounted = false;
+
+      // Clean up window resize listener (prevents memory leak)
+      if (resizeCleanupRef.current) {
+        resizeCleanupRef.current();
+        resizeCleanupRef.current = null;
+      }
+
+      // Clean up line feed timeout (prevents memory leak)
+      if (lineFeedTimeoutRef.current) {
+        clearTimeout(lineFeedTimeoutRef.current);
+        lineFeedTimeoutRef.current = null;
+      }
 
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
 
@@ -653,17 +699,46 @@ export function XtermTerminal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wsUrl]);
 
-  // Handle visibility changes
+  // =========================================================================
+  // Handle Visibility Changes - Critical for proper terminal sizing
+  // =========================================================================
+
+  /**
+   * When isVisible changes (route switch or tab switch), fit the terminal to container
+   *
+   * Why this is necessary:
+   * 1. Problem: FitAddon cannot detect when CSS display changes from 'none' to 'block'
+   * 2. When hidden (display: none):
+   *    - container.offsetWidth = 0
+   *    - container.offsetHeight = 0
+   *    - Calling fit() would result in terminal dimensions of 1x1 (xterm.js minimum)
+   * 3. When becoming visible:
+   *    - React updates CSS to display: block
+   *    - Browser performs layout (reflow)
+   *    - Container gets actual dimensions (e.g., 1200px × 800px)
+   *    - But xterm.js doesn't know about this change
+   *
+   * Solution:
+   * - Watch isVisible prop changes
+   * - Only fit() when isVisible becomes true
+   * - Use requestAnimationFrame to ensure browser layout is complete before fitting
+   *
+   * Trigger scenarios:
+   * - User navigates from /overview to /terminal → isVisible: false → true
+   * - User switches terminal tabs → active tab isVisible: false → true
+   * - User navigates away from /terminal → isVisible: true → false (no fit needed)
+   *
+   * Related: This complements window.resize handler which handles browser window size changes
+   */
   useEffect(() => {
     if (isVisible && terminalRef.current && containerRef.current) {
-      // Small delay to ensure container has dimensions
+      // Use requestAnimationFrame to ensure container has completed layout
+      // and has actual dimensions before calling fit()
       requestAnimationFrame(() => {
         fitAddonRef.current?.fit();
       });
     }
   }, [isVisible]);
-
-
 
   // =========================================================================
   // Render

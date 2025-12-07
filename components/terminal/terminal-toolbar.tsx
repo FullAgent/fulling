@@ -87,7 +87,7 @@ export function TerminalToolbar({
   ];
 
   // Only show endpoints that have a valid domain URL
-  const networkEndpoints = allEndpoints.filter(endpoint => endpoint.domain);
+  const networkEndpoints = allEndpoints.filter((endpoint) => endpoint.domain);
 
   const copyToClipboard = async (text: string, field: string) => {
     try {
@@ -223,9 +223,7 @@ export function TerminalToolbar({
                       <div className="flex-1 min-w-0">
                         <div className="text-[10px] text-gray-500 mb-0.5">Password</div>
                         <code className="text-xs text-blue-400 break-all">
-                          {showPassword
-                            ? fileBrowserCredentials.password
-                            : '••••••••••••••••'}
+                          {showPassword ? fileBrowserCredentials.password : '••••••••••••••••'}
                         </code>
                       </div>
                       <button
