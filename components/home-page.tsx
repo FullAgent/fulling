@@ -139,7 +139,7 @@ export function HomePage() {
             >
               {getButtonText()}
             </Button>
-            <Link href="https://fulling.ai/" target="_blank" rel="noopener">
+            <Link href="https://github.com/FullAgent/fulling" target="_blank" rel="noopener">
               <Button
                 size="lg"
                 variant="secondary"

@@ -7,6 +7,7 @@ import {
   ChevronRight,
   CreditCard,
   Database,
+  Github,
   Key,
   Package,
   Shield,
@@ -56,6 +57,12 @@ export default function ProjectSidebar({ project }: ProjectSidebarProps) {
       label: 'Payment Configuration',
       icon: CreditCard,
       href: `/projects/${project.id}/payment`,
+    },
+    {
+      id: 'github',
+      label: 'GitHub Integration',
+      icon: Github,
+      href: `/projects/${project.id}/github`,
     },
   ];
 
