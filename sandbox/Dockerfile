@@ -186,8 +186,8 @@ RUN set -eux; \
 RUN set -eux; \
     # Download and install eza
     wget -q -O - https://github.com/eza-community/eza/releases/latest/download/eza_x86_64-unknown-linux-gnu.tar.gz | tar xz -C /usr/local/bin; \
-    # Download and install ttyd
-    wget -q -O /usr/local/bin/ttyd https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.x86_64; \
+    # Download and install ttyd (using labring fork with ?authorization= support)
+    wget -q -O /usr/local/bin/ttyd https://github.com/labring/ttyd/releases/download/1.7.7/ttyd.x86_64; \
     # Set executable permissions
     chmod +x /usr/local/bin/eza /usr/local/bin/ttyd; \
     # Verify installations
@@ -200,11 +200,11 @@ WORKDIR /home/fulling/next
 # -----------------------------------------------------------------------------
 # Copy configuration files (placed before user switch for better caching)
 # entrypoint.sh: Container startup script
-# ttyd-auth.sh: Authentication script for ttyd terminal access
+# ttyd-startup.sh: Startup script for ttyd (session tracking, welcome message)
 # .bashrc: Shell configuration with custom prompt and Claude CLI auto-start
 # -----------------------------------------------------------------------------
 COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
-COPY --chmod=755 ttyd-auth.sh /usr/local/bin/ttyd-auth.sh
+COPY --chmod=755 ttyd-startup.sh /usr/local/bin/ttyd-startup.sh
 COPY --chmod=644 .bashrc /etc/skel/.bashrc
 
 # =============================================================================

@@ -27,9 +27,8 @@ export default async function DatabasePage({ params }: { params: Promise<{ id: s
   if (!project) notFound();
 
   const database = project.databases[0];
-  const dbUrlEnv = project.environments.find((env) => env.key === 'DATABASE_URL');
 
-  const connectionString = dbUrlEnv?.value || database?.connectionUrl || '';
+  const connectionString = database?.connectionUrl || '';
   let host = '';
   let port = '';
   let dbName = '';

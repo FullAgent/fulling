@@ -45,12 +45,13 @@ The **Runtime Image** is the "operating system" of the user sandbox, containing 
 ```
 /runtime/
 ├── Dockerfile              ← Docker image definition (core)
-├── entrypoint.sh          ← Container startup script
-├── .bashrc                ← Shell configuration (auto-starts Claude)
-├── VERSION                ← Version number (v0.0.1-alpha.9)
-├── build.sh               ← Local build script
-├── push-to-dockerhub.sh   ← Push to Docker Hub
-└── README.md              ← Usage documentation
+├── entrypoint.sh           ← Container startup script (HTTP Basic Auth)
+├── ttyd-startup.sh         ← ttyd session handler (session tracking, welcome)
+├── .bashrc                 ← Shell configuration (auto-starts Claude)
+├── VERSION                 ← Version number
+├── build.sh                ← Local build script
+├── push-to-dockerhub.sh    ← Push to Docker Hub
+└── README.md               ← Usage documentation
 ```
 
 ### Built-in Software and Tools
@@ -84,13 +85,16 @@ RUN npm install -g @anthropic-ai/claude-code
 # Install Next.js and related tools
 RUN npm install -g next@latest typescript prisma
 
-# Install ttyd (Web Terminal)
-RUN wget -O /tmp/ttyd https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.x86_64 && \
-    chmod +x /tmp/ttyd && \
-    mv /tmp/ttyd /usr/local/bin/ttyd
+# Install ttyd (Web Terminal) - using labring fork with ?authorization= support
+RUN wget -O /usr/local/bin/ttyd https://github.com/labring/ttyd/releases/download/1.7.7/ttyd.x86_64 && \
+    chmod +x /usr/local/bin/ttyd
 
 # Install PostgreSQL client
 RUN apt-get install -y postgresql-client-16
+
+# Copy startup scripts
+COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY --chmod=755 ttyd-startup.sh /usr/local/bin/ttyd-startup.sh
 
 # Working directory
 WORKDIR /workspace
@@ -102,12 +106,54 @@ EXPOSE 3000 7681
 CMD ["/usr/local/bin/entrypoint.sh"]
 ```
 
-### Startup Script
+### Startup Scripts (v0.4.2+)
 
-**entrypoint.sh**:
+**entrypoint.sh** - Container entry point with HTTP Basic Auth:
 ```bash
 #!/bin/bash
-ttyd -W bash
+set -euo pipefail
+
+# Validate required environment variables
+if [ -z "$TTYD_ACCESS_TOKEN" ]; then
+    echo "ERROR: TTYD_ACCESS_TOKEN environment variable is not set"
+    exit 1
+fi
+
+# Build HTTP Basic Auth credential (username is fixed as 'user')
+TTYD_CREDENTIAL="user:${TTYD_ACCESS_TOKEN}"
+
+# Terminal theme configuration
+THEME='theme={...}'
+
+# Start ttyd with HTTP Basic Auth
+exec ttyd \
+    -T xterm-256color \
+    -W \
+    -a \
+    -c "$TTYD_CREDENTIAL" \
+    -t "$THEME" \
+    /usr/local/bin/ttyd-startup.sh
+```
+
+**ttyd-startup.sh** - Session tracking and welcome message:
+```bash
+#!/bin/bash
+# NOTE: Authentication is handled by ttyd -c at HTTP layer
+# This script only handles session tracking for file upload cwd detection
+
+# Arguments (via ?arg=...):
+#   $1 - TERMINAL_SESSION_ID
+
+if [ "$#" -ge 1 ] && [ -n "$1" ]; then
+    TERMINAL_SESSION_ID="$1"
+    export TERMINAL_SESSION_ID
+    echo "$$" > "/tmp/.terminal-session-${TERMINAL_SESSION_ID}"
+fi
+
+# Welcome message
+echo "👋 Welcome to your FullstackAgent Sandbox!"
+
+exec /bin/bash
 ```
 
 **.bashrc** (auto-start Claude):
@@ -731,9 +777,10 @@ export const prisma = new PrismaClient();
 ```bash
 runtime/
 ├── Dockerfile              # Image definition
-├── entrypoint.sh           # Start ttyd
+├── entrypoint.sh           # Container entry with HTTP Basic Auth
+├── ttyd-startup.sh         # Session tracking + welcome message
 ├── .bashrc                 # Auto-start Claude
-├── VERSION                 # v0.0.1-alpha.9
+├── VERSION                 # Version file
 └── README.md               # Documentation
 ```
 

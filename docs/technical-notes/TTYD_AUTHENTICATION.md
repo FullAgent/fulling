@@ -2,389 +2,209 @@
 
 ## Overview
 
-This document explains the authentication mechanism used in FullstackAgent's terminal system and why it differs from ttyd's built-in authentication.
+FullstackAgent uses **ttyd's HTTP Basic Auth** (`-c` parameter) combined with the `?authorization=` URL parameter for seamless, popup-free terminal authentication.
 
 ## Table of Contents
 
-1. [Authentication Layers](#authentication-layers)
-2. [ttyd's Built-in Authentication](#ttyds-built-in-authentication)
-3. [FullstackAgent's Authentication](#fullstackagents-authentication)
-4. [Why We Don't Use AuthToken](#why-we-dont-use-authtoken)
-5. [Security Analysis](#security-analysis)
-6. [Implementation Details](#implementation-details)
+1. [Authentication Flow](#authentication-flow)
+2. [URL Format](#url-format)
+3. [Authentication Layers](#authentication-layers)
+4. [Security Features](#security-features)
+5. [Implementation Details](#implementation-details)
+6. [Session Tracking](#session-tracking)
+7. [Troubleshooting](#troubleshooting)
+
+---
+
+## Authentication Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          1. Project Creation                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  app/api/projects/route.ts                                                  │
+│  ┌────────────────────────────────────────────────────────────────────────┐│
+│  │ const ttydAuthToken = generateRandomString(24) // 143 bits entropy     ││
+│  │ await tx.environment.create({                                          ││
+│  │   key: 'TTYD_ACCESS_TOKEN',                                            ││
+│  │   value: ttydAuthToken,                                                ││
+│  │   category: EnvironmentCategory.TTYD,                                  ││
+│  │   isSecret: true                                                       ││
+│  │ })                                                                     ││
+│  └────────────────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          2. Sandbox Creation                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  lib/k8s/sandbox-manager.ts                                                 │
+│  ┌────────────────────────────────────────────────────────────────────────┐│
+│  │ // Build ttydUrl with HTTP Basic Auth (authorization URL parameter)    ││
+│  │ const credentials = `user:${ttydAccessToken}`                          ││
+│  │ const authBase64 = Buffer.from(credentials).toString('base64')         ││
+│  │ const ttydUrl = `${baseTtydUrl}?authorization=${authBase64}`           ││
+│  │                                                                        ││
+│  │ // Environment variable injected into K8s pod                          ││
+│  │ envVars: { TTYD_ACCESS_TOKEN: "xxx..." }                               ││
+│  └────────────────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          3. Container Runtime                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  sandbox/entrypoint.sh                                                      │
+│  ┌────────────────────────────────────────────────────────────────────────┐│
+│  │ TTYD_CREDENTIAL="user:${TTYD_ACCESS_TOKEN}"                            ││
+│  │                                                                        ││
+│  │ ttyd -T xterm-256color \                                               ││
+│  │      -W \                           # WebSocket compression             ││
+│  │      -a \                           # Allow URL args (?arg=SESSION_ID)  ││
+│  │      -c "$TTYD_CREDENTIAL" \        # HTTP Basic Auth                   ││
+│  │      -t "$THEME" \                                                     ││
+│  │      /usr/local/bin/ttyd-startup.sh                                       ││
+│  └────────────────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          4. Frontend Connection                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  components/terminal/xterm-terminal.tsx                                     │
+│  ┌────────────────────────────────────────────────────────────────────────┐│
+│  │ const parseUrl = () => {                                               ││
+│  │   const authorization = url.searchParams.get('authorization')          ││
+│  │   url.searchParams.append('arg', terminalSessionId.current)            ││
+│  │   // URL: ?authorization=base64(user:pass)&arg=SESSION_ID              ││
+│  │   return { wsFullUrl, authorization }                                  ││
+│  │ }                                                                      ││
+│  │                                                                        ││
+│  │ socket.onopen = () => {                                                ││
+│  │   // Send AuthToken in JSON (required by ttyd -c)                      ││
+│  │   const initMsg = JSON.stringify({                                     ││
+│  │     AuthToken: authorization,  // base64(user:password)                ││
+│  │     columns: terminal.cols,                                            ││
+│  │     rows: terminal.rows,                                               ││
+│  │   })                                                                   ││
+│  │   socket.send(textEncoder.encode(initMsg))                             ││
+│  │ }                                                                      ││
+│  └────────────────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          5. Session Handler Script                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  sandbox/ttyd-startup.sh                                                       │
+│  ┌────────────────────────────────────────────────────────────────────────┐│
+│  │ # NOTE: Authentication is handled by ttyd -c at HTTP layer             ││
+│  │ # This script only handles session tracking for file upload cwd        ││
+│  │                                                                        ││
+│  │ # Arguments (via ?arg=...):                                            ││
+│  │ #   $1 - TERMINAL_SESSION_ID                                           ││
+│  │                                                                        ││
+│  │ if [ "$#" -ge 1 ] && [ -n "$1" ]; then                                 ││
+│  │     TERMINAL_SESSION_ID="$1"                                           ││
+│  │     echo "$$" > "/tmp/.terminal-session-${TERMINAL_SESSION_ID}"        ││
+│  │ fi                                                                     ││
+│  │                                                                        ││
+│  │ exec /bin/bash                                                         ││
+│  └────────────────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## URL Format
+
+```
+https://{sandbox}-ttyd.{domain}?authorization={base64}&arg={session_id}
+                                ^^^^^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^
+                                HTTP Basic Auth          Session tracking
+```
+
+**Example:**
+```
+https://myproject-ttyd.usw.sealos.io?authorization=dXNlcjphYmMxMjM=&arg=terminal-1234567890-abc123
+```
+
+Where `dXNlcjphYmMxMjM=` is `base64("user:abc123")`.
 
 ---
 
 ## Authentication Layers
 
-ttyd supports three authentication layers:
+| Layer | Mechanism | Purpose |
+|-------|-----------|---------|
+| **HTTP** | `?authorization=base64(user:pass)` | Validates at HTTP handshake, no browser popup |
+| **WebSocket** | `AuthToken` in JSON message | Required by ttyd when `-c` is used |
+| **Shell** | ttyd-startup.sh | Session tracking only (no auth check) |
 
-| Layer | Purpose | Implementation | Status in FullstackAgent |
-|-------|---------|----------------|--------------------------|
-| **Layer 1: HTTP Authentication** | Protect WebSocket handshake | HTTP Basic Auth / Custom Header | ❌ Not Used |
-| **Layer 2: WebSocket Authentication** | Validate first WebSocket message | `AuthToken` field in JSON message | ❌ Not Used |
-| **Layer 3: Shell Script Authentication** | Validate before spawning shell | Custom shell script (ttyd-auth.sh) | ✅ **Used** |
+### How It Works
 
----
-
-## ttyd's Built-in Authentication
-
-### How ttyd's `-c` Parameter Works
-
-```bash
-# Start ttyd with HTTP Basic Auth
-ttyd -c "username:password" /bin/bash
-```
-
-**Internal Processing:**
-1. ttyd Base64 encodes `username:password`
-2. Stores result in `server->credential`
-3. Validates at two levels:
-   - **HTTP Layer**: Checks `Authorization` header during WebSocket handshake
-   - **WebSocket Layer**: Checks `AuthToken` field in first JSON message
-
-### WebSocket Authentication Message (ttyd Original Design)
-
-```json
-{
-  "AuthToken": "Base64(username:password)",
-  "columns": 80,
-  "rows": 24
-}
-```
-
-**Validation Code (ttyd source):**
-```c
-// protocol.c
-case JSON_DATA:
-  if (server->credential != NULL) {
-    struct json_object *o = NULL;
-    if (json_object_object_get_ex(obj, "AuthToken", &o)) {
-      const char *token = json_object_get_string(o);
-      if (token != NULL && !strcmp(token, server->credential))
-        pss->authenticated = true;
-      else
-        lwsl_warn("WS authentication failed with token: %s\n", token);
-    }
-    if (!pss->authenticated) {
-      lws_close_reason(wsi, LWS_CLOSE_STATUS_POLICY_VIOLATION, NULL, 0);
-      return -1;  // Close WebSocket
-    }
-  }
-  spawn_process(pss, columns, rows);
-  break;
-```
+1. **HTTP Layer**: ttyd validates `?authorization=` parameter against `-c` credential
+2. **WebSocket Layer**: First JSON message must include `AuthToken` field
+3. **Shell Layer**: ttyd-startup.sh receives `?arg=` parameters for session tracking
 
 ---
 
-## FullstackAgent's Authentication
+## Security Features
 
-### Design Decisions
+### Token Generation
 
-**Why Shell Script Authentication?**
+| Property | Value |
+|----------|-------|
+| Length | 24 characters |
+| Character set | `A-Za-z0-9` (62 characters) |
+| Entropy | ~143 bits (62^24 combinations) |
+| Generator | nanoid with `crypto.getRandomValues()` |
 
-1. ✅ **Single Token Simplicity** - No need for `username:password` format
-2. ✅ **Environment Variable Security** - Token passed via Kubernetes Secrets
-3. ✅ **Multi-Parameter Support** - Can pass SESSION_ID alongside token
-4. ✅ **Flexibility** - Custom validation logic in bash script
-5. ✅ **Process Isolation** - Works with Kubernetes exec constraints
-
-### Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ Frontend: Generate Session ID                               │
-├─────────────────────────────────────────────────────────────┤
-│ terminalSessionId = `terminal-${Date.now()}-${random()}`   │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│ WebSocket URL: Pass token and session ID as URL params     │
-├─────────────────────────────────────────────────────────────┤
-│ wss://terminal.example.com/ws?arg=TOKEN&arg=SESSION_ID     │
-│                                    ^^^^^      ^^^^^^^^^^    │
-│                                    $1         $2            │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│ WebSocket Message: Send terminal size (NO AuthToken)       │
-├─────────────────────────────────────────────────────────────┤
-│ {                                                           │
-│   "columns": 80,                                            │
-│   "rows": 24                                                │
-│ }                                                           │
-│                                                             │
-│ Note: AuthToken field removed because:                     │
-│ - ttyd started without -c parameter                        │
-│ - server->credential = NULL                                │
-│ - WebSocket authentication not used                        │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│ ttyd: Trigger spawn_process()                              │
-├─────────────────────────────────────────────────────────────┤
-│ ttyd receives JSON message:                                │
-│ - Extracts columns and rows                                │
-│ - Skips AuthToken validation (credential = NULL)           │
-│ - Calls spawn_process(pss, columns, rows)                  │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│ ttyd: Build command with URL arguments                     │
-├─────────────────────────────────────────────────────────────┤
-│ Command: /usr/local/bin/ttyd-auth.sh TOKEN SESSION_ID      │
-│                                        ^^^^^  ^^^^^^^^^^    │
-│                                        $1     $2            │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Shell Script: ttyd-auth.sh performs authentication          │
-├─────────────────────────────────────────────────────────────┤
-│ #!/bin/bash                                                 │
-│ EXPECTED_TOKEN="${TTYD_ACCESS_TOKEN:-}"                    │
-│ PROVIDED_TOKEN="$1"                                         │
-│                                                             │
-│ if [ "$PROVIDED_TOKEN" != "$EXPECTED_TOKEN" ]; then        │
-│     echo "ERROR: Authentication failed"                    │
-│     sleep infinity  # Block shell startup                  │
-│ fi                                                          │
-│                                                             │
-│ # Optional: Store session PID                              │
-│ if [ -n "$2" ]; then                                        │
-│     SESSION_ID="$2"                                         │
-│     echo "$$" > "/tmp/.terminal-session-${SESSION_ID}"     │
-│ fi                                                          │
-│                                                             │
-│ exec /bin/bash  # Start shell                              │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Why We Don't Use AuthToken
-
-### Technical Reasons
-
-#### 1. **ttyd Started Without `-c` Parameter**
-
-```bash
-# sandbox/entrypoint.sh
-ttyd -T xterm-256color -W -a -t "$THEME" /usr/local/bin/ttyd-auth.sh
-#                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-#                                        Authentication delegated to script
-#    ^^ -a: Allow URL arguments
-#    No -c parameter → server->credential = NULL
-```
-
-**Result:**
-- `server->credential = NULL`
-- WebSocket authentication code skipped
-- `AuthToken` field in JSON message is ignored
-
-#### 2. **JSON Message Purpose**
-
-The JSON message sent after WebSocket connection serves **three purposes**:
-
-| Purpose | Required? | FullstackAgent Usage |
-|---------|-----------|----------------------|
-| Trigger `spawn_process()` | ✅ Required | ✅ Used |
-| Initialize terminal size | ✅ Required | ✅ Used |
-| Authenticate via AuthToken | ⚠️ Optional (if `-c` used) | ❌ Not Used |
-
-**Code Evidence (ttyd protocol.c):**
-```c
-case JSON_DATA:
-  if (pss->process != NULL) break;
-
-  // Extract terminal size (REQUIRED)
-  uint16_t columns = 0, rows = 0;
-  json_object *obj = parse_window_size(pss->buffer, pss->len, &columns, &rows);
-
-  // AuthToken validation (ONLY if server->credential != NULL)
-  if (server->credential != NULL) {
-    // ... validation code ...
-  }
-
-  // Spawn process (REQUIRED for shell startup)
-  spawn_process(pss, columns, rows);
-  break;
-```
-
-**Without JSON Message:**
-- ❌ `spawn_process()` never called
-- ❌ Shell never starts
-- ❌ Terminal hangs forever
-
-**With JSON Message (no AuthToken):**
-- ✅ `spawn_process()` called
-- ✅ Shell script receives URL arguments
-- ✅ Script validates token from environment variable
-
-#### 3. **Authentication Happens in Shell Script**
-
-```bash
-# sandbox/ttyd-auth.sh
-
-# Environment variable set by Kubernetes
-EXPECTED_TOKEN="${TTYD_ACCESS_TOKEN:-}"
-
-# Provided via URL (?arg=TOKEN)
-PROVIDED_TOKEN="$1"
-
-# Validation
-if [ "$PROVIDED_TOKEN" != "$EXPECTED_TOKEN" ]; then
-    echo "ERROR: Authentication failed - invalid token"
-    sleep infinity  # Block indefinitely (no shell access)
-fi
-
-# Success
-echo "✓ Authentication successful"
-exec /bin/bash
-```
-
-**Advantages:**
-- 🔒 Token never appears in WebSocket messages
-- 🔒 Token stored in Kubernetes Secrets (environment variable)
-- 🔒 Validation happens at OS level (bash script)
-- 🔒 Failed authentication blocks shell startup
-
----
-
-## Security Analysis
-
-### Comparison: WebSocket Auth vs Shell Script Auth
-
-| Aspect | ttyd WebSocket Auth | FullstackAgent Shell Auth |
-|--------|---------------------|---------------------------|
-| **Token Storage** | Command line (`-c` parameter) | Environment variable (Kubernetes Secret) |
-| **Token Visibility** | Visible in process list | Hidden (injected at runtime) |
-| **Token Format** | `Base64(username:password)` | Any string (32+ random chars) |
-| **Transmission** | WebSocket message (encrypted) | URL parameter + Script parameter |
-| **Validation Point** | ttyd server (Layer 2) | Shell script (Layer 3) |
-| **Multi-tenancy** | Single credential for all users | Per-project unique tokens |
-| **Session Tracking** | Not supported | Supported (SESSION_ID) |
-
-### Security Features in FullstackAgent
-
-#### 1. **Token Generation**
 ```typescript
 // app/api/projects/route.ts
-const ttydAuthToken = generateRandomString(32);
-// Example: "7a9f2e8d3c1b5a4e6f0d8c2a1b3e5f7a"
+const ttydAuthToken = generateRandomString(24) // 143 bits entropy
 ```
 
-#### 2. **Token Storage**
-```typescript
-// Stored in database with encryption
-const environment = await tx.environment.create({
-  data: {
-    projectId: project.id,
-    key: 'TTYD_ACCESS_TOKEN',
-    value: ttydAuthToken,
-    category: EnvironmentCategory.TTYD,
-    isSecret: true,  // Marked as secret
-  },
-});
-```
+### Token Storage
 
-#### 3. **Token Injection**
-```typescript
-// lib/events/sandbox/sandboxListener.ts
-const projectEnvVars = await getProjectEnvironments(project.id);
-// Includes TTYD_ACCESS_TOKEN
+- Stored in `Environment` table
+- Category: `ttyd`
+- `isSecret: true`
+- Injected into K8s pod as environment variable
 
-const sandboxInfo = await k8sService.createSandbox(
-  project.name,
-  sandbox.k8sNamespace,
-  sandbox.sandboxName,
-  projectEnvVars  // Injected into Kubernetes StatefulSet
-);
-```
+### Credential Format
 
-#### 4. **Token Validation**
-```bash
-# sandbox/ttyd-auth.sh
-# Runs inside container with environment variable injected by Kubernetes
-EXPECTED_TOKEN="${TTYD_ACCESS_TOKEN:-}"
-PROVIDED_TOKEN="$1"
+| Component | Value |
+|-----------|-------|
+| Username | `user` (fixed) |
+| Password | 24-character random token |
+| Format | `base64("user:{token}")` |
 
-if [ "$PROVIDED_TOKEN" != "$EXPECTED_TOKEN" ]; then
-    sleep infinity  # No shell access
-fi
-```
+### Per-Project Isolation
 
-### Attack Surface Analysis
-
-| Attack Vector | ttyd WebSocket Auth | FullstackAgent Shell Auth |
-|---------------|---------------------|---------------------------|
-| **Process list exposure** | ⚠️ Token visible in `ps aux` | ✅ Token in environment (not visible) |
-| **WebSocket intercept** | ⚠️ Token in WebSocket message | ✅ Token not in WebSocket message |
-| **Replay attack** | ⚠️ Captured token can be reused | ⚠️ Captured token can be reused* |
-| **Brute force** | ⚠️ Same token for all sessions | ✅ Per-project unique tokens |
-| **Token rotation** | ❌ Requires ttyd restart | ✅ Update DB + restart pod |
-
-*Note: Replay attacks mitigated by:
-- Short-lived tokens (can implement expiration)
-- Network-level security (HTTPS/WSS)
-- Kubernetes network policies
+- Each project gets a unique token at creation time
+- Tokens cannot be used across projects
+- Token rotation: Update DB + restart pod
 
 ---
 
 ## Implementation Details
 
-### Frontend: Terminal Connection
+### Key Files
 
-**File:** `components/terminal/xterm-terminal.tsx`
+| File | Purpose |
+|------|---------|
+| `app/api/projects/route.ts` | Token generation at project creation |
+| `lib/k8s/sandbox-manager.ts` | Build ttydUrl with authorization parameter |
+| `sandbox/entrypoint.sh` | Start ttyd with `-c` parameter |
+| `sandbox/ttyd-startup.sh` | Session tracking for file uploads |
+| `components/terminal/xterm-terminal.tsx` | Parse URL and send AuthToken |
 
-```typescript
-// Generate unique session ID per terminal instance
-const terminalSessionId = useRef(
-  `terminal-${Date.now()}-${Math.random().toString(36).slice(2)}`
-);
-
-// Parse URL and add session ID
-const parseUrl = (): { wsFullUrl: string; token: string } | null => {
-  const url = new URL(wsUrl);
-  const token = url.searchParams.get('arg') || '';
-
-  if (!token) {
-    console.error('[XtermTerminal] No authentication token found in URL');
-    return null;
-  }
-
-  // Add session ID as second arg parameter
-  url.searchParams.append('arg', terminalSessionId.current);
-
-  const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsPath = url.pathname.replace(/\/$/, '') + '/ws';
-  const wsFullUrl = `${wsProtocol}//${url.host}${wsPath}${url.search}`;
-
-  return { wsFullUrl, token };
-};
-
-// WebSocket connection
-socket.onopen = () => {
-  // Send terminal size (AuthToken field removed)
-  const initMsg = JSON.stringify({
-    columns: terminal!.cols,
-    rows: terminal!.rows,
-  });
-  socket?.send(textEncoder.encode(initMsg));
-};
-```
-
-### Backend: Token Management
-
-**File:** `app/api/projects/route.ts`
+### Backend: Token Generation
 
 ```typescript
-// Create project with TTYD_ACCESS_TOKEN
-const ttydAuthToken = generateRandomString(32);
+// app/api/projects/route.ts
+const ttydAuthToken = generateRandomString(24)
 
 const environment = await tx.environment.create({
   data: {
@@ -394,193 +214,219 @@ const environment = await tx.environment.create({
     category: EnvironmentCategory.TTYD,
     isSecret: true,
   },
-});
+})
 ```
 
-**File:** `lib/events/sandbox/sandboxListener.ts`
+### Backend: URL Construction
 
 ```typescript
-async function handleCreateSandbox(payload: SandboxEventPayload) {
-  // Load environment variables (includes TTYD_ACCESS_TOKEN)
-  const projectEnvVars = await getProjectEnvironments(project.id);
+// lib/k8s/sandbox-manager.ts
+const baseTtydUrl = `https://${sandboxName}-ttyd.${ingressDomain}`
+const ttydAccessToken = envVars['TTYD_ACCESS_TOKEN']
 
-  // Inject into Kubernetes StatefulSet
-  const sandboxInfo = await k8sService.createSandbox(
-    project.name,
-    sandbox.k8sNamespace,
-    sandbox.sandboxName,
-    projectEnvVars
-  );
+if (ttydAccessToken) {
+  const credentials = `user:${ttydAccessToken}`
+  const authBase64 = Buffer.from(credentials).toString('base64')
+  ttydUrl = `${baseTtydUrl}?authorization=${authBase64}`
 }
 ```
 
-### Container: Authentication Script
-
-**File:** `sandbox/ttyd-auth.sh`
+### Container: entrypoint.sh
 
 ```bash
 #!/bin/bash
-# ttyd authentication wrapper script
-# Validates TTYD_ACCESS_TOKEN before granting shell access
-#
-# Arguments (passed via URL ?arg=...&arg=...):
-#   $1 - TTYD_ACCESS_TOKEN (required)
-#   $2 - TERMINAL_SESSION_ID (optional, for file upload directory tracking)
 
-# Get expected token from environment variable (injected by Kubernetes)
-EXPECTED_TOKEN="${TTYD_ACCESS_TOKEN:-}"
-
-# Check if token is configured
-if [ -z "$EXPECTED_TOKEN" ]; then
-    echo "ERROR: TTYD_ACCESS_TOKEN is not configured"
-    echo "Please contact your system administrator"
-    sleep infinity
+# Validate required environment variables
+if [ -z "$TTYD_ACCESS_TOKEN" ]; then
+    echo "ERROR: TTYD_ACCESS_TOKEN environment variable is not set"
+    exit 1
 fi
 
-# Check if token was provided as argument
-if [ "$#" -lt 1 ]; then
-    echo "ERROR: Authentication failed - no token provided"
-    sleep infinity
-fi
+# Build HTTP Basic Auth credential
+TTYD_CREDENTIAL="user:${TTYD_ACCESS_TOKEN}"
 
-PROVIDED_TOKEN="$1"
+# Start ttyd with authentication
+exec ttyd \
+    -T xterm-256color \
+    -W \
+    -a \
+    -c "$TTYD_CREDENTIAL" \
+    -t "$THEME" \
+    /usr/local/bin/ttyd-startup.sh
+```
 
-# Validate token
-if [ "$PROVIDED_TOKEN" != "$EXPECTED_TOKEN" ]; then
-    echo "ERROR: Authentication failed - invalid token"
-    sleep infinity
-fi
+### Container: ttyd-startup.sh
 
-# Authentication successful
-echo "✓ Authentication successful"
+```bash
+#!/bin/bash
+# NOTE: Authentication is handled by ttyd -c at HTTP layer
+# This script only handles session tracking
 
-# Optional: Handle terminal session ID for file upload directory tracking
-if [ "$#" -ge 2 ] && [ -n "$2" ]; then
-    TERMINAL_SESSION_ID="$2"
+# Arguments (via ?arg=...):
+#   $1 - TERMINAL_SESSION_ID
+
+if [ "$#" -ge 1 ] && [ -n "$1" ]; then
+    if [[ ! "$1" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        echo "ERROR: Invalid session ID format"
+        exit 1
+    fi
+
+    TERMINAL_SESSION_ID="$1"
     export TERMINAL_SESSION_ID
-
-    # Store shell PID in session file
-    SESSION_FILE="/tmp/.terminal-session-${TERMINAL_SESSION_ID}"
-    echo "$$" > "$SESSION_FILE"
-
-    echo "✓ Terminal session: ${TERMINAL_SESSION_ID}"
+    echo "$$" > "/tmp/.terminal-session-${TERMINAL_SESSION_ID}"
 fi
 
-# Start bash shell
 exec /bin/bash
 ```
 
-**File:** `sandbox/entrypoint.sh`
+### Frontend: Terminal Connection
 
-```bash
-#!/bin/bash
-# Start ttyd with authentication wrapper
+```typescript
+// components/terminal/xterm-terminal.tsx
 
-ttyd -T xterm-256color -W -a -t "$THEME" /usr/local/bin/ttyd-auth.sh
-#    ^^                 ^^ ^^
-#    |                  |  |
-#    |                  |  +-- Allow URL arguments (?arg=...)
-#    |                  +-- Allow client writes
-#    +-- Terminal type
-#
-# Note: No -c parameter → server->credential = NULL
-# Authentication delegated to ttyd-auth.sh script
+const parseUrl = (): { wsFullUrl: string; authorization: string } | null => {
+  const url = new URL(wsUrl)
+  const authorization = url.searchParams.get('authorization') || ''
+
+  if (!authorization) {
+    console.error('[XtermTerminal] No authorization found in URL')
+    return null
+  }
+
+  // Add session ID for file upload cwd detection
+  url.searchParams.append('arg', terminalSessionId.current)
+
+  const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
+  const wsPath = url.pathname.replace(/\/$/, '') + '/ws'
+  const wsFullUrl = `${wsProtocol}//${url.host}${wsPath}${url.search}`
+
+  return { wsFullUrl, authorization }
+}
+
+socket.onopen = () => {
+  // AuthToken required when ttyd started with -c parameter
+  const initMsg = JSON.stringify({
+    AuthToken: authorization,
+    columns: terminal.cols,
+    rows: terminal.rows,
+  })
+  socket.send(textEncoder.encode(initMsg))
+}
 ```
 
 ---
 
-## Environment Variable Requirements
+## Session Tracking
 
-### Required Environment Variables
+The session tracking feature enables file uploads to the terminal's current working directory.
 
-| Variable | Purpose | Set By | Example Value |
-|----------|---------|--------|---------------|
-| `TTYD_ACCESS_TOKEN` | Authentication token | Kubernetes (from DB) | `7a9f2e8d3c1b5a4e6f0d8c2a1b3e5f7a` |
-| `TERMINAL_SESSION_ID` | Session tracking (optional) | ttyd-auth.sh (from URL) | `terminal-1234567890-abc123` |
+### Flow
 
-### Environment Variable Flow
+1. **Frontend** generates unique session ID: `terminal-{timestamp}-{random}`
+2. **URL** includes session ID: `?arg=SESSION_ID`
+3. **ttyd-startup.sh** stores shell PID: `/tmp/.terminal-session-{SESSION_ID}`
+4. **Backend API** reads PID to get cwd: `/proc/{PID}/cwd`
+5. **File uploads** go to the detected directory
 
-```
-Database
-  ↓
-Environment table (key='TTYD_ACCESS_TOKEN', isSecret=true)
-  ↓
-Kubernetes StatefulSet (env vars)
-  ↓
-Container process (environment variable)
-  ↓
-ttyd-auth.sh reads $TTYD_ACCESS_TOKEN
-  ↓
-Compares with $1 (from URL ?arg=TOKEN)
+### Session File
+
+```bash
+# Location
+/tmp/.terminal-session-{SESSION_ID}
+
+# Content
+{shell_pid}
+
+# Example
+/tmp/.terminal-session-terminal-1234567890-abc123
+# Contains: 12345 (the bash PID)
 ```
 
 ---
 
 ## Troubleshooting
 
-### Issue: Terminal hangs on connection
+### Authentication Failed (401)
 
 **Symptoms:**
-- WebSocket connects successfully
-- No shell prompt appears
-- Terminal stuck in loading state
+- WebSocket connection fails with 401
+- Browser may show Basic Auth popup (should not happen with `?authorization=`)
 
-**Cause:**
-- `TTYD_ACCESS_TOKEN` environment variable not set in container
-- Token mismatch between URL and environment variable
+**Causes:**
+- `TTYD_ACCESS_TOKEN` not set in container
+- `authorization` URL parameter missing or incorrect
+- `AuthToken` not included in WebSocket JSON message
 
-**Solution:**
-```bash
-# Check environment variable in container
-kubectl exec -it <pod-name> -n <namespace> -- env | grep TTYD_ACCESS_TOKEN
-
-# Check URL token
-# Should match the value in database Environment table
-```
-
-### Issue: Authentication failed error
-
-**Symptoms:**
-- Error message: "ERROR: Authentication failed - invalid token"
-- Shell never starts
-
-**Cause:**
-- Token in URL doesn't match `TTYD_ACCESS_TOKEN` environment variable
-
-**Solution:**
-1. Verify token in database:
-   ```sql
-   SELECT value FROM Environment
-   WHERE key = 'TTYD_ACCESS_TOKEN' AND projectId = '<project-id>';
+**Solutions:**
+1. Check environment variable:
+   ```bash
+   kubectl exec -it <pod-name> -n <namespace> -- env | grep TTYD_ACCESS_TOKEN
    ```
 
-2. Verify token in URL:
+2. Verify URL has authorization parameter:
    ```
-   ttydUrl: "https://sandbox-ttyd.example.com?arg=<TOKEN>&arg=<SESSION_ID>"
+   ?authorization=dXNlcjp4eHh4eHh4eHh4
    ```
 
-3. Ensure they match
+3. Check WebSocket JSON message includes AuthToken
 
-### Issue: Session tracking not working
+### Session ID Not Working
 
 **Symptoms:**
 - File uploads go to root directory instead of current directory
 - `/tmp/.terminal-session-*` file not found
 
-**Cause:**
-- SESSION_ID not passed in URL
-- ttyd-auth.sh not storing PID
+**Causes:**
+- Session ID not passed in URL
+- ttyd not started with `-a` flag
+- ttyd-startup.sh not storing PID
 
-**Solution:**
-1. Check URL has session ID:
+**Solutions:**
+1. Check URL has arg parameter:
    ```
-   ?arg=<TOKEN>&arg=<SESSION_ID>
+   ?authorization=xxx&arg=terminal-1234567890-abc123
    ```
 
 2. Verify session file created:
    ```bash
    kubectl exec -it <pod-name> -n <namespace> -- ls -la /tmp/.terminal-session-*
    ```
+
+3. Verify ttyd started with `-a` flag in entrypoint.sh
+
+### Terminal Hangs
+
+**Symptoms:**
+- WebSocket connects but no shell prompt
+- No output in terminal
+
+**Causes:**
+- Authentication failed silently
+- ttyd-startup.sh exiting with error
+
+**Solutions:**
+1. Check ttyd logs:
+   ```bash
+   kubectl logs <pod-name> -n <namespace>
+   ```
+
+2. Manually test ttyd-startup.sh:
+   ```bash
+   kubectl exec -it <pod-name> -n <namespace> -- /usr/local/bin/ttyd-startup.sh test-session
+   ```
+
+---
+
+## Security Comparison
+
+| Aspect | Previous (Shell Auth) | Current (HTTP Basic Auth) |
+|--------|----------------------|---------------------------|
+| Auth timing | At shell startup | At HTTP/WebSocket handshake |
+| URL format | `?arg=TOKEN&arg=SESSION_ID` | `?authorization=base64&arg=SESSION_ID` |
+| Failure behavior | `sleep infinity` | HTTP 401 response |
+| ttyd parameter | No `-c` | `-c user:$TOKEN` |
+| WebSocket JSON | No AuthToken | AuthToken required |
+| Token in URL | Plain text | Base64 encoded |
 
 ---
 
@@ -590,24 +436,10 @@ kubectl exec -it <pod-name> -n <namespace> -- env | grep TTYD_ACCESS_TOKEN
 - [ttyd Protocol Documentation](https://github.com/tsl0922/ttyd/blob/main/docs/protocol.md)
 - [Kubernetes Secrets](https://kubernetes.io/docs/concepts/configuration/secret/)
 - [FullstackAgent Architecture](./TECHNICAL_DOCUMENTATION.md)
-- [ttyd server.c](https://github.com/tsl0922/ttyd/blob/eccebc6bb1dfbaf0c46f1fd9c53b89abc773784d/src/server.c)
-- [ttyd protocol.c](https://github.com/tsl0922/ttyd/blob/eccebc6bb1dfbaf0c46f1fd9c53b89abc773784d/src/protocol.c)
-- [ttyd xterm](https://github.com/tsl0922/ttyd/blob/eccebc6bb1dfbaf0c46f1fd9c53b89abc773784d/html/src/components/terminal/xterm/index.ts#L264)
 
 ---
 
 ## Changelog
 
-- **2025-01-19**: Initial documentation
-- **2025-01-19**: Removed AuthToken field from WebSocket message (not needed)
-
----
-
-## Related Files
-
-- `components/terminal/xterm-terminal.tsx` - Frontend terminal component
-- `sandbox/ttyd-auth.sh` - Authentication script
-- `sandbox/entrypoint.sh` - Container entrypoint
-- `app/api/projects/route.ts` - Token generation
-- `lib/events/sandbox/sandboxListener.ts` - Token injection
-- `lib/k8s/sandbox-manager.ts` - Kubernetes resource management
+- **2024-12-17**: Migrated to HTTP Basic Auth with `?authorization=` URL parameter
+- **2025-01-19**: Initial shell script authentication

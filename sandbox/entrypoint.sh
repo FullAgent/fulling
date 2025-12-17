@@ -1,18 +1,44 @@
 #!/bin/bash
-# Start ttyd with authentication
-# -T: Set terminal type to xterm-256color (widely supported)
-# -W: Enable websocket compression
-# -a: Allow URL arguments to be passed to the command
-# -t: Set terminal theme
-# The ttyd-auth.sh script will receive the token as first argument via ?arg=TOKEN
+# =============================================================================
+# ttyd Entrypoint Script
+# =============================================================================
+#
+# Starts ttyd web terminal with HTTP Basic Auth enabled.
+#
+# Authentication Flow:
+# 1. ttyd validates credentials at HTTP/WebSocket layer via -c parameter
+# 2. URL format: ?authorization=base64(user:password)&arg=SESSION_ID
+# 3. ttyd-startup.sh handles session tracking (not auth) for file upload cwd detection
+#
+# Required Environment Variables:
+#   TTYD_ACCESS_TOKEN - Password for HTTP Basic Auth (username is 'user')
+#
+# Optional URL Parameters (via -a flag):
+#   arg=SESSION_ID - Terminal session ID for file upload directory tracking
+#
+# =============================================================================
 
-# Verify authentication script exists
-if [ ! -f /usr/local/bin/ttyd-auth.sh ]; then
-    echo "ERROR: ttyd-auth.sh not found"
+set -euo pipefail
+
+# -----------------------------------------------------------------------------
+# Validate required environment variables
+# -----------------------------------------------------------------------------
+if [ -z "$TTYD_ACCESS_TOKEN" ]; then
+    echo "ERROR: TTYD_ACCESS_TOKEN environment variable is not set"
+    echo "This is required for terminal authentication"
     exit 1
 fi
 
-# Terminal theme configuration (ttyd expects theme={...} format)
+# -----------------------------------------------------------------------------
+# Build HTTP Basic Auth credential
+# Format: username:password (username is fixed as 'user')
+# -----------------------------------------------------------------------------
+TTYD_CREDENTIAL="user:${TTYD_ACCESS_TOKEN}"
+
+# -----------------------------------------------------------------------------
+# Terminal theme configuration
+# ttyd expects theme in JSON format via -t parameter
+# -----------------------------------------------------------------------------
 THEME='theme={
  "background":"#262626",
  "foreground":"#BCBCBC",
@@ -35,5 +61,35 @@ THEME='theme={
  "brightWhite":"#FFFFFF"
 }'
 
-# Start ttyd with authentication wrapper and theme
-ttyd -T xterm-256color -W -a -t "$THEME" /usr/local/bin/ttyd-auth.sh
+# -----------------------------------------------------------------------------
+# Verify startup script exists
+# -----------------------------------------------------------------------------
+if [ ! -f /usr/local/bin/ttyd-startup.sh ]; then
+    echo "ERROR: ttyd-startup.sh not found at /usr/local/bin/ttyd-startup.sh"
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+# Start ttyd with authentication
+# -----------------------------------------------------------------------------
+# Parameters:
+#   -T xterm-256color  : Terminal type (widely supported)
+#   -W                 : Enable WebSocket compression
+#   -a                 : Allow URL arguments (?arg=SESSION_ID) to be passed to command
+#   -c credential      : HTTP Basic Auth (user:password)
+#   -t theme           : Terminal color theme
+#
+# The command (ttyd-startup.sh) receives URL arguments:
+#   $1 = SESSION_ID (from ?arg=...)
+#
+# Authentication happens at HTTP/WebSocket level by ttyd.
+# ttyd-startup.sh only handles session tracking for file upload cwd detection.
+# -----------------------------------------------------------------------------
+echo "Starting ttyd with HTTP Basic Auth..."
+exec ttyd \
+    -T xterm-256color \
+    -W \
+    -a \
+    -c "$TTYD_CREDENTIAL" \
+    -t "$THEME" \
+    /usr/local/bin/ttyd-startup.sh

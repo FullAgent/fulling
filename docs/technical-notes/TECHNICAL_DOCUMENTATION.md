@@ -270,17 +270,39 @@ env:
 - `5000`, `8080`, `5173`, `8000` - Reduced attack surface
 
 #### ttyd Terminal Integration:
-WebSocket support via ingress annotations:
+
+**Authentication (v0.4.2+)**:
+- Uses HTTP Basic Auth via `-c` parameter
+- URL format: `?authorization=base64(user:password)&arg=SESSION_ID`
+- No browser popup - credentials passed in URL
+- Token: 24-character random string (~143 bits entropy)
+
+**Container Startup**:
+```bash
+# entrypoint.sh
+TTYD_CREDENTIAL="user:${TTYD_ACCESS_TOKEN}"
+ttyd -T xterm-256color -W -a -c "$TTYD_CREDENTIAL" -t "$THEME" /usr/local/bin/ttyd-startup.sh
+```
+
+**WebSocket Support** via ingress annotations:
 ```yaml
 annotations:
   nginx.ingress.kubernetes.io/proxy-set-headers: |
     Upgrade $http_upgrade
     Connection "upgrade"
-args: [
-  '-c',
-  `ttyd --port 7681 --interface 0.0.0.0 --check-origin false /bin/bash`
-]
 ```
+
+**Frontend Connection**:
+```typescript
+// Parse authorization from URL, send AuthToken in WebSocket JSON
+const initMsg = JSON.stringify({
+  AuthToken: authorization,  // base64(user:password)
+  columns: terminal.cols,
+  rows: terminal.rows,
+})
+```
+
+See `docs/technical-notes/TTYD_AUTHENTICATION.md` for complete details.
 
 ### 4. Authentication System
 

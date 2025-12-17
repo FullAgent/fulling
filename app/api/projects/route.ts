@@ -193,7 +193,7 @@ export const POST = withAuth<PostProjectResponse>(async (req, _context, session)
   // Generate K8s compatible names
   const k8sProjectName = KubernetesUtils.toK8sProjectName(name)
   const randomSuffix = KubernetesUtils.generateRandomString()
-  const ttydAuthToken = generateRandomString()
+  const ttydAuthToken = generateRandomString(24) // 24 chars = ~143 bits entropy for terminal auth
   const fileBrowserUsername = `fb-${randomSuffix}` // filebrowser username
   const fileBrowserPassword = generateRandomString(16) // 16 char random password
   const databaseName = `${k8sProjectName}-${randomSuffix}`

@@ -125,10 +125,17 @@ export class SandboxManager {
     await this.createIngresses(sandboxName, k8sProjectName, namespace, serviceName, ingressDomain)
     logger.info(`Ingresses created for: ${sandboxName}`)
 
-    // Build ttydUrl with authentication token if available
+    // Build ttydUrl with HTTP Basic Auth (authorization URL parameter)
+    // ttyd supports ?authorization=base64(username:password) for seamless auth without browser popup
+    // Username is fixed as 'user', password is the TTYD_ACCESS_TOKEN
     const baseTtydUrl = `https://${sandboxName}-ttyd.${ingressDomain}`
     const ttydAccessToken = envVars['TTYD_ACCESS_TOKEN']
-    const ttydUrl = ttydAccessToken ? `${baseTtydUrl}?arg=${ttydAccessToken}` : baseTtydUrl
+    let ttydUrl = baseTtydUrl
+    if (ttydAccessToken) {
+      const credentials = `user:${ttydAccessToken}`
+      const authBase64 = Buffer.from(credentials).toString('base64')
+      ttydUrl = `${baseTtydUrl}?authorization=${authBase64}`
+    }
 
     // Build fileBrowserUrl (no token in URL, uses standard login)
     const fileBrowserUrl = `https://${sandboxName}-filebrowser.${ingressDomain}`

@@ -121,19 +121,17 @@ The runtime supports the following environment variables:
 | `DOCKER_HUB_NAME`            | Docker Hub username for pushing images | -       | For pushing |
 | `DOCKER_HUB_PASSWD`          | Docker Hub password for pushing images | -       | For pushing |
 
-### ttyd Web Terminal Configuration
+### ttyd Web Terminal Configuration (v0.4.2+)
 
-| Variable            | Description                              | Default | Required |
-| ------------------- | ---------------------------------------- | ------- | -------- |
-| `TTYD_PORT`         | Port for web terminal access             | 7681    | No       |
-| `TTYD_USERNAME`     | Username for authentication              | -       | No       |
-| `TTYD_PASSWORD`     | Password for authentication              | -       | No       |
-| `TTYD_INTERFACE`    | Network interface to bind                | 0.0.0.0 | No       |
-| `TTYD_BASE_PATH`    | Base URL path for ttyd                   | /       | No       |
-| `TTYD_MAX_CLIENTS`  | Maximum concurrent clients (0=unlimited) | 0       | No       |
-| `TTYD_READONLY`     | Enable read-only mode                    | false   | No       |
-| `TTYD_ALLOW_ORIGIN` | CORS allow origin header                 | \*      | No       |
-| `DISABLE_TTYD`      | Disable ttyd completely                  | false   | No       |
+| Variable              | Description                                      | Default | Required |
+| --------------------- | ------------------------------------------------ | ------- | -------- |
+| `TTYD_ACCESS_TOKEN`   | Password for HTTP Basic Auth (username is 'user')| -       | Yes      |
+
+**Authentication Flow**:
+- ttyd uses HTTP Basic Auth via `-c user:$TTYD_ACCESS_TOKEN`
+- URL format: `?authorization=base64(user:password)&arg=SESSION_ID`
+- Frontend sends `AuthToken` in WebSocket JSON message
+- See `docs/technical-notes/TTYD_AUTHENTICATION.md` for details
 
 ### Setting Environment Variables
 
@@ -166,50 +164,41 @@ The runtime includes ttyd, providing secure web-based terminal access. This is p
 - Product demonstrations
 - Educational platforms
 
-### Basic Usage
+### Basic Usage (v0.4.2+)
 
 ```bash
-# Run with default ttyd configuration (port 7681, no auth)
-docker run -it --rm -p 7681:7681 fullstackagent/fullstack-web-runtime:latest
-
-# Access the web terminal at: http://localhost:7681
-```
-
-### Secure Usage with Authentication
-
-```bash
-# Run with authentication enabled
+# Run with HTTP Basic Auth enabled
 docker run -it --rm \
   -p 7681:7681 \
-  -e TTYD_USERNAME=admin \
-  -e TTYD_PASSWORD=secretpassword \
+  -e TTYD_ACCESS_TOKEN=your-secret-token-here \
   fullstackagent/fullstack-web-runtime:latest
+
+# Access the web terminal at:
+# http://localhost:7681?authorization=base64(user:your-secret-token-here)
 ```
 
-### Custom Configuration
+### Authentication Details
+
+The runtime uses ttyd's HTTP Basic Auth with URL parameter authentication:
+
+1. **Username**: Fixed as `user`
+2. **Password**: Set via `TTYD_ACCESS_TOKEN` environment variable
+3. **URL Format**: `?authorization=base64(user:password)`
 
 ```bash
-# Run with custom port and path
-docker run -it --rm \
-  -p 8080:8080 \
-  -e TTYD_PORT=8080 \
-  -e TTYD_BASE_PATH=/terminal \
-  -e TTYD_USERNAME=developer \
-  -e TTYD_PASSWORD=secure123 \
-  fullstackagent/fullstack-web-runtime:latest
-
-# Access at: http://localhost:8080/terminal
+# Generate authorization parameter
+TOKEN="your-secret-token"
+AUTH=$(echo -n "user:$TOKEN" | base64)
+echo "Access URL: http://localhost:7681?authorization=$AUTH"
 ```
 
-### Disable ttyd
+### In FullstackAgent Platform
 
-If you don't need web terminal access:
-
-```bash
-docker run -it --rm \
-  -e DISABLE_TTYD=true \
-  fullstackagent/fullstack-web-runtime:latest
-```
+When running in the FullstackAgent platform:
+- `TTYD_ACCESS_TOKEN` is automatically generated (24 chars, ~143 bits entropy)
+- Stored in Environment table with `category=ttyd`
+- Injected into container via Kubernetes
+- Frontend automatically handles authorization URL construction
 
 ## Usage Examples
 

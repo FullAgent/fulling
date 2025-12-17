@@ -21,18 +21,20 @@
  * - Toast notifications with absolute path display and filename clipboard copy
  * - Background upload without blocking terminal interaction
  *
- * Session Tracking Architecture:
- * - Frontend generates unique session ID per terminal instance
- * - Session ID passed to ttyd-auth.sh via URL parameter (?arg=TOKEN&arg=SESSION_ID)
+ * Authentication & Session Tracking:
+ * - ttyd uses HTTP Basic Auth via -c parameter (username:password)
+ * - URL format: ?authorization=base64(user:pass)&arg=SESSION_ID
+ * - AuthToken sent in WebSocket JSON message for ttyd validation
+ * - Session ID passed to ttyd-auth.sh via ?arg= for file upload cwd detection
  * - ttyd-auth.sh stores shell PID in /tmp/.terminal-session-{SESSION_ID}
  * - Backend reads shell PID to detect current working directory via /proc/{PID}/cwd
- * - Solves process isolation issue (K8s exec creates new shell, can't see original env vars)
  */
 
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ITerminalOptions, Terminal as ITerminal } from '@xterm/xterm';
+import { ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useFileDrop } from './hooks/use-file-drop';
@@ -344,26 +346,27 @@ export function XtermTerminal({
     // Helper: Parse WebSocket URL and add session ID
     // -----------------------------------------------------------------------
 
-    const parseUrl = (): string | null => {
+    const parseUrl = (): { wsFullUrl: string; authorization: string } | null => {
       try {
         const url = new URL(wsUrl);
-        const token = url.searchParams.get('arg') || '';
+        // Get authorization parameter (base64 encoded credentials for HTTP Basic Auth)
+        const authorization = url.searchParams.get('authorization') || '';
 
-        if (!token) {
-          console.error('[XtermTerminal] No authentication token found in URL');
+        if (!authorization) {
+          console.error('[XtermTerminal] No authorization found in URL');
           return null;
         }
 
-        // Add session ID as second arg parameter for ttyd-auth.sh
-        // URL format: ?arg=TOKEN&arg=SESSION_ID
+        // Add session ID as arg parameter for ttyd-auth.sh
+        // URL format: ?authorization=base64(user:pass)&arg=SESSION_ID
         url.searchParams.append('arg', terminalSessionId.current);
 
         const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsPath = url.pathname.replace(/\/$/, '') + '/ws';
         const wsFullUrl = `${wsProtocol}//${url.host}${wsPath}${url.search}`;
 
-        console.log('[XtermTerminal] Connecting to:', wsFullUrl.replace(token, '***'));
-        return wsFullUrl;
+        console.log('[XtermTerminal] Connecting to:', wsFullUrl.replace(authorization, '***'));
+        return { wsFullUrl, authorization };
       } catch (error) {
         console.error('[XtermTerminal] Failed to parse URL:', error);
         return null;
@@ -445,11 +448,13 @@ export function XtermTerminal({
     const connectWebSocket = () => {
       if (!terminal || !isMounted) return;
 
-      const wsFullUrl = parseUrl();
-      if (!wsFullUrl) {
+      const parsed = parseUrl();
+      if (!parsed) {
         stableOnDisconnected();
         return;
       }
+
+      const { wsFullUrl, authorization } = parsed;
 
       console.log('[XtermTerminal] Creating WebSocket connection...');
       socket = new WebSocket(wsFullUrl, ['tty']);
@@ -460,11 +465,12 @@ export function XtermTerminal({
         console.log('[XtermTerminal] WebSocket connected');
         stableOnConnected();
 
-        // Send initial terminal size to ttyd
-        // Note: AuthToken field removed - this project uses shell script authentication
-        // instead of ttyd's built-in WebSocket authentication (server->credential = NULL)
+        // Send initial terminal size and AuthToken to ttyd
+        // AuthToken is required when ttyd is started with -c parameter (HTTP Basic Auth)
+        // The value is base64(username:password), same as the authorization URL parameter
         // See: docs/technical-notes/TTYD_AUTHENTICATION.md
         const initMsg = JSON.stringify({
+          AuthToken: authorization,
           columns: terminal!.cols,
           rows: terminal!.rows,
         });
@@ -752,34 +758,20 @@ export function XtermTerminal({
       {hasNewContent && (
         <button
           onClick={handleScrollToBottom}
-          className="absolute bottom-4 right-4
-                     bg-blue-500 hover:bg-blue-600
-                     text-white text-sm font-medium
-                     px-4 py-2 rounded-full
-                     shadow-lg hover:shadow-xl
+          className="absolute bottom-5 right-6 z-10
+                     flex items-center gap-2 px-3 py-1.5
+                     bg-[#252526] hover:bg-[#2d2d2d]
+                     text-[#cccccc] hover:text-white
+                     border border-[#454545]
+                     shadow-2xl rounded-[3px]
                      transition-all duration-200
-                     flex items-center gap-2
-                     animate-fade-in
-                     z-10"
+                     text-xs font-normal
+                     animate-fade-in"
           aria-label={`Scroll to bottom (${newLineCount} new lines)`}
         >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 14l-7 7m0 0l-7-7m7 7V3"
-            />
-          </svg>
-          <span>
-            {newLineCount} new {newLineCount === 1 ? 'line' : 'lines'}
-          </span>
+          <ArrowDown className="w-3.5 h-3.5 text-[#3794ff]" />
+          <span className="font-mono text-[#3794ff] font-medium">{newLineCount}</span>
+          <span>new {newLineCount === 1 ? 'line' : 'lines'}</span>
         </button>
       )}
     </div>
