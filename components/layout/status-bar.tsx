@@ -1,34 +1,32 @@
+'use client';
+
 import React from 'react';
-import { Prisma } from '@prisma/client';
 import { Box, Database } from 'lucide-react';
 
 import { RepoStatusIndicator } from '@/components/layout/repo-status-indicator';
+import { useProject } from '@/hooks/use-project';
 import { getStatusIconColor } from '@/lib/util/status-colors';
 
-type ProjectWithRelations = Prisma.ProjectGetPayload<{
-  include: {
-    sandboxes: true;
-    databases: true;
-    environments: true;
-  };
-}>;
-
 interface StatusBarProps {
-  project: ProjectWithRelations;
+  projectId: string;
 }
 
-export function StatusBar({ project }: StatusBarProps) {
-  const database = project.databases?.[0];
+export function StatusBar({ projectId }: StatusBarProps) {
+  const { data: project } = useProject(projectId);
+  
+  const database = project?.databases?.[0];
   const dbStatus = database?.status || 'CREATING';
-  const sandbox = project.sandboxes?.[0];
+  const sandbox = project?.sandboxes?.[0];
   const sbStatus = sandbox?.status || 'CREATING';
 
   return (
     <div className="h-6 bg-primary text-card-foreground [&_span]:text-card-foreground flex items-center justify-between px-2 text-xs select-none z-50">
       <div className="flex items-center gap-4">
-        <RepoStatusIndicator 
-          project={project}
-        />
+        {project && (
+          <RepoStatusIndicator 
+            project={project}
+          />
+        )}
 
       </div>
 

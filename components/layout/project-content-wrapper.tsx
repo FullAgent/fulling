@@ -20,7 +20,8 @@
 
 import { usePathname } from 'next/navigation';
 
-import { TerminalContainer, type TerminalContainerProps } from '@/components/terminal/terminal-container';
+import { TerminalContainer } from '@/components/terminal/terminal-container';
+import { useProject } from '@/hooks/use-project';
 
 import styles from './project-content-wrapper.module.css';
 
@@ -28,7 +29,8 @@ import styles from './project-content-wrapper.module.css';
 // Types
 // ============================================================================
 
-interface ProjectContentWrapperProps extends TerminalContainerProps {
+interface ProjectContentWrapperProps {
+  projectId: string;
   children: React.ReactNode;
 }
 
@@ -38,13 +40,16 @@ interface ProjectContentWrapperProps extends TerminalContainerProps {
 
 export function ProjectContentWrapper({
   children,
-  project,
-  sandbox,
+  projectId,
 }: ProjectContentWrapperProps) {
+  const { data: project } = useProject(projectId);
   const pathname = usePathname();
 
   // Determine which panel to display based on current route
   const isTerminalPage = pathname?.endsWith('/terminal') ?? false;
+
+  // Get sandbox from project data
+  const sandbox = project?.sandboxes?.[0];
 
   return (
     <div className={styles.wrapper}>
@@ -57,11 +62,13 @@ export function ProjectContentWrapper({
         role="region"
         aria-label="Terminal Console"
       >
-        <TerminalContainer
-          project={project}
-          sandbox={sandbox}
-          isVisible={isTerminalPage}
-        />
+        {project && (
+          <TerminalContainer
+            project={project}
+            sandbox={sandbox}
+            isVisible={isTerminalPage}
+          />
+        )}
       </div>
 
       {/* Content Panel - Regular pages (overview, settings, env, etc.) */}

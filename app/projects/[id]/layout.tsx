@@ -23,15 +23,15 @@ export default async function ProjectLayout({
 
   const { id } = await params;
 
+  // Only need to check if project exists and belongs to user
+  // All components fetch their own data via useProject hook
   const project = await prisma.project.findFirst({
     where: {
       id: id,
       userId: session.user.id,
     },
-    include: {
-      sandboxes: true,
-      databases: true,
-      environments: true,
+    select: {
+      id: true,
     },
   });
 
@@ -48,20 +48,18 @@ export default async function ProjectLayout({
 
         {/* Secondary Sidebar - Project Settings */}
         <ProjectSidebar
-          project={project}
-          sandboxes={project.sandboxes}
-          envVars={project.environments}
+          projectId={id}
         />
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
-          <ProjectContentWrapper project={project} sandbox={project.sandboxes[0]}>
+          <ProjectContentWrapper projectId={id}>
             {children}
           </ProjectContentWrapper>
         </div>
       </div>
       
-      <StatusBar project={project} />
+      <StatusBar projectId={id} />
     </div>
   );
 }

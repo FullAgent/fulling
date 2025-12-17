@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Environment, Project, Sandbox } from '@prisma/client';
 import {
   ChevronLeft,
   ChevronRight,
@@ -16,15 +15,15 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { useProject } from '@/hooks/use-project';
 import { cn } from '@/lib/utils';
 
 interface ProjectSidebarProps {
-  project: Project;
-  sandboxes: Sandbox[];
-  envVars: Environment[];
+  projectId: string;
 }
 
-export default function ProjectSidebar({ project }: ProjectSidebarProps) {
+export default function ProjectSidebar({ projectId }: ProjectSidebarProps) {
+  const { data: project } = useProject(projectId);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
 
@@ -33,9 +32,9 @@ export default function ProjectSidebar({ project }: ProjectSidebarProps) {
       id: 'terminal',
       label: 'Web Terminal',
       icon: Terminal,
-      href: `/projects/${project.id}/terminal`,
+      href: `/projects/${projectId}/terminal`,
     },
-    { id: 'database', label: 'Database', icon: Database, href: `/projects/${project.id}/database` },
+    { id: 'database', label: 'Database', icon: Database, href: `/projects/${projectId}/database` },
   ];
 
   const configSections = [
@@ -43,26 +42,26 @@ export default function ProjectSidebar({ project }: ProjectSidebarProps) {
       id: 'environment',
       label: 'Environment Variables',
       icon: Package,
-      href: `/projects/${project.id}/environment`,
+      href: `/projects/${projectId}/environment`,
     },
     {
       id: 'secrets',
       label: 'Secret Configuration',
       icon: Key,
-      href: `/projects/${project.id}/secrets`,
+      href: `/projects/${projectId}/secrets`,
     },
-    { id: 'auth', label: 'Auth Configuration', icon: Shield, href: `/projects/${project.id}/auth` },
+    { id: 'auth', label: 'Auth Configuration', icon: Shield, href: `/projects/${projectId}/auth` },
     {
       id: 'payment',
       label: 'Payment Configuration',
       icon: CreditCard,
-      href: `/projects/${project.id}/payment`,
+      href: `/projects/${projectId}/payment`,
     },
     {
       id: 'github',
       label: 'GitHub Integration',
       icon: Github,
-      href: `/projects/${project.id}/github`,
+      href: `/projects/${projectId}/github`,
     },
   ];
 
@@ -76,7 +75,7 @@ export default function ProjectSidebar({ project }: ProjectSidebarProps) {
       {/* Header */}
       <div className="h-12 flex items-center justify-between px-3 border-b border-border">
         {!isCollapsed && (
-          <span className="text-sm font-medium text-foreground">Project {project.name}</span>
+          <span className="text-sm font-medium text-foreground">Project {project?.name ?? 'Loading...'}</span>
         )}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
