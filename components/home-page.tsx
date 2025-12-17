@@ -83,6 +83,14 @@ export function HomePage() {
 
   return (
     <>
+      {/* Maintenance Announcement Banner - Fixed at top */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-zinc-900/95 text-zinc-100 py-3 px-4 text-center text-sm font-medium backdrop-blur-sm border-b border-zinc-700/50 shadow-lg">
+        <span className="inline-flex items-center gap-2 flex-col justify-center">
+          <span>🔧 Scheduled Maintenance | Dec 19, 22:00 - 22:30 (Beijing Time)</span>
+          <span className="text-zinc-400">Your app will restart automatically. Please avoid updating or deploying apps during this window.</span>
+        </span>
+      </div>
+
       {/* Base marketing page - always visible */}
       <div className="min-h-screen flex flex-col items-center justify-start pt-28">
         {/* Matrix Background Effect */}
