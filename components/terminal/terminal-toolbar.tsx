@@ -101,7 +101,7 @@ export function TerminalToolbar({
 
   return (
     <>
-      <div className="h-9 bg-[#2d2d30] border-b border-[#3e3e42] flex items-center justify-between px-2">
+      <div className="h-12 bg-[#2d2d30] border-b border-[#3e3e42] flex items-center justify-between px-2">
         {/* Terminal Tabs */}
         <div className="flex items-center gap-1 flex-1 min-w-0">
           {tabs.map((tab) => (
