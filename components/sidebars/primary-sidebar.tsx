@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Circle, FolderOpen, GitBranch, Home, Plus, Settings } from 'lucide-react';
+import { Circle, FolderOpen, GitBranch, LayoutGrid, Plus, Settings } from 'lucide-react';
 import Link from 'next/link';
 
 import CreateProjectDialog from '@/components/dialog/create-project-dialog';
@@ -37,23 +37,16 @@ export default function PrimarySidebar({ currentProjectId }: PrimarySidebarProps
     staleTime: 4000, // Data is fresh for 4 seconds
     retry: 2,
   });
-  const [isExpanded, setIsExpanded] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showCreateProject, setShowCreateProject] = useState(false);
 
   return (
     <div
-      className={cn(
-        'bg-sidebar-background border-r border-sidebar-border flex flex-col transition-all duration-200',
-        isExpanded ? 'w-52' : 'w-12'
-      )}
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
+      className="bg-sidebar-background border-r border-sidebar-border flex flex-col w-12 transition-all duration-200"
     >
       {/* Header */}
-      <div className="h-12 flex items-center justify-center border-b border-sidebar-border">
+      <div className="h-12 flex items-center justify-center border-b border-border">
         <FolderOpen className="h-5 w-5 text-muted-foreground" />
-        {isExpanded && <span className="ml-2 text-sm font-medium text-foreground">Projects</span>}
       </div>
 
       {/* Navigation Items */}
@@ -61,21 +54,17 @@ export default function PrimarySidebar({ currentProjectId }: PrimarySidebarProps
         {/* Home Link */}
         <Link
           href="/projects"
-          className="group flex items-center h-8 px-3 hover:bg-sidebar-accent/10 transition-colors"
+          className="group flex items-center justify-center h-8 px-3 hover:bg-sidebar-accent/10 transition-colors"
         >
-          <Home className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-foreground shrink-0 transition-colors" />
-          {isExpanded && (
-            <span className="ml-3 text-sm text-foreground truncate">All Projects</span>
-          )}
+          <LayoutGrid className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-foreground shrink-0 transition-colors" />
         </Link>
 
         {/* New Project */}
         <button
           onClick={() => setShowCreateProject(true)}
-          className="group flex items-center h-8 px-3 hover:bg-sidebar-accent transition-colors mb-2 w-full"
+          className="group flex items-center justify-center h-8 px-3 hover:bg-sidebar-accent transition-colors mb-2 w-full"
         >
           <Plus className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-foreground shrink-0 transition-colors" />
-          {isExpanded && <span className="ml-3 text-sm text-foreground truncate">New Project</span>}
         </button>
 
         <div className="border-t border-border my-2" />
@@ -87,20 +76,17 @@ export default function PrimarySidebar({ currentProjectId }: PrimarySidebarProps
               key={project.id}
               href={`/projects/${project.id}`}
               className={cn(
-                'group flex items-center h-8 px-3 hover:bg-sidebar-accent transition-colors',
+                'group flex items-center justify-center h-8 px-3 hover:bg-sidebar-accent transition-colors',
                 currentProjectId === project.id && 'bg-sidebar-accent'
               )}
             >
-              <div className="flex items-center shrink-0">
+              <div className="flex items-center justify-center shrink-0">
                 <Circle
                   className={cn('h-2 w-2 mr-2', getStatusTextClasses(project.status))}
                   fill="currentColor"
                 />
                 <GitBranch className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-foreground transition-colors" />
               </div>
-              {isExpanded && (
-                <span className="ml-3 text-sm text-foreground truncate">{project.name}</span>
-              )}
             </Link>
           ))}
         </div>
@@ -110,10 +96,9 @@ export default function PrimarySidebar({ currentProjectId }: PrimarySidebarProps
       <div className="p-2">
         <button
           onClick={() => setShowSettings(true)}
-          className="group flex items-center h-8 px-2 hover:bg-sidebar-accent rounded transition-colors w-full"
+          className="group flex items-center justify-center h-8 px-2 hover:bg-sidebar-accent rounded transition-colors w-full"
         >
           <Settings className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-foreground shrink-0 transition-colors" />
-          {isExpanded && <span className="ml-3 text-sm text-foreground">Settings</span>}
         </button>
       </div>
 
