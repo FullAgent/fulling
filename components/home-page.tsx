@@ -100,9 +100,14 @@ export function HomePage() {
                 height={80}
                 className="w-16 h-16 md:w-20 md:h-20"
               />
-              <h1 className="md:text-6xl lg:text-8xl font-bold bg-linear-to-r from-foreground to-muted-foreground bg-clip-text leading-normal text-transparent">
-                Fulling
-              </h1>
+              <div className="relative">
+                <h1 className="md:text-6xl lg:text-8xl font-bold bg-linear-to-r from-foreground to-muted-foreground bg-clip-text leading-normal text-transparent">
+                  Fulling
+                </h1>
+                <span className="absolute top-2 -right-10 md:-right-14 text-blue-500 border border-blue-500 rounded px-1.5 py-0.5 text-xs md:text-sm font-medium tracking-wide">
+                  Beta
+                </span>
+              </div>
             </div>
 
             {/* Subtitle and Description */}
