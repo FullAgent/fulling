@@ -101,41 +101,49 @@ export function TerminalToolbar({
 
   return (
     <>
-      <div className="h-12 bg-[#2d2d30] border-b border-[#3e3e42] flex items-center justify-between px-2">
+      <div className="h-12 bg-[#2d2d30] border-b border-[#3e3e42] flex items-center justify-between">
         {/* Terminal Tabs */}
-        <div className="flex items-center gap-1 flex-1 min-w-0">
+        <div className="flex items-center flex-1 min-w-0 h-full overflow-x-auto overflow-y-hidden">
           {tabs.map((tab) => (
             <div
               key={tab.id}
               className={cn(
-                'flex items-center gap-1 px-2 py-1 rounded text-xs cursor-pointer transition-colors',
+                'flex items-center gap-2 px-4 h-full text-xs cursor-pointer transition-colors border-r border-[#3e3e42] relative group min-w-[120px] max-w-[200px]',
                 activeTabId === tab.id
                   ? 'bg-[#1e1e1e] text-white'
-                  : 'text-gray-400 hover:bg-[#37373d]'
+                  : 'bg-[#2d2d30] text-[#969696] hover:bg-[#2d2d30] hover:text-white'
               )}
               onClick={() => onTabSelect(tab.id)}
             >
-              <TerminalIcon className="h-3 w-3" />
-              <span className="truncate max-w-[100px]">{tab.name}</span>
+              {/* Top Accent Line for Active Tab */}
+              {activeTabId === tab.id && (
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#007fd4]" />
+              )}
+              
+              <TerminalIcon className={cn("h-3.5 w-3.5 shrink-0", activeTabId === tab.id ? "text-white" : "text-[#007fd4]")} />
+              <span className="truncate flex-1">{tab.name}</span>
               {tabs.length > 1 && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onTabClose(tab.id);
                   }}
-                  className="ml-1 hover:text-white"
+                  className={cn(
+                    "p-0.5 rounded-sm opacity-0 group-hover:opacity-100 transition-all",
+                    activeTabId === tab.id ? "hover:bg-[#37373d]" : "hover:bg-[#454549]"
+                  )}
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
           ))}
           <button
             onClick={onTabAdd}
-            className="p-1 text-gray-400 hover:text-white hover:bg-[#37373d] rounded transition-colors"
+            className="h-full aspect-square flex items-center justify-center text-[#c5c5c5] hover:bg-[#37373d] transition-colors border-r border-transparent"
             title="Add new terminal"
           >
-            <Plus className="h-3 w-3" />
+            <Plus className="h-4 w-4" />
           </button>
         </div>
 
