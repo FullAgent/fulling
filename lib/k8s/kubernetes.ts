@@ -258,6 +258,56 @@ export class KubernetesService {
   }
 
   /**
+   * Execute a command in sandbox background
+   *
+   * Delegates to SandboxManager for execution
+   *
+   * @param namespace - Kubernetes namespace
+   * @param sandboxName - Sandbox StatefulSet name
+   * @param command - Command to execute
+   * @param workdir - Working directory (default: /home/fulling)
+   * @returns Execution result with PID
+   */
+  async execCommandInBackground(
+    namespace: string,
+    sandboxName: string,
+    command: string,
+    workdir?: string
+  ): Promise<{
+    success: boolean
+    pid?: number
+    error?: string
+  }> {
+    namespace = namespace || this.defaultNamespace
+    return await this.sandboxManager.execCommandInBackground(
+      namespace,
+      sandboxName,
+      command,
+      workdir
+    )
+  }
+
+  /**
+   * Check if a port is listening in sandbox
+   */
+  async isPortListening(namespace: string, sandboxName: string, port: number): Promise<boolean> {
+    namespace = namespace || this.defaultNamespace
+    return await this.sandboxManager.isPortListening(namespace, sandboxName, port)
+  }
+
+  /**
+   * Kill process listening on a specific port in sandbox
+   */
+  async killProcessOnPort(
+    namespace: string,
+    sandboxName: string,
+    port: number
+  ): Promise<{ success: boolean; error?: string }> {
+    namespace = namespace || this.defaultNamespace
+    return await this.sandboxManager.killProcessOnPort(namespace, sandboxName, port)
+  }
+
+  /**
    * Get current working directory of a terminal session in sandbox
    *
    * Delegates to SandboxManager for execution

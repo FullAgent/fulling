@@ -6,9 +6,10 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Prisma } from '@prisma/client';
-import { Copy, Eye, EyeOff, Network, Plus, Terminal as TerminalIcon, X } from 'lucide-react';
+import { Copy, Eye, EyeOff, Loader2, Network, Play, Plus, Square, Terminal as TerminalIcon, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 import {
   Dialog,
@@ -72,6 +73,26 @@ export function TerminalToolbar({
   const [showNetworkDialog, setShowNetworkDialog] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [isStartingApp, setIsStartingApp] = useState(false);
+  const [isStoppingApp, setIsStoppingApp] = useState(false);
+  const [isAppRunning, setIsAppRunning] = useState(false);
+
+  // Check app status on mount
+  useEffect(() => {
+    if (!sandbox?.id) return;
+
+    const checkStatus = async () => {
+      try {
+        const response = await fetch(`/api/sandbox/${sandbox.id}/app-status`);
+        const data = await response.json();
+        setIsAppRunning(data.running);
+      } catch (error) {
+        console.error('Failed to check app status:', error);
+      }
+    };
+
+    checkStatus();
+  }, [sandbox?.id]);
 
   // Build network endpoints list, filtering out any without URLs
   const allEndpoints = [
@@ -96,6 +117,107 @@ export function TerminalToolbar({
       setTimeout(() => setCopiedField(null), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
+    }
+  };
+
+  // Start application in background
+  const handleStartApp = async () => {
+    if (!sandbox?.id || isStartingApp) return;
+
+    setIsStartingApp(true);
+
+    // Send exec command (fire and forget, don't wait for response)
+    fetch(`/api/sandbox/${sandbox.id}/exec`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        command: 'pnpm run build && pnpm run start',
+        workdir: '/home/fulling/next',
+      }),
+    }).catch(() => {
+      // Ignore errors, we'll detect success via port polling
+    });
+
+    toast.info('Deploying...', {
+      description: 'Building and starting your app. This may take a few minutes.',
+    });
+
+    // Poll for app status every 10 seconds, max 5 minutes
+    const maxAttempts = 30; // 30 * 10s = 5 minutes
+    let attempts = 0;
+
+    const pollStatus = async (): Promise<boolean> => {
+      try {
+        const response = await fetch(`/api/sandbox/${sandbox.id}/app-status`);
+        const data = await response.json();
+        return data.running;
+      } catch {
+        return false;
+      }
+    };
+
+    const poll = async () => {
+      while (attempts < maxAttempts) {
+        attempts++;
+        const running = await pollStatus();
+        if (running) {
+          setIsAppRunning(true);
+          setIsStartingApp(false);
+          toast.success('Deployed', {
+            description: 'Your app is now live',
+          });
+          return;
+        }
+        // Wait 10 seconds before next check
+        await new Promise((resolve) => setTimeout(resolve, 10000));
+      }
+
+      // Timeout after max attempts
+      setIsStartingApp(false);
+      toast.error('Deploy Timeout', {
+        description: 'App did not start within 5 minutes. Check terminal for errors.',
+      });
+    };
+
+    poll();
+  };
+
+  // Stop application
+  const handleStopApp = async () => {
+    if (!sandbox?.id || isStoppingApp) return;
+
+    setIsStoppingApp(true);
+    try {
+      const response = await fetch(`/api/sandbox/${sandbox.id}/app-status`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setIsAppRunning(false);
+        toast.success('App Stopped');
+      } else {
+        toast.error('Stop Failed', {
+          description: result.error || 'Unknown error',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to stop app:', error);
+      toast.error('Stop Failed', {
+        description: 'Network error, please try again',
+      });
+    } finally {
+      setIsStoppingApp(false);
+    }
+  };
+
+  // Toggle app start/stop
+  const handleToggleApp = () => {
+    if (isAppRunning) {
+      handleStopApp();
+    } else {
+      handleStartApp();
     }
   };
 
@@ -150,10 +272,38 @@ export function TerminalToolbar({
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
           {/* Status Badge */}
-          <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-300">
+          {/* <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-300">
             <div className={cn('h-1.5 w-1.5 rounded-full', getStatusBgClasses(project.status))} />
             <span>{project.status}</span>
-          </div>
+          </div> */}
+
+          {/* Deploy Button */}
+          <button
+            onClick={handleToggleApp}
+            disabled={isStartingApp || isStoppingApp || !sandbox}
+            className={cn(
+              'px-2 py-1 text-xs rounded transition-colors flex items-center gap-1 disabled:cursor-not-allowed',
+              isAppRunning
+                ? 'text-green-400 hover:text-red-400 hover:bg-red-400/10 bg-green-400/10'
+                : 'text-gray-300 hover:text-white hover:bg-[#37373d] disabled:opacity-50'
+            )}
+            title={
+              isAppRunning
+                ? 'Click to stop. Your app will no longer be accessible.'
+                : 'Build and run your app in production mode. It will keep running even if you close this terminal.'
+            }
+          >
+            {isStartingApp || isStoppingApp ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : isAppRunning ? (
+              <Square className="h-3 w-3" />
+            ) : (
+              <Play className="h-3 w-3" />
+            )}
+            <span>
+              {isStartingApp ? 'Deploying...' : isStoppingApp ? 'Stopping...' : isAppRunning ? 'Live' : 'Deploy'}
+            </span>
+          </button>
 
           {/* Network Button */}
           <button

@@ -1421,6 +1421,213 @@ echo "=== Init Container: Completed successfully ==="
   }
 
   /**
+   * Execute a command in sandbox background
+   *
+   * Runs command with nohup in background, returns PID immediately.
+   * Output is redirected to /tmp/exec-logs/{timestamp}.log
+   *
+   * @param namespace - Kubernetes namespace
+   * @param sandboxName - Sandbox StatefulSet name
+   * @param command - Command to execute
+   * @param workdir - Working directory (default: /home/fulling)
+   * @returns Execution result with PID
+   */
+  async execCommandInBackground(
+    namespace: string,
+    sandboxName: string,
+    command: string,
+    workdir: string = '/home/fulling'
+  ): Promise<{
+    success: boolean
+    pid?: number
+    error?: string
+  }> {
+    const exec = new k8s.Exec(this.kc)
+    const podName = `${sandboxName}-0` // StatefulSet pod naming
+    const timestamp = Date.now()
+
+    const script = `
+#!/bin/bash
+cd "${workdir}" || exit 1
+mkdir -p /tmp/exec-logs
+nohup ${command} > /tmp/exec-logs/${timestamp}.log 2>&1 &
+echo $!
+`.trim()
+
+    let output = ''
+    let errorOutput = ''
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const stdoutStream = new PassThrough()
+        const stderrStream = new PassThrough()
+
+        stdoutStream.on('data', (chunk) => {
+          output += chunk.toString()
+        })
+
+        stderrStream.on('data', (chunk) => {
+          errorOutput += chunk.toString()
+        })
+
+        exec.exec(
+          namespace,
+          podName,
+          sandboxName,
+          ['bash', '-c', script],
+          stdoutStream,
+          stderrStream,
+          null,
+          false,
+          (status) => {
+            if (status.status === 'Success') {
+              resolve()
+            } else {
+              reject(new Error(`Command failed: ${status.message || errorOutput}`))
+            }
+          }
+        )
+      })
+
+      const pid = parseInt(output.trim(), 10)
+      if (isNaN(pid)) {
+        return {
+          success: false,
+          error: `Failed to parse PID from output: ${output}`,
+        }
+      }
+
+      logger.info(`Background command started in sandbox ${sandboxName}: PID ${pid}`)
+      return { success: true, pid }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logger.error(`Failed to execute command in sandbox ${sandboxName}: ${errorMessage}`)
+      return { success: false, error: errorMessage }
+    }
+  }
+
+  /**
+   * Check if a port is listening in sandbox
+   *
+   * @param namespace - Kubernetes namespace
+   * @param sandboxName - Sandbox StatefulSet name
+   * @param port - Port number to check
+   * @returns Whether the port is listening
+   */
+  async isPortListening(
+    namespace: string,
+    sandboxName: string,
+    port: number
+  ): Promise<boolean> {
+    const exec = new k8s.Exec(this.kc)
+    const podName = `${sandboxName}-0`
+
+    // Use netstat to check if port is listening
+    const script = `netstat -tuln 2>/dev/null | grep -q ':${port} ' && echo 'listening' || echo 'not listening'`
+
+    let output = ''
+
+    try {
+      await new Promise<void>((resolve, _reject) => {
+        const stdoutStream = new PassThrough()
+        const stderrStream = new PassThrough()
+
+        stdoutStream.on('data', (chunk) => {
+          output += chunk.toString()
+        })
+
+        exec.exec(
+          namespace,
+          podName,
+          sandboxName,
+          ['bash', '-c', script],
+          stdoutStream,
+          stderrStream,
+          null,
+          false,
+          (_status) => {
+            resolve()
+          }
+        )
+      })
+
+      return output.trim() === 'listening'
+    } catch (error) {
+      logger.warn(`Failed to check port ${port} in sandbox ${sandboxName}: ${error}`)
+      return false
+    }
+  }
+
+  /**
+   * Kill process listening on a specific port in sandbox
+   *
+   * @param namespace - Kubernetes namespace
+   * @param sandboxName - Sandbox StatefulSet name
+   * @param port - Port number
+   * @returns Whether the process was killed
+   */
+  async killProcessOnPort(
+    namespace: string,
+    sandboxName: string,
+    port: number
+  ): Promise<{ success: boolean; error?: string }> {
+    const exec = new k8s.Exec(this.kc)
+    const podName = `${sandboxName}-0`
+
+    // Use netstat -tulnp to find PID and kill it
+    // netstat output format: tcp 0 0 0.0.0.0:3000 0.0.0.0:* LISTEN 12345/node
+    const script = `
+pid=$(netstat -tulnp 2>/dev/null | grep ':${port} ' | awk '{print $7}' | cut -d'/' -f1 | head -1)
+if [ -n "$pid" ] && [ "$pid" != "-" ]; then
+  kill $pid 2>/dev/null && echo "killed $pid" || echo "failed"
+else
+  echo "no process"
+fi
+`.trim()
+
+    let output = ''
+
+    try {
+      await new Promise<void>((resolve, _reject) => {
+        const stdoutStream = new PassThrough()
+        const stderrStream = new PassThrough()
+
+        stdoutStream.on('data', (chunk) => {
+          output += chunk.toString()
+        })
+
+        exec.exec(
+          namespace,
+          podName,
+          sandboxName,
+          ['bash', '-c', script],
+          stdoutStream,
+          stderrStream,
+          null,
+          false,
+          (_status) => {
+            resolve()
+          }
+        )
+      })
+
+      const result = output.trim()
+      if (result.startsWith('killed')) {
+        logger.info(`Killed process on port ${port} in sandbox ${sandboxName}`)
+        return { success: true }
+      } else if (result === 'no process') {
+        return { success: true } // No process to kill is also success
+      } else {
+        return { success: false, error: 'Failed to kill process' }
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logger.error(`Failed to kill process on port ${port} in sandbox ${sandboxName}: ${errorMessage}`)
+      return { success: false, error: errorMessage }
+    }
+  }
+
+  /**
    * Get current working directory of a terminal session in sandbox
    *
    * Uses session ID to find the shell process via proc filesystem environ
