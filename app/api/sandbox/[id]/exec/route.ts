@@ -2,14 +2,15 @@
  * POST /api/sandbox/[id]/exec
  *
  * Execute a command in the sandbox background.
- * Uses ttyd WebSocket to run the command with nohup for persistence.
+ * Runs command with nohup, returns PID immediately.
  *
  * Request Body:
  * - command: Command to execute (required)
  * - workdir: Working directory (optional, default: /home/fulling)
  *
  * Returns:
- * - success: Whether execution was initiated successfully
+ * - success: Whether execution was successful
+ * - pid: Process ID
  * - error: Error message if failed
  *
  * Security:
@@ -19,10 +20,9 @@
 
 import { NextResponse } from 'next/server'
 
-import { withAuth } from '@/lib/api-auth'
-import { prisma } from '@/lib/db'
+import { verifySandboxAccess, withAuth } from '@/lib/api-auth'
+import { getK8sServiceForUser } from '@/lib/k8s/k8s-service-helper'
 import { logger as baseLogger } from '@/lib/logger'
-import { executeTtydCommand, TtydExecError } from '@/lib/util/ttyd-exec'
 
 const logger = baseLogger.child({ module: 'api/sandbox/[id]/exec' })
 
@@ -33,53 +33,8 @@ interface ExecRequestBody {
 
 interface ExecResponse {
   success: boolean
+  pid?: number
   error?: string
-}
-
-/**
- * Get ttyd context for a sandbox
- * Returns the base URL and access token needed for ttyd-exec
- */
-async function getTtydContext(sandboxId: string, userId: string) {
-  // security measure: verify user owns this sandbox through project
-  const sandbox = await prisma.sandbox.findFirst({
-    where: {
-      id: sandboxId,
-      project: {
-        userId: userId,
-      },
-    },
-    include: {
-      project: {
-        include: {
-          environments: true,
-        },
-      },
-    },
-  })
-
-  if (!sandbox) {
-    throw new Error('Sandbox not found')
-  }
-
-  const ttydAccessToken = sandbox.project.environments.find(
-    (env) => env.key === 'TTYD_ACCESS_TOKEN'
-  )?.value
-
-  if (!sandbox.ttydUrl || !ttydAccessToken) {
-    throw new Error('Sandbox configuration missing')
-  }
-
-  // Parse the ttydUrl to get base URL (without query params)
-  const ttydBaseUrl = new URL(sandbox.ttydUrl)
-  
-  // Extract authorization param if present
-  const authorization = ttydBaseUrl.searchParams.get('authorization') || undefined
-  
-  ttydBaseUrl.search = '' // Remove query params
-  const baseUrl = ttydBaseUrl.toString().replace(/\/$/, '')
-
-  return { baseUrl, accessToken: ttydAccessToken, authorization, sandbox }
 }
 
 export const POST = withAuth<ExecResponse>(async (req, context, session) => {
@@ -95,54 +50,35 @@ export const POST = withAuth<ExecResponse>(async (req, context, session) => {
       return NextResponse.json({ success: false, error: 'command is required' }, { status: 400 })
     }
 
-    // Get ttyd context (validates ownership and gets credentials)
-    const { baseUrl, accessToken, authorization, sandbox } = await getTtydContext(
-      sandboxId,
-      session.user.id
-    )
-
-    const workdir = body.workdir || '/home/fulling'
-    const timestamp = Date.now()
+    // Verify user owns this sandbox
+    const sandbox = await verifySandboxAccess(sandboxId, session.user.id)
 
     logger.info(
       `Executing background command in sandbox ${sandboxId} (${sandbox.sandboxName}): "${body.command}"`
     )
 
-    // Build the background execution command
-    // nohup ensures the process continues after ttyd session ends
-    // Output is redirected to a log file for debugging
-    const bgCommand = `cd "${workdir}" && mkdir -p /tmp/exec-logs && nohup ${body.command} > /tmp/exec-logs/${timestamp}.log 2>&1 &`
+    // Get K8s service for user
+    const k8sService = await getK8sServiceForUser(session.user.id)
 
-    // Execute the command via ttyd WebSocket
-    // The command returns almost immediately since it runs in background
-    const result = await executeTtydCommand({
-      ttydUrl: baseUrl,
-      accessToken,
-      authorization,
-      command: bgCommand,
-      timeoutMs: 10000, // 10 second timeout should be plenty for nohup to start
-    })
+    // Execute command in sandbox background
+    const result = await k8sService.execCommandInBackground(
+      sandbox.k8sNamespace,
+      sandbox.sandboxName,
+      body.command,
+      body.workdir
+    )
 
-    if (result.timedOut) {
-      logger.warn(`Command timed out in sandbox ${sandboxId}`)
-      return NextResponse.json(
-        { success: false, error: 'Command execution timed out' },
-        { status: 500 }
-      )
+    if (result.success) {
+      logger.info(`Command started in sandbox ${sandboxId} (PID: ${result.pid})`)
+    } else {
+      logger.warn(`Command execution failed in sandbox ${sandboxId}: ${result.error}`)
     }
 
-    logger.info(`Background command started in sandbox ${sandboxId}`)
-    return NextResponse.json({ success: true })
+    return NextResponse.json(result, { status: result.success ? 200 : 500 })
   } catch (error) {
     logger.error(`Failed to execute command in sandbox: ${error}`)
 
-    let errorMessage = 'Unknown error'
-    if (error instanceof TtydExecError) {
-      errorMessage = `ttyd error (${error.code}): ${error.message}`
-    } else if (error instanceof Error) {
-      errorMessage = error.message
-    }
-
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
       { success: false, error: `Failed to execute command: ${errorMessage}` },
       { status: 500 }
