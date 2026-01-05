@@ -332,12 +332,13 @@ export function TerminalToolbar({
         <AlertDialogContent className="bg-[#252526] border-[#3e3e42] text-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Run Application & Keep Active?</AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-400 space-y-3">
-              <p>
-                This will build and start your application by running:
-                <br />
-                <code className="bg-[#1e1e1e] px-1.5 py-0.5 rounded text-xs border border-[#3e3e42] mt-1 inline-block font-mono text-blue-400">pnpm build && pnpm start</code>
-              </p>
+            <AlertDialogDescription className="text-gray-400 space-y-3" asChild>
+              <div className="text-sm text-gray-400 space-y-3">
+                <div>
+                  This will build and start your application by running:
+                  <br />
+                  <code className="bg-[#1e1e1e] px-1.5 py-0.5 rounded text-xs border border-[#3e3e42] mt-1 inline-block font-mono text-blue-400">pnpm build && pnpm start</code>
+                </div>
               
               <div className="bg-[#1e1e1e]/50 rounded-md border border-[#3e3e42]/50 text-sm">
                 <div className="p-3 space-y-2">
@@ -368,6 +369,7 @@ export function TerminalToolbar({
                     </a>
                   </div>
                 )}
+              </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
