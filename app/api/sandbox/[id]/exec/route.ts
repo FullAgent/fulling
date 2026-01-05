@@ -72,10 +72,14 @@ async function getTtydContext(sandboxId: string, userId: string) {
 
   // Parse the ttydUrl to get base URL (without query params)
   const ttydBaseUrl = new URL(sandbox.ttydUrl)
+  
+  // Extract authorization param if present
+  const authorization = ttydBaseUrl.searchParams.get('authorization') || undefined
+  
   ttydBaseUrl.search = '' // Remove query params
   const baseUrl = ttydBaseUrl.toString().replace(/\/$/, '')
 
-  return { baseUrl, accessToken: ttydAccessToken, sandbox }
+  return { baseUrl, accessToken: ttydAccessToken, authorization, sandbox }
 }
 
 export const POST = withAuth<ExecResponse>(async (req, context, session) => {
@@ -92,7 +96,10 @@ export const POST = withAuth<ExecResponse>(async (req, context, session) => {
     }
 
     // Get ttyd context (validates ownership and gets credentials)
-    const { baseUrl, accessToken, sandbox } = await getTtydContext(sandboxId, session.user.id)
+    const { baseUrl, accessToken, authorization, sandbox } = await getTtydContext(
+      sandboxId,
+      session.user.id
+    )
 
     const workdir = body.workdir || '/home/fulling'
     const timestamp = Date.now()
@@ -111,6 +118,7 @@ export const POST = withAuth<ExecResponse>(async (req, context, session) => {
     const result = await executeTtydCommand({
       ttydUrl: baseUrl,
       accessToken,
+      authorization,
       command: bgCommand,
       timeoutMs: 10000, // 10 second timeout should be plenty for nohup to start
     })

@@ -46,10 +46,14 @@ async function getTtydContext(projectId: string, userId: string) {
 
   // Parse the ttydUrl to get base URL (without query params)
   const ttydBaseUrl = new URL(sandbox.ttydUrl)
+  
+  // Extract authorization param if present
+  const authorization = ttydBaseUrl.searchParams.get('authorization') || undefined
+  
   ttydBaseUrl.search = '' // Remove query params
   const baseUrl = ttydBaseUrl.toString().replace(/\/$/, '')
 
-  return { baseUrl, accessToken: ttydAccessToken, project }
+  return { baseUrl, accessToken: ttydAccessToken, authorization, project }
 }
 
 
@@ -65,7 +69,7 @@ export async function initializeRepo(projectId: string): Promise<RepoInitResult>
   }
 
   try {
-    const { baseUrl, accessToken, project } = await getTtydContext(projectId, session.user.id)
+    const { baseUrl, accessToken, authorization, project } = await getTtydContext(projectId, session.user.id)
 
     // Create GitHub repo first
     const repoResult = await createGithubRepo(project.name)
@@ -79,7 +83,7 @@ export async function initializeRepo(projectId: string): Promise<RepoInitResult>
       data: { githubRepo: repoResult.repoUrl },
     })
 
-    await runInitCommand(baseUrl, accessToken)
+    await runInitCommand(baseUrl, accessToken, authorization)
 
     // Push the initial code to GitHub
     const pushResult = await pushToGithub(projectId)
@@ -95,12 +99,13 @@ export async function initializeRepo(projectId: string): Promise<RepoInitResult>
   }
 }
 
-async function runInitCommand(baseUrl: string, accessToken: string) {
+async function runInitCommand(baseUrl: string, accessToken: string, authorization?: string) {
   return execCommand(
     baseUrl,
     accessToken,
     'git init -b main && git add . && claude -p "commit all staged changes with a descriptive message" --dangerously-skip-permissions',
-    300000
+    300000,
+    authorization
   )
 
 }
@@ -194,12 +199,14 @@ export async function commitChanges(projectId: string): Promise<RepoInitResult> 
   }
 
   try {
-    const { baseUrl, accessToken } = await getTtydContext(projectId, session.user.id)
+    const { baseUrl, accessToken, authorization } = await getTtydContext(projectId, session.user.id)
     
     await execCommand(
       baseUrl,
       accessToken,
       'git add . && claude -p "commit all staged changes with a descriptive message" --dangerously-skip-permissions',
+      undefined,
+      authorization
     )
 
     // Push changes to GitHub
@@ -232,7 +239,7 @@ export async function pushToGithub(projectId: string): Promise<RepoInitResult> {
   }
 
   try {
-    const { baseUrl, accessToken, project } = await getTtydContext(projectId, session.user.id)
+    const { baseUrl, accessToken, authorization, project } = await getTtydContext(projectId, session.user.id)
 
     if (!project.githubRepo) {
       return { success: false, message: 'No GitHub repository linked to this project' }
@@ -281,7 +288,7 @@ export async function pushToGithub(projectId: string): Promise<RepoInitResult> {
       git push -u origin main
     `.replace(/\n/g, ' ').trim()
 
-    await execCommand(baseUrl, accessToken, command, 300000)
+    await execCommand(baseUrl, accessToken, command, 300000, authorization)
 
     return { success: true, message: 'Code pushed to GitHub successfully' }
   } catch (error) {

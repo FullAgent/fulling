@@ -97,6 +97,12 @@ export interface TtydExecOptions {
   /** Optional session ID for multi-terminal support */
   sessionId?: string
 
+  /** 
+   * Optional authorization string for ttyd basic auth
+   * Should be the base64 encoded "username:password" string
+   */
+  authorization?: string
+
   /** Timeout in milliseconds (default: 30000) */
   timeoutMs?: number
 
@@ -158,7 +164,12 @@ function stripAnsiCodes(str: string): string {
 /**
  * Build WebSocket URL from ttyd HTTP URL
  */
-function buildWsUrl(ttydUrl: string, accessToken: string, sessionId?: string): string {
+function buildWsUrl(
+  ttydUrl: string,
+  accessToken: string,
+  sessionId?: string,
+  authorization?: string
+): string {
   const url = new URL(ttydUrl)
   const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
   const wsPath = url.pathname.replace(/\/$/, '') + '/ws'
@@ -168,6 +179,9 @@ function buildWsUrl(ttydUrl: string, accessToken: string, sessionId?: string): s
   params.append('arg', accessToken)
   if (sessionId) {
     params.append('arg', sessionId)
+  }
+  if (authorization) {
+    params.append('authorization', authorization)
   }
 
   return `${wsProtocol}//${url.host}${wsPath}?${params.toString()}`
@@ -230,6 +244,7 @@ export async function executeTtydCommand(options: TtydExecOptions): Promise<Ttyd
     accessToken,
     command,
     sessionId,
+    authorization,
     timeoutMs = DEFAULT_TIMEOUT_MS,
     cols = DEFAULT_COLS,
     rows = DEFAULT_ROWS,
@@ -241,7 +256,7 @@ export async function executeTtydCommand(options: TtydExecOptions): Promise<Ttyd
   const endMarkerPattern = new RegExp(`${END_MARKER_PREFIX}${markerId}:(\\d+)___`)
 
   // Build WebSocket URL
-  const wsUrl = buildWsUrl(ttydUrl, accessToken, sessionId)
+  const wsUrl = buildWsUrl(ttydUrl, accessToken, sessionId, authorization)
 
   // Text encoder/decoder
   const textEncoder = new TextEncoder()
@@ -391,7 +406,12 @@ export async function executeTtydCommand(options: TtydExecOptions): Promise<Ttyd
           if (!ws) return
 
           // Send initial terminal size
-          const initMsg = JSON.stringify({ columns: cols, rows: rows })
+          // Include AuthToken if authorization is provided (for ttyd basic auth)
+          const initMsg = JSON.stringify({
+            columns: cols,
+            rows: rows,
+            AuthToken: authorization,
+          })
           ws.send(textEncoder.encode(initMsg))
 
           // Wait a bit for shell to initialize, then send command
@@ -526,11 +546,13 @@ export async function execCommand(
   ttydUrl: string,
   accessToken: string,
   command: string,
-  timeoutMs?: number
+  timeoutMs?: number,
+  authorization?: string
 ): Promise<string> {
   const result = await executeTtydCommand({
     ttydUrl,
     accessToken,
+    authorization,
     command,
     timeoutMs,
   })
@@ -553,12 +575,14 @@ export async function execCommand(
 export async function execCommandSuccess(
   ttydUrl: string,
   accessToken: string,
-  command: string
+  command: string,
+  authorization?: string
 ): Promise<boolean> {
   try {
     const result = await executeTtydCommand({
       ttydUrl,
       accessToken,
+      authorization,
       command,
     })
     return result.exitCode === 0 && !result.timedOut
