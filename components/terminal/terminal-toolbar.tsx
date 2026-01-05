@@ -28,7 +28,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { getStatusBgClasses } from '@/lib/util/status-colors';
 import { cn } from '@/lib/utils';
 
 type Project = Prisma.ProjectGetPayload<{
@@ -71,7 +70,6 @@ export interface TerminalToolbarProps {
  * Terminal toolbar with tabs and operations
  */
 export function TerminalToolbar({
-  project,
   sandbox,
   tabs,
   activeTabId,
