@@ -19,6 +19,7 @@ LABEL maintainer="FullstackAgent" \
 #       This is safe - no actual secrets are hardcoded in the Dockerfile.
 ENV DEBIAN_FRONTEND=noninteractive \
     NODE_VERSION=22.x \
+    NEXT_VERSION=15.5.9 \
     CLAUDE_CODE_VERSION=latest \
     PATH="/root/.local/bin:/home/fulling/.local/bin:$PATH" \
     TERM=xterm-256color \
@@ -82,7 +83,7 @@ RUN set -eux; \
 # -----------------------------------------------------------------------------
 RUN npm install -g \
         @anthropic-ai/claude-code \
-        create-next-app \
+        create-next-app@${NEXT_VERSION} \
         pnpm \
         prisma \
         typescript \
@@ -223,7 +224,7 @@ RUN set -eux; \
     mkdir -p "$TEMPLATE_DIR"; \
     cd "$TEMPLATE_DIR"; \
     echo "=== Creating Next.js project in $TEMPLATE_DIR ==="; \
-    npx --yes create-next-app@latest . \
+    npx --yes create-next-app@${NEXT_VERSION} . \
         --typescript \
         --tailwind \
         --eslint \
