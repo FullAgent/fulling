@@ -250,9 +250,11 @@ RUN set -eux; \
     cd "$TEMPLATE_DIR"; \
     echo "=== Initializing shadcn/ui ==="; \
     pnpm dlx shadcn@latest init -d -y; \
-    echo "=== Installing shadcn/ui components ==="; \
-    pnpm dlx shadcn@latest add --all --yes; \
-    echo "✓ shadcn/ui installed"
+    # NOTE: Disabled pre-installing all components due to react-resizable-panels
+    #       type incompatibility with React 19. Components can be added on-demand
+    #       using: pnpm dlx shadcn add <component-name>
+    # pnpm dlx shadcn@latest add --all --yes; \
+    echo "✓ shadcn/ui initialized (components available on-demand)"
 
 # -----------------------------------------------------------------------------
 # Step 3: Clean up node_modules and set ownership
