@@ -6,9 +6,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
-import { authenticateWithSealos } from '@/app/actions/sealos-auth';
 import { MatrixRain } from '@/components/MatrixRain';
 import { Button } from '@/components/ui/button';
+import { authenticateWithSealos } from '@/lib/actions/sealos-auth';
 import { useSealos } from '@/provider/sealos';
 
 /**
