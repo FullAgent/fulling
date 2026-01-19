@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { Code, Database, Github, Save, Terminal } from 'lucide-react';
+import Image from 'next/image';
 import { toast } from 'sonner';
 
 import {
