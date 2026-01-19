@@ -8,19 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import type { Prisma } from '@prisma/client';
-import { Copy, Eye, EyeOff, Folder, Loader2, Network, Play, Plus, Square, Terminal as TerminalIcon, X } from 'lucide-react';
-import { toast } from 'sonner';
-
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { Copy, Eye, EyeOff, Network, Plus, Terminal as TerminalIcon, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -29,6 +17,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+
+import { AppRunner } from './app-runner';
 
 type Project = Prisma.ProjectGetPayload<{
   include: {
@@ -79,29 +69,8 @@ export function TerminalToolbar({
   fileBrowserCredentials,
 }: TerminalToolbarProps) {
   const [showNetworkDialog, setShowNetworkDialog] = useState(false);
-  const [showStartConfirm, setShowStartConfirm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [isStartingApp, setIsStartingApp] = useState(false);
-  const [isStoppingApp, setIsStoppingApp] = useState(false);
-  const [isAppRunning, setIsAppRunning] = useState(false);
-
-  // Check app status on mount
-  useEffect(() => {
-    if (!sandbox?.id) return;
-
-    const checkStatus = async () => {
-      try {
-        const response = await fetch(`/api/sandbox/${sandbox.id}/app-status`);
-        const data = await response.json();
-        setIsAppRunning(data.running);
-      } catch (error) {
-        console.error('Failed to check app status:', error);
-      }
-    };
-
-    checkStatus();
-  }, [sandbox?.id]);
 
   // Build network endpoints list, filtering out any without URLs
   const allEndpoints = [
@@ -126,108 +95,6 @@ export function TerminalToolbar({
       setTimeout(() => setCopiedField(null), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
-    }
-  };
-
-  // Start application in background
-  const handleStartApp = async () => {
-    if (!sandbox?.id || isStartingApp) return;
-
-    setIsStartingApp(true);
-    setShowStartConfirm(false); // Close modal
-
-    // Send exec command (fire and forget, don't wait for response)
-    fetch(`/api/sandbox/${sandbox.id}/exec`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        command: 'pnpm run build && pnpm run start',
-        workdir: '/home/fulling/next',
-      }),
-    }).catch(() => {
-      // Ignore errors, we'll detect success via port polling
-    });
-
-    toast.info('Starting...', {
-      description: 'Building and starting your app. This may take a few minutes.',
-    });
-
-    // Poll for app status every 10 seconds, max 5 minutes
-    const maxAttempts = 30; // 30 * 10s = 5 minutes
-    let attempts = 0;
-
-    const pollStatus = async (): Promise<boolean> => {
-      try {
-        const response = await fetch(`/api/sandbox/${sandbox.id}/app-status`);
-        const data = await response.json();
-        return data.running;
-      } catch {
-        return false;
-      }
-    };
-
-    const poll = async () => {
-      while (attempts < maxAttempts) {
-        attempts++;
-        const running = await pollStatus();
-        if (running) {
-          setIsAppRunning(true);
-          setIsStartingApp(false);
-          toast.success('App Running', {
-            description: 'Your app is live in the background',
-          });
-          return;
-        }
-        // Wait 10 seconds before next check
-        await new Promise((resolve) => setTimeout(resolve, 10000));
-      }
-
-      // Timeout after max attempts
-      setIsStartingApp(false);
-      toast.error('Start Timeout', {
-        description: 'App did not start within 5 minutes. Check terminal for errors.',
-      });
-    };
-
-    poll();
-  };
-
-  // Stop application
-  const handleStopApp = async () => {
-    if (!sandbox?.id || isStoppingApp) return;
-
-    setIsStoppingApp(true);
-    try {
-      const response = await fetch(`/api/sandbox/${sandbox.id}/app-status`, {
-        method: 'DELETE',
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setIsAppRunning(false);
-        toast.success('App Stopped');
-      } else {
-        toast.error('Stop Failed', {
-          description: result.error || 'Unknown error',
-        });
-      }
-    } catch (error) {
-      console.error('Failed to stop app:', error);
-      toast.error('Stop Failed', {
-        description: 'Network error, please try again',
-      });
-    } finally {
-      setIsStoppingApp(false);
-    }
-  };
-
-  // Toggle app start/stop
-  const handleToggleApp = () => {
-    if (isAppRunning) {
-      handleStopApp();
-    } else {
-      setShowStartConfirm(true); // Open confirmation modal
     }
   };
 
@@ -281,58 +148,7 @@ export function TerminalToolbar({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
-          {/* Status Badge */}
-          {/* <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-300">
-            <div className={cn('h-1.5 w-1.5 rounded-full', getStatusBgClasses(project.status))} />
-            <span>{project.status}</span>
-          </div> */}
-
-          {/* Directory Selector */}
-          <div className="flex items-center gap-3 mr-1">
-            <div className="relative group cursor-pointer">
-              <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                <Folder className="h-3.5 w-3.5 text-[#858585] group-hover:text-[#c5c5c5] transition-colors" />
-              </div>
-              <input
-                type="text"
-                value="./"
-                readOnly
-                className="bg-[#1e1e1e] border border-[#3e3e42] text-[#cccccc] text-xs rounded pl-8 pr-3 py-1 h-[26px] font-mono w-[80px] focus:outline-none focus:border-[#007fd4] hover:bg-[#252526] hover:border-[#505055] transition-all cursor-pointer select-none"
-                title="Change deploy directory"
-              />
-            </div>
-            
-            {/* Separator */}
-            <div className="h-4 w-[1px] bg-[#3e3e42]" />
-          </div>
-
-          {/* Run App Button (was Deploy) */}
-          <button
-            onClick={handleToggleApp}
-            disabled={isStartingApp || isStoppingApp || !sandbox}
-            className={cn(
-              'px-2 py-1 text-xs rounded transition-colors flex items-center gap-1 disabled:cursor-not-allowed',
-              isAppRunning
-                ? 'text-green-400 hover:text-red-400 hover:bg-red-400/10 bg-green-400/10'
-                : 'text-gray-300 hover:text-white hover:bg-[#37373d] disabled:opacity-50'
-            )}
-            title={
-              isAppRunning
-                ? 'Click to stop. Your app will no longer be accessible.'
-                : 'Build and run your app in production mode. It will keep running even if you close this terminal.'
-            }
-          >
-            {isStartingApp || isStoppingApp ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : isAppRunning ? (
-              <Square className="h-3 w-3" />
-            ) : (
-              <Play className="h-3 w-3" />
-            )}
-            <span>
-              {isStartingApp ? 'Starting...' : isStoppingApp ? 'Stopping...' : isAppRunning ? 'Running' : 'Run App'}
-            </span>
-          </button>
+          <AppRunner sandbox={sandbox} />
 
           {/* Network Button */}
           <button
@@ -345,61 +161,6 @@ export function TerminalToolbar({
           </button>
         </div>
       </div>
-
-      {/* Confirmation Alert Dialog */}
-      <AlertDialog open={showStartConfirm} onOpenChange={setShowStartConfirm}>
-        <AlertDialogContent className="bg-[#252526] border-[#3e3e42] text-white">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Run Application & Keep Active?</AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-400 space-y-3" asChild>
-              <div className="text-sm text-gray-400 space-y-3">
-                <div>
-                  This will build and start your application by running:
-                  <br />
-                  <code className="bg-[#1e1e1e] px-1.5 py-0.5 rounded text-xs border border-[#3e3e42] mt-1 inline-block font-mono text-blue-400">pnpm build && pnpm start</code>
-                </div>
-              
-              <div className="bg-[#1e1e1e]/50 rounded-md border border-[#3e3e42]/50 text-sm">
-                <div className="p-3 space-y-2">
-                  <div className="flex gap-2.5 items-start">
-                    <span className="text-blue-400 mt-0.5">•</span>
-                    <span>App runs continuously in the background</span>
-                  </div>
-                  <div className="flex gap-2.5 items-start">
-                    <span className="text-blue-400 mt-0.5">•</span>
-                    <span>Remains active even if you leave this page</span>
-                  </div>
-                  <div className="flex gap-2.5 items-start">
-                    <span className="text-blue-400 mt-0.5">•</span>
-                    <span>Can be stopped anytime by clicking this button again</span>
-                  </div>
-                </div>
-
-                {sandbox?.publicUrl && (
-                  <div className="px-3 pb-3 pt-2 border-t border-[#3e3e42]/30">
-                    <div className="text-xs text-gray-500 mb-1">Once running, your application will be available at:</div>
-                    <a 
-                      href={sandbox.publicUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-xs text-[#3794ff] hover:text-[#4fc1ff] break-all underline underline-offset-2 hover:underline-offset-4 transition-all block"
-                    >
-                      {sandbox.publicUrl}
-                    </a>
-                  </div>
-                )}
-              </div>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="bg-transparent border-[#3e3e42] text-gray-300 hover:bg-[#37373d] hover:text-white">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleStartApp} className="bg-[#007fd4] hover:bg-[#0060a0] text-white">
-              Confirm & Run
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Network Dialog */}
       <Dialog open={showNetworkDialog} onOpenChange={setShowNetworkDialog}>
