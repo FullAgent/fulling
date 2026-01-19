@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { Code, Database, Github, Save, Terminal } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -614,10 +615,12 @@ export default function SettingsDialog({
                     <div className="space-y-4">
                       <div className="flex items-center gap-4 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
                         {githubStatus.avatar_url && (
-                          <img
+                          <Image
                             src={githubStatus.avatar_url}
                             alt="GitHub Avatar"
-                            className="w-12 h-12 rounded-full"
+                            width={48}
+                            height={48}
+                            className="rounded-full"
                           />
                         )}
                         <div className="flex-1">

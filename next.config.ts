@@ -6,6 +6,16 @@ const nextConfig: NextConfig = {
   compress: true,
   // Exclude server-side packages from bundling
   serverExternalPackages: ['pino'],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
 }
 
 export default nextConfig
