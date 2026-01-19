@@ -8,7 +8,7 @@ import { useSession } from 'next-auth/react';
 
 import { MatrixRain } from '@/components/MatrixRain';
 import { Button } from '@/components/ui/button';
-import { authenticateWithSealos } from '@/lib/actions/sealos-auth';
+import { authenticateWithSealos } from '@/actions/sealos-auth';
 import { useSealos } from '@/provider/sealos';
 
 /**
