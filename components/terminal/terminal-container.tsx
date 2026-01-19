@@ -17,7 +17,7 @@ import { useState } from 'react';
 import type { Prisma } from '@prisma/client';
 
 import { TerminalDisplay } from './terminal-display';
-import { type Tab, TerminalToolbar } from './terminal-toolbar';
+import { type Tab, TerminalToolbar } from './toolbar/toolbar';
 
 // ============================================================================
 // Types
