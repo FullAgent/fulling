@@ -28,9 +28,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <SealosProvider>
           <ThemeProvider
             attribute="class"
-            defaultTheme="stealth"
+            defaultTheme="modern"
             enableSystem={false}
-            themes={['light', 'dark', 'stealth']}
+            themes={['light', 'dark', 'stealth', 'modern']}
           >
             {children}
           </ThemeProvider>
