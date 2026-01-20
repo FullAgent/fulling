@@ -47,7 +47,7 @@ export function DirectorySelector({
     const fetchDirectories = async () => {
       setIsLoading(true);
       try {
-        const result = await runCommand(sandboxId, 'find . -type d -maxdepth 2');
+        const result = await runCommand(sandboxId, 'find . -type d -maxdepth 1');
         if (result.success && result.output) {
           const dirs = result.output
             .split('\n')
@@ -86,7 +86,7 @@ export function DirectorySelector({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="relative group cursor-pointer mr-1 bg-[#1e1e1e] border border-[#3e3e42] text-[#cccccc] text-xs rounded pl-8 pr-6 py-1 h-[26px] font-mono w-[120px] focus:outline-none focus:border-[#007fd4] hover:bg-[#252526] hover:border-[#505055] transition-all select-none text-left"
+          className="relative group cursor-pointer mr-1 bg-[#1e1e1e] border border-[#3e3e42] text-[#cccccc] text-xs rounded pl-8 pr-6 py-1 h-[26px] font-mono w-[180px] focus:outline-none focus:border-[#007fd4] hover:bg-[#252526] hover:border-[#505055] transition-all select-none text-left"
           title="Change deploy directory"
           disabled={isLoading}
         >

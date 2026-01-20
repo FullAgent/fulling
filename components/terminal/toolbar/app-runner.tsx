@@ -17,13 +17,14 @@ interface AppRunnerProps {
 
 export function AppRunner({ sandbox }: AppRunnerProps) {
   const [showStartConfirm, setShowStartConfirm] = useState(false);
+  const [deployDirectory, setDeployDirectory] = useState('./');
   const {
     isStartingApp,
     isStoppingApp,
     isAppRunning,
     startApp,
     stopApp,
-  } = useAppRunner(sandbox?.id);
+  } = useAppRunner(sandbox?.id, deployDirectory);
 
   // Toggle app start/stop
   const handleToggleApp = () => {
@@ -43,7 +44,11 @@ export function AppRunner({ sandbox }: AppRunnerProps) {
     <>
       <div className="flex items-center gap-2">
         {/* Directory Selector */}
-        <DirectorySelector sandboxId={sandbox?.id} />
+        <DirectorySelector
+          sandboxId={sandbox?.id}
+          value={deployDirectory}
+          onChange={setDeployDirectory}
+        />
 
 
 

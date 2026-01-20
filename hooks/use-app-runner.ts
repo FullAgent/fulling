@@ -1,10 +1,22 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 
-export function useAppRunner(sandboxId: string | undefined) {
+const BASE_DIR = '/home/fulling/next';
+
+export function useAppRunner(sandboxId: string | undefined, deployDir: string = './') {
   const [isStartingApp, setIsStartingApp] = useState(false);
   const [isStoppingApp, setIsStoppingApp] = useState(false);
   const [isAppRunning, setIsAppRunning] = useState(false);
+
+  // Calculate workdir based on deployDir
+  const workdir = useMemo(() => {
+    if (deployDir === './' || deployDir === '.') {
+      return BASE_DIR;
+    }
+    // Remove leading ./ if present and join with base dir
+    const relativePath = deployDir.replace(/^\.\//, '');
+    return `${BASE_DIR}/${relativePath}`;
+  }, [deployDir]);
 
   // Check app status on mount
   useEffect(() => {
@@ -35,7 +47,7 @@ export function useAppRunner(sandboxId: string | undefined) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         command: 'pnpm run build && pnpm run start',
-        workdir: '/home/fulling/next',
+        workdir,
       }),
     }).catch(() => {
       // Ignore errors, we'll detect success via port polling
@@ -83,7 +95,7 @@ export function useAppRunner(sandboxId: string | undefined) {
     };
 
     poll();
-  }, [sandboxId, isStartingApp]);
+  }, [sandboxId, isStartingApp, workdir]);
 
   // Stop application
   const stopApp = useCallback(async () => {
