@@ -43,10 +43,9 @@ export function AppRunner({ sandbox }: AppRunnerProps) {
     <>
       <div className="flex items-center gap-2">
         {/* Directory Selector */}
-        <DirectorySelector />
+        <DirectorySelector sandboxId={sandbox?.id} />
 
-        {/* Separator */}
-        <div className="h-4 w-[1px] bg-[#3e3e42]" />
+
 
         {/* Run App Button */}
         <button
@@ -76,6 +75,9 @@ export function AppRunner({ sandbox }: AppRunnerProps) {
           </span>
         </button>
       </div>
+
+      {/* Separator */}
+      <div className="h-4 w-[1px] bg-[#3e3e42]" />
 
       {/* Confirmation Alert Dialog */}
       <AppRunnerDialog
