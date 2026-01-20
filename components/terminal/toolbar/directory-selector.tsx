@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect,useState } from 'react';
 import { ChevronDown, Folder, Loader2 } from 'lucide-react';
 
+import { runCommand } from '@/actions/sandbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { runCommand } from '@/actions/sandbox';
 
 interface DirectorySelectorProps {
   sandboxId?: string;

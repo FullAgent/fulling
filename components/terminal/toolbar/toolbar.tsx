@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react';
 import type { Prisma } from '@prisma/client';
 import { Copy, Eye, EyeOff, Network, Plus, Terminal as TerminalIcon, X } from 'lucide-react';
+
 import {
   Dialog,
   DialogContent,

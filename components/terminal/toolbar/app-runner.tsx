@@ -4,8 +4,9 @@ import { useState } from 'react';
 import type { Prisma } from '@prisma/client';
 import { Loader2, Play, Square } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
 import { useAppRunner } from '@/hooks/use-app-runner';
+import { cn } from '@/lib/utils';
+
 import { AppRunnerDialog } from './app-runner-dialog';
 import { DirectorySelector } from './directory-selector';
 
