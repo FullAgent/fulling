@@ -68,14 +68,14 @@ export default function ProjectSidebar({ projectId }: ProjectSidebarProps) {
   return (
     <div
       className={cn(
-        'bg-sidebar-project-background flex flex-col transition-all duration-200 relative',
+        'bg-sidebar-background flex flex-col transition-all duration-200 relative',
         isCollapsed ? 'w-0' : 'w-72 border-r border-border'
       )}
     >
       {/* Toggle Button */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-2 top-1/2 -translate-y-1/2 z-20 h-10 w-4 rounded-md border border-border bg-sidebar-project-background flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors shadow-sm"
+        className="absolute -right-2 top-1/2 -translate-y-1/2 z-20 h-10 w-4 rounded-md border border-border bg-sidebar-background flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors shadow-sm"
       >
         {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
       </button>
