@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "material-icons/iconfont/outlined.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -173,74 +174,8 @@
   --tab-hover-background: #3e3e42;
 }
 
-/* Modern Theme - Light Mode */
+/* Modern Theme - Dark Mode (default) */
 .modern {
-  /* === Base Colors === */
-  --background: #ffffff;
-  --foreground: #09090b;
-
-  /* === UI Components === */
-  --card: #f9fafb;
-  --card-foreground: #09090b;
-  --popover: #ffffff;
-  --popover-foreground: #09090b;
-
-  /* === Brand Colors === */
-  --primary: #3b82f6;
-  --primary-foreground: #ffffff;
-  --primary-hover: #2563eb;
-
-  --secondary: #f3f4f6;
-  --secondary-foreground: #64748b;
-
-  --accent: #f3f4f6;
-  --accent-foreground: #09090b;
-
-  --muted: #f3f4f6;
-  --muted-foreground: #64748b;
-
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-
-  /* === Borders & Inputs === */
-  --border: #e5e7eb;
-  --input: #e5e7eb;
-  --ring: #3b82f6;
-
-  /* === Sidebar === */
-  --sidebar: #f3f4f6;
-  --sidebar-foreground: #09090b;
-  --sidebar-background: #f3f4f6;
-  --sidebar-project-background: #ffffff;
-  --sidebar-accent: #e5e7eb;
-  --sidebar-border: #e5e7eb;
-
-  /* === Charts === */
-  --chart-1: #3b82f6;
-  --chart-2: #64748b;
-  --chart-3: #10b981;
-  --chart-4: #f59e0b;
-  --chart-5: #ef4444;
-
-  /* === Content === */
-  --content-background: #ffffff;
-
-  /* === Tabs === */
-  --tabs-background: #f3f4f6;
-  --tab-background: #f3f4f6;
-  --tab-foreground: #64748b;
-  --tab-active-background: #ffffff;
-  --tab-active-foreground: #09090b;
-  --tab-hover-background: #e5e7eb;
-
-  /* === Typography === */
-  --font-sans: Inter, sans-serif;
-  --font-mono: JetBrains Mono, monospace;
-  --radius: 0.375rem;
-}
-
-/* Modern Theme - Dark Mode */
-.modern.dark {
   /* === Base Colors === */
   --background: #09090b;
   --foreground: #fafafa;
@@ -298,6 +233,72 @@
   --tab-active-background: #09090b;
   --tab-active-foreground: #ffffff;
   --tab-hover-background: #27272a;
+
+  /* === Typography === */
+  --font-sans: Inter, sans-serif;
+  --font-mono: JetBrains Mono, monospace;
+  --radius: 0.375rem;
+}
+
+/* Modern Theme - Light Mode (optional) */
+.modern-light {
+  /* === Base Colors === */
+  --background: #ffffff;
+  --foreground: #09090b;
+
+  /* === UI Components === */
+  --card: #f9fafb;
+  --card-foreground: #09090b;
+  --popover: #ffffff;
+  --popover-foreground: #09090b;
+
+  /* === Brand Colors === */
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --primary-hover: #2563eb;
+
+  --secondary: #f3f4f6;
+  --secondary-foreground: #64748b;
+
+  --accent: #f3f4f6;
+  --accent-foreground: #09090b;
+
+  --muted: #f3f4f6;
+  --muted-foreground: #64748b;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  /* === Borders & Inputs === */
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #3b82f6;
+
+  /* === Sidebar === */
+  --sidebar: #f3f4f6;
+  --sidebar-foreground: #09090b;
+  --sidebar-background: #f3f4f6;
+  --sidebar-project-background: #ffffff;
+  --sidebar-accent: #e5e7eb;
+  --sidebar-border: #e5e7eb;
+
+  /* === Charts === */
+  --chart-1: #3b82f6;
+  --chart-2: #64748b;
+  --chart-3: #10b981;
+  --chart-4: #f59e0b;
+  --chart-5: #ef4444;
+
+  /* === Content === */
+  --content-background: #ffffff;
+
+  /* === Tabs === */
+  --tabs-background: #f3f4f6;
+  --tab-background: #f3f4f6;
+  --tab-foreground: #64748b;
+  --tab-active-background: #ffffff;
+  --tab-active-foreground: #09090b;
+  --tab-hover-background: #e5e7eb;
 
   /* === Typography === */
   --font-sans: Inter, sans-serif;

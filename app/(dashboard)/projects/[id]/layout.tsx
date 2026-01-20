@@ -44,7 +44,7 @@ export default async function ProjectLayout({
     <div className="h-screen flex flex-col text-foreground overflow-hidden">
       <div className="flex-1 flex overflow-hidden">
         {/* Primary Sidebar - VSCode style */}
-        <PrimarySidebar currentProjectId={id} userId={session.user.id} />
+        <PrimarySidebar />
 
         {/* Secondary Sidebar - Project Settings */}
         <ProjectSidebar

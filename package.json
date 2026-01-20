@@ -39,6 +39,7 @@
     "croner": "^9.1.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.545.0",
+    "material-icons": "^1.13.14",
     "nanoid": "^5.1.6",
     "next": "16.0.10",
     "next-auth": "^5.0.0-beta.29",
