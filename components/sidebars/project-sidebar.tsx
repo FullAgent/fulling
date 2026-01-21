@@ -1,22 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  ChevronLeft,
-  ChevronRight,
-  CreditCard,
-  Database,
-  Github,
-  Key,
-  Package,
-  Shield,
-  Terminal,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { useProject } from '@/hooks/use-project';
 import { cn } from '@/lib/utils';
+
+// Static menu configuration - hoisted outside component to avoid recreation on every render
+const WORKSPACE_SECTIONS = [
+  { id: 'terminal', label: 'Web Terminal', icon: 'terminal' },
+  { id: 'database', label: 'Database', icon: 'dns' },
+] as const;
+
+const CONFIG_SECTIONS = [
+  { id: 'environment', label: 'Environment Variables', icon: 'layers' },
+  { id: 'secrets', label: 'Secret Configuration', icon: 'vpn_key' },
+  { id: 'auth', label: 'Auth Configuration', icon: 'security' },
+  { id: 'payment', label: 'Payment Configuration', icon: 'credit_card' },
+  { id: 'github', label: 'GitHub Integration', icon: 'code' },
+] as const;
 
 interface ProjectSidebarProps {
   projectId: string;
@@ -27,43 +31,8 @@ export default function ProjectSidebar({ projectId }: ProjectSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
 
-  const topSections = [
-    {
-      id: 'terminal',
-      label: 'Web Terminal',
-      icon: Terminal,
-      href: `/projects/${projectId}/terminal`,
-    },
-    { id: 'database', label: 'Database', icon: Database, href: `/projects/${projectId}/database` },
-  ];
-
-  const configSections = [
-    {
-      id: 'environment',
-      label: 'Environment Variables',
-      icon: Package,
-      href: `/projects/${projectId}/environment`,
-    },
-    {
-      id: 'secrets',
-      label: 'Secret Configuration',
-      icon: Key,
-      href: `/projects/${projectId}/secrets`,
-    },
-    { id: 'auth', label: 'Auth Configuration', icon: Shield, href: `/projects/${projectId}/auth` },
-    {
-      id: 'payment',
-      label: 'Payment Configuration',
-      icon: CreditCard,
-      href: `/projects/${projectId}/payment`,
-    },
-    {
-      id: 'github',
-      label: 'GitHub Integration',
-      icon: Github,
-      href: `/projects/${projectId}/github`,
-    },
-  ];
+  // Generate href with projectId
+  const getHref = (sectionId: string) => `/projects/${projectId}/${sectionId}`;
 
   return (
     <div
@@ -81,58 +50,68 @@ export default function ProjectSidebar({ projectId }: ProjectSidebarProps) {
       </button>
 
       {/* Header */}
-      <div className="h-12 flex items-center px-3 border-b border-border min-w-0 overflow-hidden">
+      <div className="h-12 flex items-center px-4 border-b border-border min-w-0 overflow-hidden">
         {!isCollapsed && (
           <span className="text-sm font-medium text-foreground truncate">Project {project?.name ?? 'Loading...'}</span>
         )}
       </div>
 
       {!isCollapsed && (
-        <div className="flex-1 overflow-y-auto flex flex-col gap-2">
+        <div className="flex-1 overflow-y-auto py-4 px-2 space-y-6">
           {/* Top sections */}
           <div>
-            <div className="px-3 pt-4 pb-2 text-xs font-semibold text-muted-foreground">WORKSPACE</div>
-            {topSections.map((section) => {
-              const Icon = section.icon;
-              const isActive = pathname === section.href;
+            <div className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Workspace</div>
+            <ul className="space-y-0.5">
+            {WORKSPACE_SECTIONS.map((section) => {
+              const href = getHref(section.id);
+              const isActive = pathname === href;
 
               return (
-                <Link
-                  key={section.id}
-                  href={section.href}
-                  className={cn(
-                    'group w-full flex items-center pl-6 pr-3 py-2 text-base transition-colors min-h-[32px]',
-                    isActive ? 'bg-sidebar-accent' : 'hover:bg-sidebar-accent'
-                  )}
-                >
-                  <Icon className="h-4 w-4 mr-2 text-muted-foreground group-hover:text-sidebar-foreground shrink-0 transition-colors" />
-                  <span className={cn("truncate flex-1 font-semibold", isActive ? "text-card-foreground" : "text-foreground")}>{section.label}</span>
-                </Link>
+                <li key={section.id}>
+                  <Link
+                    href={href}
+                    className={cn(
+                      'group flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-all',
+                      isActive
+                        ? 'bg-accent text-foreground font-medium shadow-sm ring-1 ring-white/5'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    )}
+                  >
+                    <span className={cn('material-icons-outlined text-sm', isActive && 'text-foreground')}>{section.icon}</span>
+                    {section.label}
+                  </Link>
+                </li>
               );
             })}
+            </ul>
           </div>
 
           {/* Configuration Group */}
           <div>
-            <div className="px-3 pt-4 pb-2 text-xs font-semibold text-muted-foreground">CONFIGURATION</div>
-            {configSections.map((section) => {
-              const Icon = section.icon;
-              const isActive = pathname === section.href;
+            <div className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Configuration</div>
+            <ul className="space-y-0.5">
+            {CONFIG_SECTIONS.map((section) => {
+              const href = getHref(section.id);
+              const isActive = pathname === href;
 
               return (
-                <Link
-                  key={section.id}
-                  href={section.href}
-                  className={cn(
-                    'group w-full flex items-center pl-6 pr-3 py-2 text-base transition-colors min-h-[32px]',
-                    isActive ? 'bg-sidebar-accent' : 'hover:bg-sidebar-accent'
-                  )}
-                >
-                  <Icon className="h-4 w-4 mr-2 text-muted-foreground group-hover:text-sidebar-foreground shrink-0 transition-colors" />
-                  <span className={cn("truncate flex-1 font-semibold", isActive ? "text-card-foreground" : "text-foreground")}>{section.label}</span>
-                </Link>
+                <li key={section.id}>
+                  <Link
+                    href={href}
+                    className={cn(
+                      'group flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-all',
+                      isActive
+                        ? 'bg-accent text-foreground font-medium shadow-sm ring-1 ring-white/5'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    )}
+                  >
+                    <span className={cn('material-icons-outlined text-sm', isActive && 'text-foreground')}>{section.icon}</span>
+                    {section.label}
+                  </Link>
+                </li>
               );
             })}
+            </ul>
           </div>
         </div>
       )}
