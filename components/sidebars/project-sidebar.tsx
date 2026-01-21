@@ -26,6 +26,19 @@ interface ProjectSidebarProps {
   projectId: string;
 }
 
+/**
+ * A collapsible navigation sidebar for project detail pages.
+ *
+ * Features:
+ * - Displays current project name in header
+ * - Provides navigation links grouped into Workspace and Configuration sections
+ * - Supports collapse/expand toggle with smooth transition
+ * - Highlights active route based on current pathname
+ *
+ * Navigation Structure:
+ * - Workspace: Web Terminal, Database
+ * - Configuration: Environment Variables, Secrets, Auth, Payment, GitHub Integration
+ */
 export default function ProjectSidebar({ projectId }: ProjectSidebarProps) {
   const { data: project } = useProject(projectId);
   const [isCollapsed, setIsCollapsed] = useState(false);
