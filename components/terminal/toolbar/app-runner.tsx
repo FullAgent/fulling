@@ -61,7 +61,7 @@ export function AppRunner({ sandbox }: AppRunnerProps) {
             'px-2 py-1 text-xs rounded transition-colors flex items-center gap-1 disabled:cursor-not-allowed',
             isAppRunning
               ? 'text-green-400 hover:text-red-400 hover:bg-red-400/10 bg-green-400/10'
-              : 'text-gray-300 hover:text-white hover:bg-[#37373d] disabled:opacity-50'
+              : 'text-foreground font-semibold hover:text-white hover:bg-zinc-800 disabled:opacity-50'
           )}
           title={
             isAppRunning
@@ -74,7 +74,7 @@ export function AppRunner({ sandbox }: AppRunnerProps) {
           ) : isAppRunning ? (
             <Square className="h-3 w-3" />
           ) : (
-            <Play className="h-3 w-3" />
+            <Play className="h-3 w-3 text-green-500" />
           )}
           <span>
             {isStartingApp ? 'Starting...' : isStoppingApp ? 'Stopping...' : isAppRunning ? 'Running' : 'Run App'}

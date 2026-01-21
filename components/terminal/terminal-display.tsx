@@ -102,13 +102,13 @@ export function TerminalDisplay({
     const showErrorIndicator = connectionStatus === 'error' && terminalReady;
 
     return (
-      <div className="h-full w-full bg-[#1e1e1e] flex flex-col relative">
+      <div className="h-full w-full bg-background flex flex-col relative">
         {/* Loading Overlay */}
         {isLoading && (
-          <div className="absolute inset-0 bg-[#1e1e1e] flex items-center justify-center z-10">
+          <div className="absolute inset-0 bg-background flex items-center justify-center z-10">
             <div className="flex items-center gap-3">
-              <Spinner className="h-5 w-5 text-[#3794ff]" />
-              <span className="text-sm text-[#cccccc]">
+              <Spinner className="h-5 w-5 text-blue-500" />
+              <span className="text-sm text-muted-foreground">
                 {!terminalReady ? 'Initializing terminal...' : 'Establishing connection...'}
               </span>
             </div>
@@ -127,25 +127,25 @@ export function TerminalDisplay({
             wsUrl={ttydUrl}
             sandboxId={sandboxId}
             theme={{
-              foreground: '#d2d2d2',
-              background: '#1e1e1e',
-              cursor: '#adadad',
-              black: '#000000',
-              red: '#d81e00',
-              green: '#5ea702',
-              yellow: '#cfae00',
-              blue: '#427ab3',
-              magenta: '#89658e',
-              cyan: '#00a7aa',
-              white: '#dbded8',
-              brightBlack: '#686a66',
-              brightRed: '#f54235',
-              brightGreen: '#99e343',
-              brightYellow: '#fdeb61',
-              brightBlue: '#84b0d8',
-              brightMagenta: '#bc94b7',
-              brightCyan: '#37e6e8',
-              brightWhite: '#f1f1f0',
+              foreground: '#fafafa',
+              background: '#09090b',
+              cursor: '#fafafa',
+              black: '#09090b',
+              red: '#ef4444',
+              green: '#22c55e',
+              yellow: '#eab308',
+              blue: '#3b82f6',
+              magenta: '#a855f7',
+              cyan: '#06b6d4',
+              white: '#fafafa',
+              brightBlack: '#71717a',
+              brightRed: '#f87171',
+              brightGreen: '#4ade80',
+              brightYellow: '#facc15',
+              brightBlue: '#60a5fa',
+              brightMagenta: '#c084fc',
+              brightCyan: '#22d3ee',
+              brightWhite: '#ffffff',
             }}
             fontSize={14}
             fontFamily="Consolas, Liberation Mono, Menlo, Courier, monospace"
@@ -191,10 +191,10 @@ export function TerminalDisplay({
       : TerminalIcon;
 
   return (
-    <div className="h-full w-full bg-[#1e1e1e] flex items-center justify-center">
+    <div className="h-full w-full bg-background flex items-center justify-center">
       <div className="flex items-center gap-3">
         <StatusIcon className={cn('h-5 w-5', getStatusIconColor(status))} />
-        <span className="text-sm text-[#cccccc]">{getStatusMessage(status)}</span>
+        <span className="text-sm text-muted-foreground">{getStatusMessage(status)}</span>
       </div>
     </div>
   );
