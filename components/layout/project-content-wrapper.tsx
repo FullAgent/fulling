@@ -23,6 +23,7 @@ import { usePathname } from 'next/navigation';
 import { TerminalContainer } from '@/components/terminal/terminal-container';
 import { useProject } from '@/hooks/use-project';
 
+import { StatusBar } from './status-bar';
 import styles from './project-content-wrapper.module.css';
 
 // ============================================================================
@@ -63,11 +64,14 @@ export function ProjectContentWrapper({
         aria-label="Terminal Console"
       >
         {project && (
-          <TerminalContainer
-            project={project}
-            sandbox={sandbox}
-            isVisible={isTerminalPage}
-          />
+          <>
+            <TerminalContainer
+              project={project}
+              sandbox={sandbox}
+              isVisible={isTerminalPage}
+            />
+            <StatusBar projectId={projectId} />
+          </>
         )}
       </div>
 

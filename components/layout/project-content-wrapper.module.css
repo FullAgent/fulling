@@ -22,9 +22,10 @@
   content-visibility: hidden; /* Modern CSS optimization */
 }
 
-/* Terminal panel - block layout */
+/* Terminal panel - flex column layout for terminal + status bar */
 .terminalPanel[data-visible='true'] {
-  display: block;
+  display: flex;
+  flex-direction: column;
   content-visibility: auto;
 }
 

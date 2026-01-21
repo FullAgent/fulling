@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Project } from '@prisma/client'
-import { Github, Loader2, RefreshCw } from 'lucide-react'
+import { Loader2, RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
@@ -77,9 +77,9 @@ export function RepoStatusIndicator({ project }: RepoStatusIndicatorProps) {
         <div className="flex items-center gap-1 px-1">
           <div className="p-0.5">
             {(!project.githubRepo && isInitializing) ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
             ) : (
-              <Github className="w-4 h-4" />
+              <RefreshCw className="w-3 h-3 text-blue-500" />
             )}
           </div>
           
@@ -88,13 +88,13 @@ export function RepoStatusIndicator({ project }: RepoStatusIndicatorProps) {
               href={project.githubRepo}
               target="_blank"
               rel="noopener noreferrer" 
-              className="hover:underline cursor-pointer text-sm"
+              className="hover:underline cursor-pointer"
             >
               {project.name}
             </a>
           ) : (
             <button 
-              className={`cursor-pointer hover:underline text-sm ${isInitializing ? 'opacity-70' : ''}`}
+              className={`cursor-pointer hover:underline text-blue-500 ${isInitializing ? 'opacity-70' : ''}`}
               onClick={handleInitialize}
               disabled={isInitializing}
             >

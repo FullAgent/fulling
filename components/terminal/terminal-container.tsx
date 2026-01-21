@@ -119,7 +119,7 @@ export function TerminalContainer({ project, sandbox, isVisible = true }: Termin
   // =========================================================================
 
   return (
-    <div className="flex flex-col h-full bg-[#1e1e1e]">
+    <div className="flex flex-col flex-1 min-h-0 bg-background">
       {/* Toolbar with tabs and operations */}
       <TerminalToolbar
         project={project}
@@ -133,7 +133,7 @@ export function TerminalContainer({ project, sandbox, isVisible = true }: Termin
       />
 
       {/* Terminal display area with tab switching */}
-      <div className="flex-1 bg-black relative">
+      <div className="flex-1 min-h-0 bg-black relative overflow-hidden">
         {tabs.map((tab) => (
           <div
             key={tab.id}

@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation';
 import { notFound } from 'next/navigation';
 
 import { ProjectContentWrapper } from '@/components/layout/project-content-wrapper';
-import { StatusBar } from '@/components/layout/status-bar';
 import PrimarySidebar from '@/components/sidebars/primary-sidebar';
 import ProjectSidebar from '@/components/sidebars/project-sidebar';
 import { auth } from '@/lib/auth';
@@ -58,8 +57,6 @@ export default async function ProjectLayout({
           </ProjectContentWrapper>
         </div>
       </div>
-      
-      <StatusBar projectId={id} />
     </div>
   );
 }
