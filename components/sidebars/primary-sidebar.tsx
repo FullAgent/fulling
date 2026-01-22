@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { MdOutlineGridView, MdOutlineSettings } from 'react-icons/md';
 
 import SettingsDialog from '@/components/dialog/settings-dialog';
 import { Button } from '@/components/ui/button';
@@ -56,7 +57,7 @@ function ProjectsButton() {
   return (
     <Button variant="ghost" size="icon" asChild className="group hover:bg-transparent">
       <Link href="/projects">
-        <span className="material-icons-outlined text-gray-400 group-hover:text-primary transition-colors">grid_view</span>
+        <MdOutlineGridView className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
       </Link>
     </Button>
   );
@@ -73,7 +74,7 @@ function SettingsButton() {
         onClick={() => setShowSettings(true)}
         className="group hover:bg-transparent"
       >
-        <span className="material-icons-outlined text-gray-400 group-hover:text-primary transition-colors">settings</span>
+        <MdOutlineSettings className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
       </Button>
       <SettingsDialog open={showSettings} onOpenChange={setShowSettings} />
     </>

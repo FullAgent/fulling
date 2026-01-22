@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "material-icons/iconfont/outlined.css";
 
 @custom-variant dark (&:is(.dark *));
 

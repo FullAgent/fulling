@@ -4,9 +4,30 @@ import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  MdOutlineTerminal,
+  MdOutlineDns,
+  MdOutlineLayers,
+  MdOutlineVpnKey,
+  MdOutlineSecurity,
+  MdOutlineCreditCard,
+  MdOutlineCode,
+} from 'react-icons/md';
+import { IconType } from 'react-icons';
 
 import { useProject } from '@/hooks/use-project';
 import { cn } from '@/lib/utils';
+
+// Icon mapping for dynamic icon rendering
+const ICON_MAP: Record<string, IconType> = {
+  terminal: MdOutlineTerminal,
+  dns: MdOutlineDns,
+  layers: MdOutlineLayers,
+  vpn_key: MdOutlineVpnKey,
+  security: MdOutlineSecurity,
+  credit_card: MdOutlineCreditCard,
+  code: MdOutlineCode,
+};
 
 // Static menu configuration - hoisted outside component to avoid recreation on every render
 const WORKSPACE_SECTIONS = [
@@ -78,6 +99,7 @@ export default function ProjectSidebar({ projectId }: ProjectSidebarProps) {
             {WORKSPACE_SECTIONS.map((section) => {
               const href = getHref(section.id);
               const isActive = pathname === href;
+              const IconComponent = ICON_MAP[section.icon];
 
               return (
                 <li key={section.id}>
@@ -90,7 +112,7 @@ export default function ProjectSidebar({ projectId }: ProjectSidebarProps) {
                         : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                     )}
                   >
-                    <span className={cn('material-icons-outlined text-sm', isActive && 'text-foreground')}>{section.icon}</span>
+                    <IconComponent className={cn('w-4 h-4', isActive && 'text-foreground')} />
                     {section.label}
                   </Link>
                 </li>
@@ -106,6 +128,7 @@ export default function ProjectSidebar({ projectId }: ProjectSidebarProps) {
             {CONFIG_SECTIONS.map((section) => {
               const href = getHref(section.id);
               const isActive = pathname === href;
+              const IconComponent = ICON_MAP[section.icon];
 
               return (
                 <li key={section.id}>
@@ -118,7 +141,7 @@ export default function ProjectSidebar({ projectId }: ProjectSidebarProps) {
                         : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                     )}
                   >
-                    <span className={cn('material-icons-outlined text-sm', isActive && 'text-foreground')}>{section.icon}</span>
+                    <IconComponent className={cn('w-4 h-4', isActive && 'text-foreground')} />
                     {section.label}
                   </Link>
                 </li>
