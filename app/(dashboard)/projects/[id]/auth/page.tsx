@@ -1,7 +1,6 @@
 /**
  * Authentication Configuration Page
  * Configure OAuth providers and NextAuth settings
- * VSCode Dark Modern style
  */
 
 'use client';
@@ -10,13 +9,14 @@ import { ExternalLink, Key } from 'lucide-react';
 import { Github } from 'lucide-react';
 import { useParams } from 'next/navigation';
 
-import { ConfigLayout } from '@/components/config/config-layout';
 import { EnvVarSection } from '@/components/config/env-var-section';
 import {
   useBatchUpdateEnvironmentVariables,
   useEnvironmentVariables,
 } from '@/hooks/use-environment-variables';
 import { useProject } from '@/hooks/use-project';
+
+import { SettingsLayout } from '../_components/settings-layout';
 
 /**
  * Generate a secure random secret
@@ -87,24 +87,24 @@ function AuthPageContent() {
   ];
 
   return (
-    <ConfigLayout
+    <SettingsLayout
       title="Auth Configuration"
       description="Configure auth configuration settings for this project."
       loading={envLoading || projectLoading}
     >
-      <div>
+      <div className="space-y-6">
         {/* GitHub OAuth Section */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Github className="h-5 w-5 text-[#3794ff]" />
-              <h2 className="text-base font-medium text-[#cccccc]">GitHub OAuth</h2>
+              <Github className="h-5 w-5 text-primary" />
+              <h2 className="text-base font-medium text-foreground">GitHub OAuth</h2>
             </div>
             <a
               href="https://github.com/settings/developers"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-[#3794ff] hover:text-[#4fc1ff] flex items-center gap-1.5 transition-colors"
+              className="text-xs text-primary hover:text-primary/80 flex items-center gap-1.5 transition-colors"
             >
               GitHub Developer Settings
               <ExternalLink className="h-3.5 w-3.5" />
@@ -121,9 +121,9 @@ function AuthPageContent() {
           />
 
           {/* Setup Instructions */}
-          <div className="mt-4 p-4 bg-[#252526] border border-[#3e3e42] rounded">
-            <h3 className="text-xs font-medium text-[#cccccc] mb-2">Setup Instructions</h3>
-            <ol className="text-xs text-[#858585] space-y-1 list-decimal list-inside">
+          <div className="mt-4 p-4 bg-card border border-border rounded">
+            <h3 className="text-xs font-medium text-foreground mb-2">Setup Instructions</h3>
+            <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
               <li>Go to GitHub Settings → Developer settings → OAuth Apps</li>
               <li>Click &quot;New OAuth App&quot; or select an existing app</li>
               <li>Set the Homepage URL and Authorization callback URL</li>
@@ -134,13 +134,13 @@ function AuthPageContent() {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-[#3e3e42]" />
+        <div className="border-t border-border" />
 
         {/* NextAuth Configuration Section */}
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <Key className="h-5 w-5 text-[#3794ff]" />
-            <h2 className="text-base font-medium text-[#cccccc]">NextAuth Configuration</h2>
+            <Key className="h-5 w-5 text-primary" />
+            <h2 className="text-base font-medium text-foreground">NextAuth Configuration</h2>
           </div>
 
           <EnvVarSection
@@ -153,9 +153,9 @@ function AuthPageContent() {
           />
 
           {/* Important Notes */}
-          <div className="mt-4 p-4 bg-[#252526] border border-[#3e3e42] rounded">
-            <h3 className="text-xs font-medium text-[#cccccc] mb-2">Important Notes</h3>
-            <ul className="text-xs text-[#858585] space-y-1 list-disc list-inside">
+          <div className="mt-4 p-4 bg-card border border-border rounded">
+            <h3 className="text-xs font-medium text-foreground mb-2">Important Notes</h3>
+            <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
               <li>The NextAuth URL must match your application URL exactly</li>
               <li>The secret should be at least 32 characters long</li>
               <li>Never commit your NEXTAUTH_SECRET to version control</li>
@@ -164,7 +164,7 @@ function AuthPageContent() {
           </div>
         </div>
       </div>
-    </ConfigLayout>
+    </SettingsLayout>
   );
 }
 

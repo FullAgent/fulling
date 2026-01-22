@@ -1,20 +1,20 @@
 /**
  * Secrets Configuration Page
  * Manage sensitive environment variables and API keys
- * VSCode Dark Modern style
  */
 
 'use client';
 
 import { useParams } from 'next/navigation';
 
-import { ConfigLayout } from '@/components/config/config-layout';
 import { EnvVarSection } from '@/components/config/env-var-section';
 import {
   useBatchUpdateEnvironmentVariables,
   useEnvironmentVariables,
 } from '@/hooks/use-environment-variables';
 import { useProject } from '@/hooks/use-project';
+
+import { SettingsLayout } from '../_components/settings-layout';
 
 function SecretsPageContent() {
   const params = useParams();
@@ -36,7 +36,7 @@ function SecretsPageContent() {
   };
 
   return (
-    <ConfigLayout
+    <SettingsLayout
       title="Secret Configuration"
       description="Manage sensitive environment variables and API keys"
       loading={envLoading || projectLoading}
@@ -54,9 +54,9 @@ function SecretsPageContent() {
         />
 
         {/* Security Notice */}
-        <div className="p-4 bg-[#252526] border border-[#3e3e42] rounded">
-          <h3 className="text-xs font-medium text-[#cccccc] mb-2">Security Best Practices</h3>
-          <ul className="text-xs text-[#858585] space-y-1 list-disc list-inside">
+        <div className="p-4 bg-card border border-border rounded">
+          <h3 className="text-xs font-medium text-foreground mb-2">Security Best Practices</h3>
+          <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
             <li>All secret values are masked by default for security</li>
             <li>Never commit secrets to Git</li>
             <li>Rotate secrets regularly to maintain security</li>
@@ -65,7 +65,7 @@ function SecretsPageContent() {
           </ul>
         </div>
       </div>
-    </ConfigLayout>
+    </SettingsLayout>
   );
 }
 

@@ -5,11 +5,12 @@ import { ExternalLink, Github, Loader2, RefreshCw } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
-import { ConfigLayout } from '@/components/config/config-layout';
 import SettingsDialog from '@/components/dialog/settings-dialog';
 import { Button } from '@/components/ui/button';
 import { useProject } from '@/hooks/use-project';
 import { commitChanges, initializeRepo } from '@/lib/services/repoService';
+
+import { SettingsLayout } from '../_components/settings-layout';
 
 export default function GithubPage() {
   const params = useParams();
@@ -72,14 +73,14 @@ export default function GithubPage() {
   };
 
   return (
-    <ConfigLayout
+    <SettingsLayout
       title="GitHub Integration"
       description="Connect your project to GitHub for version control and collaboration"
       loading={projectLoading}
     >
       <div className="max-w-3xl space-y-6">
         {/* Connection Status Section */}
-        <div className="p-6 bg-[#252526]/50 border border-[#3e3e42] rounded-lg">
+        <div className="p-6 bg-card/50 border border-border rounded-lg">
           {/* Visual Header */}
           <div className="flex items-start gap-5 mb-8">
             <div className="p-3 bg-secondary/50 rounded-xl border border-border">
@@ -179,6 +180,6 @@ export default function GithubPage() {
           defaultTab="github"
         />
       </div>
-    </ConfigLayout>
+    </SettingsLayout>
   );
 }

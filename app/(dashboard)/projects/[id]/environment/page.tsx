@@ -1,20 +1,20 @@
 /**
  * Environment Variables Configuration Page
  * Configure custom environment variables
- * VSCode Dark Modern style
  */
 
 'use client';
 
 import { useParams } from 'next/navigation';
 
-import { ConfigLayout } from '@/components/config/config-layout';
 import { EnvVarSection } from '@/components/config/env-var-section';
 import {
   useBatchUpdateEnvironmentVariables,
   useEnvironmentVariables,
 } from '@/hooks/use-environment-variables';
 import { useProject } from '@/hooks/use-project';
+
+import { SettingsLayout } from '../_components/settings-layout';
 
 function EnvironmentPageContent() {
   const params = useParams();
@@ -36,7 +36,7 @@ function EnvironmentPageContent() {
   };
 
   return (
-    <ConfigLayout
+    <SettingsLayout
       title="Environment Variables"
       description="Configure environment variables for your application"
       loading={envLoading || projectLoading}
@@ -54,9 +54,9 @@ function EnvironmentPageContent() {
         />
 
         {/* Usage Information */}
-        <div className="p-4 bg-[#252526] border border-[#3e3e42] rounded">
-          <h3 className="text-xs font-medium text-[#cccccc] mb-2">Environment Variable Usage</h3>
-          <ul className="text-xs text-[#858585] space-y-1 list-disc list-inside">
+        <div className="p-4 bg-card border border-border rounded">
+          <h3 className="text-xs font-medium text-foreground mb-2">Environment Variable Usage</h3>
+          <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
             <li>Environment variables are available in your application via process.env</li>
             <li>Changes require an application restart to take effect</li>
             <li>For authentication providers, use the Authentication page</li>
@@ -65,7 +65,7 @@ function EnvironmentPageContent() {
           </ul>
         </div>
       </div>
-    </ConfigLayout>
+    </SettingsLayout>
   );
 }
 
