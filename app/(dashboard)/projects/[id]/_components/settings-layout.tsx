@@ -8,46 +8,38 @@
 
 import type { ReactNode } from 'react';
 
-import { Spinner } from '@/components/ui/spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface SettingsLayoutProps {
-  /** Page title */
   title: string;
-  /** Page description */
   description: string;
-  /** Main content */
   children: ReactNode;
-  /** Loading state */
   loading?: boolean;
 }
 
 /**
  * Layout wrapper for project settings pages
+ * Uses skeleton to maintain layout stability during loading
  */
 export function SettingsLayout({ title, description, children, loading }: SettingsLayoutProps) {
-  if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-background">
-        <div className="flex items-center gap-3">
-          <Spinner className="h-5 w-5 text-primary" />
-          <span className="text-sm text-muted-foreground">Loading...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex-1 p-8 sm:p-12 overflow-y-auto">
-      <div className="max-w-4xl mx-auto w-full animate-fade-in-up">
-        {/* Page Header */}
+    <div className="flex-1 px-8 py-10 pb-20 overflow-y-auto">
+      <div className="max-w-7xl mx-auto w-full animate-fade-in-up">
         <header className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">{title}</h1>
-          <p className="text-muted-foreground mt-1">{description}</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{title}</h1>
+          <p className="text-muted-foreground text-sm">{description}</p>
         </header>
 
-        {/* Page Content */}
-        <div className="space-y-6">
-          {children}
+        <div className="space-y-8">
+          {loading ? (
+            <>
+              <Skeleton className="h-48 w-full" />
+              <Skeleton className="h-48 w-full" />
+              <Skeleton className="h-48 w-full" />
+            </>
+          ) : (
+            children
+          )}
         </div>
       </div>
     </div>

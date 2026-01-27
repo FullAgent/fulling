@@ -1,8 +1,3 @@
-/**
- * Database Information Page
- * Display-only page showing database connection details
- */
-
 import { Info } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
 
