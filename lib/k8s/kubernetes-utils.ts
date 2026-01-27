@@ -42,6 +42,11 @@ export class KubernetesUtils {
     const url = new URL(cluster.server)
     const hostname = url.hostname
 
+    // If domain ends with sealos.io, replace it with sealos.app
+    if (hostname.endsWith('sealos.io')) {
+      return hostname.replace('sealos.io', 'sealos.app')
+    }
+
     return hostname
   }
 

@@ -287,6 +287,8 @@ export const POST = withAuth<PostProjectResponse>(async (req, _context, session)
       fileBrowserUsernameEnv,
       fileBrowserPasswordEnv,
     }
+  }, {
+    timeout: 20000,
   })
 
   logger.info(
