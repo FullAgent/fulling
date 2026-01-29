@@ -51,30 +51,18 @@ export function useTerminal(options: UseTerminalOptions): UseTerminalReturn {
   } = options
 
   const [status, setStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>(
-    'disconnected'
+    ttydUrl ? 'connecting' : 'disconnected'
   )
-  const [wsUrl, setWsUrl] = useState<string | null>(null)
+  const [wsUrl, setWsUrl] = useState<string | null>(ttydUrl ?? null)
+  const [prevTtydUrl, setPrevTtydUrl] = useState(ttydUrl)
+
+  if (ttydUrl !== prevTtydUrl) {
+    setPrevTtydUrl(ttydUrl)
+    setWsUrl(ttydUrl ?? null)
+    setStatus(ttydUrl ? 'connecting' : 'disconnected')
+  }
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const shouldReconnectRef = useRef(true)
-
-  // Parse ttyd URL and prepare WebSocket URL
-  useEffect(() => {
-    if (!ttydUrl) {
-      setWsUrl(null)
-      setStatus('disconnected')
-      return
-    }
-
-    try {
-      // ttydUrl already includes the token as query parameter
-      setWsUrl(ttydUrl)
-      setStatus('connecting')
-    } catch (error) {
-      console.error('[useTerminal] Invalid ttyd URL:', error)
-      setStatus('error')
-      onError?.(error as Error)
-    }
-  }, [ttydUrl, onError])
 
   // Handle connection status callbacks
   const handleConnected = useCallback(() => {
