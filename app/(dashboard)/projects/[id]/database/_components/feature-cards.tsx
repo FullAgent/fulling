@@ -1,5 +1,5 @@
-import { MdAutoAwesome, MdHttps, MdStorage, MdTerminal } from 'react-icons/md';
 import { type IconType } from 'react-icons';
+import { MdAutoAwesome, MdHttps, MdStorage, MdTerminal } from 'react-icons/md';
 
 // Feature card component
 function FeatureCard({

@@ -1,10 +1,11 @@
 import { notFound, redirect } from 'next/navigation';
 
 import { auth } from '@/lib/auth';
-import { getProject } from '@/lib/data/project';
 import { parseConnectionUrl } from '@/lib/data/database';
+import { getProject } from '@/lib/data/project';
 
 import { SettingsLayout } from '../_components/settings-layout';
+
 import { ConnectionString } from './_components/connection-string';
 import { FeatureCards } from './_components/feature-cards';
 import { ReadOnlyField } from './_components/read-only-field';

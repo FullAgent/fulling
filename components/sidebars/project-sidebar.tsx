@@ -1,19 +1,19 @@
 'use client';
 
 import { useState } from 'react';
+import { IconType } from 'react-icons';
+import {
+  MdOutlineCode,
+  MdOutlineCreditCard,
+  MdOutlineDns,
+  MdOutlineLayers,
+  MdOutlineSecurity,
+  MdOutlineTerminal,
+  MdOutlineVpnKey,
+} from 'react-icons/md';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  MdOutlineTerminal,
-  MdOutlineDns,
-  MdOutlineLayers,
-  MdOutlineVpnKey,
-  MdOutlineSecurity,
-  MdOutlineCreditCard,
-  MdOutlineCode,
-} from 'react-icons/md';
-import { IconType } from 'react-icons';
 
 import { useProject } from '@/hooks/use-project';
 import { cn } from '@/lib/utils';

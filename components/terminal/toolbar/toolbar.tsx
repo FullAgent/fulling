@@ -12,7 +12,7 @@ import { Network } from 'lucide-react';
 
 import { AppRunner } from './app-runner';
 import { NetworkDialog } from './network-dialog';
-import { TerminalTabs, type Tab } from './terminal-tabs';
+import { type Tab,TerminalTabs } from './terminal-tabs';
 
 type Project = Prisma.ProjectGetPayload<{
   include: {

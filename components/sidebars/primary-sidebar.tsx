@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { MdOutlineGridView, MdOutlineSettings } from 'react-icons/md';
 import Image from 'next/image';
 import Link from 'next/link';
-import { MdOutlineGridView, MdOutlineSettings } from 'react-icons/md';
 
 import SettingsDialog from '@/components/dialog/settings-dialog';
 import { Button } from '@/components/ui/button';

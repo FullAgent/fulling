@@ -24,6 +24,7 @@ import { TerminalContainer } from '@/components/terminal/terminal-container';
 import { useProject } from '@/hooks/use-project';
 
 import { StatusBar } from './status-bar';
+
 import styles from './project-content-wrapper.module.css';
 
 // ============================================================================
