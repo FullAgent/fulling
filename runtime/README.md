@@ -149,7 +149,7 @@ Users can manually expose these ports if needed:
 The image is automatically built via GitHub Actions workflow when:
 - Pull requests are opened (validation only, no push)
 - Changes are pushed to `main` or `master` branch
-- Changes are detected in `sandbox/` directory
+- Changes are detected in `runtime/` directory
 - Manually triggered via workflow dispatch
 
 **Workflow File**: `.github/workflows/build-runtime.yml`
@@ -169,14 +169,14 @@ The image is automatically built via GitHub Actions workflow when:
 ### Local Build (Single Architecture)
 
 ```bash
-cd sandbox
+cd runtime
 docker build -t fullstack-web-runtime:local .
 ```
 
 ### Local Multi-Architecture Build
 
 ```bash
-cd sandbox
+cd runtime
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   -t fullstack-web-runtime:local \
@@ -210,7 +210,7 @@ Set these in repository settings (Settings → Secrets and variables → Actions
 ### Directory Structure
 
 ```
-sandbox/
+runtime/
 ├── Dockerfile           # Multi-stage Docker build
 ├── entrypoint.sh        # Container startup script
 ├── .bashrc              # Shell configuration with custom prompt
@@ -228,7 +228,7 @@ sandbox/
 
 ```bash
 # Build locally
-cd sandbox
+cd runtime
 docker build -t test-runtime .
 
 # Test web terminal
@@ -408,7 +408,7 @@ We welcome contributions! Please follow these steps:
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/my-feature`)
-3. Make your changes to `sandbox/` directory
+3. Make your changes to `runtime/` directory
 4. Test locally with `docker build`
 5. Commit your changes (`git commit -m 'feat: Add new feature'`)
 6. Push to your fork (`git push origin feature/my-feature`)

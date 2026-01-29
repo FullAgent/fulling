@@ -6,15 +6,15 @@ on:
     branches: [main, master]
     types: [opened, synchronize, reopened]
     paths:
-      - "sandbox/**"
+      - "runtime/**"
       - ".github/workflows/build-runtime.yml"
-      - "!sandbox/*.md"
+      - "!runtime/*.md"
   push:
     branches: [main, master]
     paths:
-      - "sandbox/**"
+      - "runtime/**"
       - ".github/workflows/build-runtime.yml"
-      - "!sandbox/*.md"
+      - "!runtime/*.md"
 
 permissions:
   pull-requests: write
@@ -88,8 +88,8 @@ jobs:
         id: docker-build
         uses: docker/build-push-action@v6
         with:
-          context: ./sandbox
-          file: ./sandbox/Dockerfile
+          context: ./runtime
+          file: ./runtime/Dockerfile
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
