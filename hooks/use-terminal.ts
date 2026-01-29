@@ -47,7 +47,6 @@ export function useTerminal(options: UseTerminalOptions): UseTerminalReturn {
     reconnectDelay = 3000,
     onConnected,
     onDisconnected,
-    onError,
   } = options
 
   const [status, setStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>(
