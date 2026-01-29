@@ -3,7 +3,7 @@
 import { useEffect,useState } from 'react';
 import { ChevronDown, Folder, Loader2 } from 'lucide-react';
 
-import { runCommand } from '@/actions/sandbox';
+import { runCommand } from '@/lib/actions/sandbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
