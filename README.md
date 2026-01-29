@@ -1,14 +1,14 @@
 # Fulling - AI-Powered Full-Stack Development Platform
 
 <div align="center">
-  <img src="https://img.shields.io/badge/Next.js-15.5.4-black?style=for-the-badge&logo=next.js" alt="Next.js"/>
-  <img src="https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript" alt="TypeScript"/>
+  <img src="https://img.shields.io/badge/Next.js-16.0.10-black?style=for-the-badge&logo=next.js" alt="Next.js"/>
+  <img src="https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript" alt="TypeScript"/>
   <img src="https://img.shields.io/badge/PostgreSQL-14-blue?style=for-the-badge&logo=postgresql" alt="PostgreSQL"/>
   <img src="https://img.shields.io/badge/Kubernetes-1.28-326ce5?style=for-the-badge&logo=kubernetes" alt="Kubernetes"/>
   <img src="https://img.shields.io/badge/Claude_Code-AI-purple?style=for-the-badge" alt="Claude Code"/>
 </div>
 
-## 🚀 Overview
+## Overview
 
 Fulling provides a sandboxed environment with Claude Code and PostgreSQL — everything you need to vibe code full-stack apps.
 
@@ -23,46 +23,30 @@ Fulling automatically sets up the following for your project, ready in a minute:
 <img width="3022" height="1532" alt="project_details" src="https://github.com/user-attachments/assets/b100a833-fa3d-459e-83d9-3b590beb79a3" />
 
 
-### ✨ Key Features
+### Features
 
-Fulling is designed to streamline the entire full-stack development lifecycle using an AI-centric approach. Its core capabilities are delivered through a highly orchestrated, self-contained development sandbox:
+- **Dev environment** - Next.js + shadcn/ui + Claude Code CLI, all pre-configured. Environment variables are set up, so you can start coding immediately.
 
-* **Pre-Configured AI Development Environment:**
-    * A complete, immediately usable development environment is provisioned, featuring **Next.js**, **shadcn/ui**, and the **Claude Code CLI**.
-    * Essential AI-related environment variables (e.g., `BASE_URL`, `KEY`, etc.) are automatically configured and injected, allowing the AI agent to begin coding instantly without manual setup.
+- **Database** - Each project gets its own PostgreSQL instance via KubeBlocks. Connection string is injected as `DATABASE_URL`.
 
-* **Isolated PostgreSQL Database Provisioning:**
-    * A dedicated and isolated **PostgreSQL** database instance is automatically created for each project using **KubeBlocks**.
-    * The database connection string is securely injected into the development environment as an environment variable (`DATABASE_URL`), ensuring the AI can access and configure the persistence layer.
+- **Live domains** - HTTPS subdomains with SSL, mapped to ports 3000/5000/8080. Your app is accessible the moment you run it.
 
-* **Automated Public Endpoint and Domain Mapping:**
-    * Multiple accessible subdomains are automatically allocated and managed (**HTTPS ingress with SSL termination**).
-    * These subdomains are configured to map to the specific application ports you wish to expose (e.g., ports 3000, 5000, 8080), providing immediate external access for testing and live development.
+- **Web terminal** - Built-in ttyd terminal. Chat with Claude Code, run commands, see output—all in your browser.
 
-* **Natural Language Interaction via Web Terminal:**
-    * All core development and configuration tasks are performed through a built-in **Web Terminal (ttyd)** using natural language instructions.
-    * This provides a direct, low-friction interface for interacting with the AI engineer, receiving code, running commands, and monitoring the development process.
+- **Config awareness** - Set up OAuth or payment configs in the UI. Claude Code can read these and implement the features for you.
 
-* **AI-Aware Business Configuration:**
-    * Specific business configurations, such as **OAuth settings** (e.g., GitHub authentication) and **Payment configurations**, can be fed into the platform.
-    * This configuration metadata is made accessible as contextual prompts, allowing the Claude Code agent to intelligently perceive and implement corresponding features (e.g., configuring NextAuth) directly into the generated code.
+- **GitHub sync** - Connect your repo. Push, pull, version control—works like you'd expect.
 
-* **Seamless GitHub Repository Integration:**
-    * The platform is designed for easy association with an external **GitHub repository**.
-    * This facilitates standard code repository management, version control, and collaboration by connecting the AI's generated code to your preferred source control workflow.
+- **One-click deploy** - Deploy from sandbox to production Kubernetes. No YAML wrangling required.
 
-* **Automated High-Availability Deployment:**
-    * Projects can be automatically deployed from the development sandbox to a high-availability production environment, leveraging the underlying **Kubernetes** infrastructure.
-    * This aims to abstract away the complexities of deployment, allowing the AI to manage the transition from development to live application.
-
-## Star Fulling on GitHub can get the latest released information.
+## Star us for latest updates
 
 ![star-demo](https://github.com/user-attachments/assets/bc497e0b-bd23-4ded-a231-1e382d56f92e)
 
-## 🛠️ Technology Stack
+## Tech Stack
 
 ### Frontend
-- **Framework**: Next.js 15.5.4 (App Router)
+- **Framework**: Next.js 16.0.10 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS v4
 - **UI Components**: Shadcn/UI
@@ -80,7 +64,7 @@ Fulling is designed to streamline the entire full-stack development lifecycle us
 - **Web Terminal**: ttyd
 - **Container Image**: fullstack-web-runtime (Custom Docker image with development tools)
 
-## 📦 Installation
+## Installation
 
 ### Prerequisites
 
@@ -93,7 +77,7 @@ Fulling is designed to streamline the entire full-stack development lifecycle us
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/FullstackAgent/fulling.git
+git clone https://github.com/FullAgent/fulling.git
 cd fulling
 ```
 
@@ -139,18 +123,16 @@ ANTHROPIC_BASE_URL=""
 LOG_LEVEL="info"
 
 # login
-ENABLE_PASSWORD_AUTH=""
-ENABLE_PASSWORD_AUTH=""
 ENABLE_SEALOS_AUTH=""
 ```
 
-6. Initialize database:
+4. Initialize database:
 ```bash
 npx prisma generate
 npx prisma db push
 ```
 
-7. Run the development server:
+5. Run the development server:
 ```bash
 pnpm run dev
 ```
@@ -161,7 +143,7 @@ Open [http://localhost:3000](http://localhost:3000) to access the application.
 
 prisma/schema.prisma
 
-## 🚢 Deployment
+## Deployment
 
 ### Kubernetes Resources
 
@@ -190,12 +172,12 @@ Default resource allocation per sandbox:
 - Memory: 256Mi limit, 25Mi request
 - Storage: 3Gi for database
 
-## 🔧 Development
+## Development
 
 ### Project Structure
 
 ```
-fullstack-agent/
+fulling/
 ├── app/                    # Next.js App Router pages
 │   ├── api/               # API routes
 │   ├── projects/          # Project management pages
@@ -229,46 +211,7 @@ fullstack-agent/
 - Prisma ORM configuration
 - Connection pooling
 
-## 📚 API Documentation
-
-### Sandbox Management
-
-#### Create Sandbox
-```http
-POST /api/sandbox/[projectId]
-Content-Type: application/json
-
-{
-  "envVars": {
-    "KEY": "value"
-  }
-}
-```
-
-#### Get Sandbox Status
-```http
-GET /api/sandbox/[projectId]
-```
-
-#### Delete Sandbox
-```http
-DELETE /api/sandbox/[projectId]
-```
-
-### Project Management
-
-#### Create Project
-```http
-POST /api/projects
-Content-Type: application/json
-
-{
-  "name": "project-name",
-  "description": "Project description"
-}
-```
-
-## 🔒 Security
+## Security
 
 - **Authentication**: GitHub OAuth ensures only authorized users can access the platform
 - **Isolation**: Each sandbox runs in its own Kubernetes namespace
@@ -276,9 +219,9 @@ Content-Type: application/json
 - **Network Policies**: Sandboxes isolated from each other
 - **Resource Limits**: Prevents resource exhaustion attacks
 
-## 🤝 Contributing
+## Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+See [Contributing Guidelines](CONTRIBUTING.md) for details.
 
 ### Development Setup
 
@@ -288,20 +231,20 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 4. Run tests: `npm test`
 5. Submit a pull request
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE).
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [Anthropic](https://www.anthropic.com/) for Claude Code
 - [Sealos](https://sealos.io/) for Kubernetes platform
 - [ttyd](https://github.com/tsl0922/ttyd) for web terminal
 
-## 📞 Contact
+## Contact
 
 - GitHub: [@fanux](https://github.com/fanux)
-- Issues: [GitHub Issues](https://github.com/FullstackAgent/FullstackAgent/issues)
+- Issues: [GitHub Issues](https://github.com/FullAgent/fulling/issues)
 
 ---
 
