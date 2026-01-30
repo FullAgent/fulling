@@ -43,8 +43,8 @@ By participating in this project, you agree to abide by our Code of Conduct. Ple
 
 4. **Test Your Changes**
    ```bash
-   npm test
-   npm run lint
+   pnpm test
+   pnpm run lint
    ```
 
 5. **Commit Your Changes**

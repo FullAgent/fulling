@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Code, Database, Github, Save, Terminal } from 'lucide-react';
+import { FaGithub } from 'react-icons/fa';
+import { MdCode, MdSave, MdStorage, MdTerminal } from 'react-icons/md';
 import Image from 'next/image';
 import { toast } from 'sonner';
 
@@ -361,7 +362,7 @@ export default function SettingsDialog({
                 value="system-prompt"
                 className="data-[state=active]:bg-primary data-[state=active]:text-foreground text-muted-foreground hover:text-foreground"
               >
-                <Code className="mr-2 h-4 w-4" />
+                <MdCode className="mr-2 h-4 w-4" />
                 System Prompt
               </TabsTrigger>
               {!isSealos && (
@@ -369,7 +370,7 @@ export default function SettingsDialog({
                   value="kubeconfig"
                   className="data-[state=active]:bg-primary data-[state=active]:text-foreground text-muted-foreground hover:text-foreground"
                 >
-                  <Database className="mr-2 h-4 w-4" />
+                  <MdStorage className="mr-2 h-4 w-4" />
                   Kubeconfig
                 </TabsTrigger>
               )}
@@ -377,14 +378,14 @@ export default function SettingsDialog({
                 value="anthropic"
                 className="data-[state=active]:bg-primary data-[state=active]:text-foreground text-muted-foreground hover:text-foreground"
               >
-                <Terminal className="mr-2 h-4 w-4" />
+                <MdTerminal className="mr-2 h-4 w-4" />
                 Anthropic
               </TabsTrigger>
               <TabsTrigger
                 value="github"
                 className="data-[state=active]:bg-primary data-[state=active]:text-foreground text-muted-foreground hover:text-foreground"
               >
-                <Github className="mr-2 h-4 w-4" />
+                <FaGithub className="mr-2 h-4 w-4" />
                 GitHub
               </TabsTrigger>
             </TabsList>
@@ -424,7 +425,7 @@ export default function SettingsDialog({
                       disabled={isSystemPromptLoading || isSystemPromptInitialLoading}
                       className="bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
-                      <Save className="mr-2 h-4 w-4" />
+                      <MdSave className="mr-2 h-4 w-4" />
                       {isSystemPromptLoading ? 'Saving...' : 'Save'}
                     </Button>
                     <Button
@@ -479,7 +480,7 @@ export default function SettingsDialog({
                         }
                         className="bg-primary hover:bg-primary/90 text-primary-foreground"
                       >
-                        <Save className="mr-2 h-4 w-4" />
+                        <MdSave className="mr-2 h-4 w-4" />
                         {isKubeconfigLoading ? 'Validating & Saving...' : 'Validate & Save'}
                       </Button>
                     </div>
@@ -589,7 +590,7 @@ export default function SettingsDialog({
                       }
                       className="bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
-                      <Save className="mr-2 h-4 w-4" />
+                      <MdSave className="mr-2 h-4 w-4" />
                       {isAnthropicLoading ? 'Saving...' : 'Save Configuration'}
                     </Button>
                   </div>
@@ -659,7 +660,7 @@ export default function SettingsDialog({
                         disabled={isGithubLoading}
                         className="bg-primary hover:bg-primary/90 text-primary-foreground"
                       >
-                        <Github className="mr-2 h-4 w-4" />
+                        <FaGithub className="mr-2 h-4 w-4" />
                         {isGithubLoading ? 'Connecting...' : 'Connect GitHub Account'}
                       </Button>
                     </div>

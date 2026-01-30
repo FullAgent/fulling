@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Copy, Eye, EyeOff } from 'lucide-react';
+import { MdContentCopy, MdVisibility, MdVisibilityOff } from 'react-icons/md';
 
 import {
   Dialog,
@@ -110,7 +110,7 @@ export function NetworkDialog({
                       {copiedField === 'username' ? (
                         <span className="text-xs text-green-400">✓</span>
                       ) : (
-                        <Copy className="h-3.5 w-3.5 text-gray-400" />
+                        <MdContentCopy className="h-3.5 w-3.5 text-gray-400" />
                       )}
                     </button>
                   </div>
@@ -129,9 +129,9 @@ export function NetworkDialog({
                       title={showPassword ? 'Hide password' : 'Show password'}
                     >
                       {showPassword ? (
-                        <EyeOff className="h-3.5 w-3.5 text-gray-400" />
+                        <MdVisibilityOff className="h-3.5 w-3.5 text-gray-400" />
                       ) : (
-                        <Eye className="h-3.5 w-3.5 text-gray-400" />
+                        <MdVisibility className="h-3.5 w-3.5 text-gray-400" />
                       )}
                     </button>
                     <button
@@ -142,7 +142,7 @@ export function NetworkDialog({
                       {copiedField === 'password' ? (
                         <span className="text-xs text-green-400">✓</span>
                       ) : (
-                        <Copy className="h-3.5 w-3.5 text-gray-400" />
+                        <MdContentCopy className="h-3.5 w-3.5 text-gray-400" />
                       )}
                     </button>
                   </div>

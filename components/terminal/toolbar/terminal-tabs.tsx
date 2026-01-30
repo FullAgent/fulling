@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, Terminal as TerminalIcon, X } from 'lucide-react';
+import { MdAdd, MdClose, MdTerminal } from 'react-icons/md';
 
 import { cn } from '@/lib/utils';
 
@@ -50,7 +50,7 @@ export function TerminalTabs({
             <div className="absolute top-0 left-0 right-0 h-[3px] bg-blue-500" />
           )}
 
-          <TerminalIcon
+          <MdTerminal
             className={cn(
               'h-3.5 w-3.5 shrink-0',
               activeTabId === tab.id ? 'text-blue-500' : 'text-foreground'
@@ -68,7 +68,7 @@ export function TerminalTabs({
                 activeTabId === tab.id ? 'hover:bg-[#37373d]' : 'hover:bg-[#454549]'
               )}
             >
-              <X className="h-3.5 w-3.5" />
+              <MdClose className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
@@ -78,7 +78,7 @@ export function TerminalTabs({
         className="h-full aspect-square flex items-center justify-center text-[#c5c5c5] hover:bg-[#37373d] transition-colors border-r border-transparent"
         title="Add new terminal"
       >
-        <Plus className="h-4 w-4" />
+        <MdAdd className="h-4 w-4" />
       </button>
     </div>
   );

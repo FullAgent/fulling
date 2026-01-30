@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { MdAdd } from 'react-icons/md';
 
 import CreateProjectDialog from '@/components/dialog/create-project-dialog';
 import { Card } from '@/components/ui/card';
@@ -22,7 +22,7 @@ export default function EmptyProjectCard() {
         onClick={() => setCreateModalOpen(true)}
       >
         <div className="w-12 h-12 rounded-full bg-secondary group-hover:bg-primary/20 flex items-center justify-center transition-colors">
-          <Plus size={24} />
+          <MdAdd size={24} />
         </div>
         <span className="font-medium">Create new project</span>
       </Card>

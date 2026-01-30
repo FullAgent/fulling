@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ExternalLink, Github, Loader2, RefreshCw } from 'lucide-react';
+import { FaGithub } from 'react-icons/fa';
+import { MdOpenInNew, MdRefresh } from 'react-icons/md';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -84,7 +85,7 @@ export default function GithubPage() {
           {/* Visual Header */}
           <div className="flex items-start gap-5 mb-8">
             <div className="p-3 bg-secondary/50 rounded-xl border border-border">
-              <Github className="w-8 h-8 text-foreground" />
+              <FaGithub className="w-8 h-8 text-foreground" />
             </div>
             <div className="space-y-1">
               <h3 className="text-lg font-medium text-foreground">
@@ -111,7 +112,7 @@ export default function GithubPage() {
                     className="flex items-center gap-2 hover:underline text-primary hover:text-primary-hover font-mono text-sm break-all"
                   >
                     {project.githubRepo}
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <MdOpenInNew className="w-3.5 h-3.5" />
                   </a>
                 </div>
                 
@@ -123,12 +124,12 @@ export default function GithubPage() {
                   >
                     {isCommitting ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <MdRefresh className="mr-2 h-4 w-4 animate-spin" />
                         Pushing...
                       </>
                     ) : (
                       <>
-                        <RefreshCw className="mr-2 h-4 w-4" />
+                        <MdRefresh className="mr-2 h-4 w-4" />
                         Push Changes
                       </>
                     )}
@@ -149,12 +150,12 @@ export default function GithubPage() {
               >
                 {isInitializing ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    <MdRefresh className="mr-2 h-5 w-5 animate-spin" />
                     Creating Repository...
                   </>
                 ) : (
                   <>
-                    <Github className="mr-2 h-5 w-5" />
+                    <FaGithub className="mr-2 h-5 w-5" />
                     Initialize & Push to GitHub
                   </>
                 )}

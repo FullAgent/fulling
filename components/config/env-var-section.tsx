@@ -7,7 +7,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Copy, Eye, EyeOff, Hash, Plus, Save, X } from 'lucide-react';
+import {
+  MdAdd,
+  MdClose,
+  MdContentCopy,
+  MdSave,
+  MdTag,
+  MdVisibility,
+  MdVisibilityOff,
+} from 'react-icons/md';
 import { toast } from 'sonner';
 
 import {
@@ -194,9 +202,9 @@ export function EnvVarSection({
                           onClick={() => handleCopyKey(variable.key)}
                           className="flex items-center gap-1.5 text-xs bg-[#2d2d30] border border-[#3e3e42] px-2 py-0.5 rounded text-[#3794ff] font-mono hover:bg-[#37373d] hover:border-[#3794ff]/50 transition-colors cursor-pointer group"
                         >
-                          <Hash className="h-3 w-3 opacity-60 group-hover:opacity-100" />
+                          <MdTag className="h-3 w-3 opacity-60 group-hover:opacity-100" />
                           <span>{variable.key}</span>
-                          <Copy className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" />
+                          <MdContentCopy className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" />
                         </button>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -247,9 +255,9 @@ export function EnvVarSection({
                         className="absolute right-2 top-1/2 -translate-y-1/2 text-[#858585] hover:text-[#cccccc]"
                       >
                         {showSecrets[index] ? (
-                          <EyeOff className="h-4 w-4" />
+                          <MdVisibilityOff className="h-4 w-4" />
                         ) : (
-                          <Eye className="h-4 w-4" />
+                          <MdVisibility className="h-4 w-4" />
                         )}
                       </button>
                     )}
@@ -277,7 +285,7 @@ export function EnvVarSection({
                       disabled={!canUpdate || saving}
                       className="text-[#858585] hover:text-[#f48771] opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      <X className="h-4 w-4" />
+                      <MdClose className="h-4 w-4" />
                     </button>
                   )}
                 </div>
@@ -309,7 +317,7 @@ export function EnvVarSection({
               size="sm"
               className="text-[#cccccc] hover:text-white hover:bg-[#37373d] h-8"
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <MdAdd className="mr-2 h-4 w-4" />
               Add Variable
             </Button>
           )}
@@ -322,7 +330,7 @@ export function EnvVarSection({
             disabled={!canUpdate || saving || !hasChanges}
             className="bg-[#3794ff] hover:bg-[#4fc1ff] text-white h-8"
           >
-            <Save className="mr-2 h-4 w-4" />
+            <MdSave className="mr-2 h-4 w-4" />
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>

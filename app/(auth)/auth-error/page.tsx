@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { AlertCircle, ArrowLeft, Home, RefreshCw } from 'lucide-react';
+import { MdArrowBack, MdErrorOutline, MdHome, MdRefresh } from 'react-icons/md';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
@@ -47,7 +47,7 @@ function ErrorContent() {
       {/* Error Header - VSCode style */}
       <div className="mb-8 flex items-start gap-4">
         <div className="shrink-0 mt-1">
-          <AlertCircle className="h-12 w-12 text-red-400" strokeWidth={1.5} />
+          <MdErrorOutline className="h-12 w-12 text-red-400" />
         </div>
         <div className="flex-1">
           <h1 className="text-4xl font-semibold text-white mb-2">{errorDetails.title}</h1>
@@ -71,7 +71,7 @@ function ErrorContent() {
             size="lg"
             className="w-full bg-blue-600 hover:bg-blue-700 text-white justify-start gap-3 rounded-md"
           >
-            <RefreshCw className="h-5 w-5" />
+            <MdRefresh className="h-5 w-5" />
             <span>Try Again</span>
           </Button>
         </Link>
@@ -81,7 +81,7 @@ function ErrorContent() {
             variant="outline"
             className="w-full border-gray-700 text-gray-300 hover:bg-gray-900 hover:text-white justify-start gap-3 rounded-md"
           >
-            <Home className="h-5 w-5" />
+            <MdHome className="h-5 w-5" />
             <span>Go to Home</span>
           </Button>
         </Link>
@@ -91,7 +91,7 @@ function ErrorContent() {
             variant="ghost"
             className="w-full text-gray-400 hover:text-white hover:bg-gray-900 justify-start gap-3 rounded-md"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <MdArrowBack className="h-5 w-5" />
             <span>Back to Projects</span>
           </Button>
         </Link>
@@ -116,7 +116,7 @@ export default function ErrorPage() {
           <div className="w-full max-w-2xl px-4">
             <div className="flex items-start gap-4">
               <div className="shrink-0 mt-1">
-                <AlertCircle className="h-12 w-12 text-gray-600 animate-pulse" strokeWidth={1.5} />
+                <MdErrorOutline className="h-12 w-12 text-gray-600 animate-pulse" />
               </div>
               <div className="flex-1">
                 <div className="h-10 bg-gray-800 rounded mb-3 animate-pulse"></div>

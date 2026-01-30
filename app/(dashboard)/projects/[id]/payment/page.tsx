@@ -5,7 +5,7 @@
 
 'use client';
 
-import { ExternalLink } from 'lucide-react';
+import { MdOpenInNew } from 'react-icons/md';
 import { useParams } from 'next/navigation';
 
 import { EnvVarSection } from '@/components/config/env-var-section';
@@ -100,7 +100,7 @@ function PaymentPageContent() {
               className="text-xs text-primary hover:text-primary/80 flex items-center gap-1.5 transition-colors"
             >
               Stripe Dashboard
-              <ExternalLink className="h-3.5 w-3.5" />
+              <MdOpenInNew className="h-3.5 w-3.5" />
             </a>
           </div>
 
@@ -142,7 +142,7 @@ function PaymentPageContent() {
               className="text-xs text-primary hover:text-primary/80 flex items-center gap-1.5 transition-colors"
             >
               PayPal Developer
-              <ExternalLink className="h-3.5 w-3.5" />
+              <MdOpenInNew className="h-3.5 w-3.5" />
             </a>
           </div>
 

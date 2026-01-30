@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { IconType } from 'react-icons';
 import {
+  MdChevronLeft,
+  MdChevronRight,
   MdOutlineCode,
   MdOutlineCreditCard,
   MdOutlineDns,
@@ -11,7 +13,6 @@ import {
   MdOutlineTerminal,
   MdOutlineVpnKey,
 } from 'react-icons/md';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -80,7 +81,7 @@ export default function ProjectSidebar({ projectId }: ProjectSidebarProps) {
         onClick={() => setIsCollapsed(!isCollapsed)}
         className="absolute -right-2 top-1/2 -translate-y-1/2 z-20 h-10 w-4 rounded-md border border-border bg-sidebar-background flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors shadow-sm"
       >
-        {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+        {isCollapsed ? <MdChevronRight className="h-3 w-3" /> : <MdChevronLeft className="h-3 w-3" />}
       </button>
 
       {/* Header */}

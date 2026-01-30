@@ -6,7 +6,7 @@
 
 import { memo } from 'react';
 import type { Prisma } from '@prisma/client';
-import { Clock } from 'lucide-react';
+import { MdAccessTime } from 'react-icons/md';
 import Link from 'next/link';
 
 import { Badge } from '@/components/ui/badge';
@@ -70,7 +70,7 @@ const ProjectCard = memo(({ project }: ProjectCardProps) => {
           </div>
 
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
+            <MdAccessTime className="h-3 w-3" />
             <span>
               {new Date(project.updatedAt).toLocaleDateString('en-US', {
                 month: 'short',

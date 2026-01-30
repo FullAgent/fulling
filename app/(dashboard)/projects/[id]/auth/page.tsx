@@ -5,8 +5,8 @@
 
 'use client';
 
-import { ExternalLink, Key } from 'lucide-react';
-import { Github } from 'lucide-react';
+import { FaGithub } from 'react-icons/fa';
+import { MdOpenInNew, MdVpnKey } from 'react-icons/md';
 import { useParams } from 'next/navigation';
 
 import { EnvVarSection } from '@/components/config/env-var-section';
@@ -97,7 +97,7 @@ function AuthPageContent() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Github className="h-5 w-5 text-primary" />
+              <FaGithub className="h-5 w-5 text-primary" />
               <h2 className="text-base font-medium text-foreground">GitHub OAuth</h2>
             </div>
             <a
@@ -107,7 +107,7 @@ function AuthPageContent() {
               className="text-xs text-primary hover:text-primary/80 flex items-center gap-1.5 transition-colors"
             >
               GitHub Developer Settings
-              <ExternalLink className="h-3.5 w-3.5" />
+              <MdOpenInNew className="h-3.5 w-3.5" />
             </a>
           </div>
 
@@ -139,7 +139,7 @@ function AuthPageContent() {
         {/* NextAuth Configuration Section */}
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <Key className="h-5 w-5 text-primary" />
+            <MdVpnKey className="h-5 w-5 text-primary" />
             <h2 className="text-base font-medium text-foreground">NextAuth Configuration</h2>
           </div>
 

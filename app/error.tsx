@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { AlertCircle, Home,RefreshCw } from 'lucide-react';
+import { MdErrorOutline, MdHome, MdRefresh } from 'react-icons/md';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ export default function Error({
         {/* Error Header */}
         <div className="mb-8 flex items-start gap-4">
           <div className="shrink-0 mt-1">
-            <AlertCircle className="h-12 w-12 text-red-400" strokeWidth={1.5} />
+            <MdErrorOutline className="h-12 w-12 text-red-400" />
           </div>
           <div className="flex-1">
             <h1 className="text-4xl font-semibold text-white mb-2">Something went wrong</h1>
@@ -52,7 +52,7 @@ export default function Error({
             onClick={reset}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white justify-start gap-3 rounded-md"
           >
-            <RefreshCw className="h-5 w-5" />
+            <MdRefresh className="h-5 w-5" />
             <span>Try Again</span>
           </Button>
           <Link href="/" className="block">
@@ -61,7 +61,7 @@ export default function Error({
               variant="outline"
               className="w-full border-gray-700 text-gray-300 hover:bg-gray-900 hover:text-white justify-start gap-3 rounded-md"
             >
-              <Home className="h-5 w-5" />
+              <MdHome className="h-5 w-5" />
               <span>Go to Home</span>
             </Button>
           </Link>

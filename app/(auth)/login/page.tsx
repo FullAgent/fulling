@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Github, User } from 'lucide-react';
+import { FaGithub } from 'react-icons/fa';
+import { MdPerson } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 
@@ -96,7 +97,7 @@ export default function LoginPage() {
               className="w-full bg-primary hover:bg-primary-hover text-primary-foreground rounded-md"
               size="lg"
             >
-              <User className="mr-2 h-5 w-5" />
+              <MdPerson className="mr-2 h-5 w-5" />
               {isLoading ? 'Signing in...' : 'Sign in / Register'}
             </Button>
 
@@ -121,7 +122,7 @@ export default function LoginPage() {
             size="lg"
             variant="outline"
           >
-            <Github className="mr-2 h-5 w-5" />
+            <FaGithub className="mr-2 h-5 w-5" />
             Continue with GitHub
           </Button>
         </CardContent>

@@ -14,7 +14,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { AlertCircle, Terminal as TerminalIcon } from 'lucide-react';
+import { MdErrorOutline, MdTerminal } from 'react-icons/md';
 
 import { Spinner } from '@/components/ui/spinner';
 import {
@@ -171,7 +171,7 @@ export function TerminalDisplay({
 
         {showErrorIndicator && (
           <div className="absolute top-2 right-2 bg-red-500/10 border border-red-500/30 rounded px-2 py-1 flex items-center gap-2">
-            <AlertCircle className="h-3 w-3 text-red-500" />
+            <MdErrorOutline className="h-3 w-3 text-red-500" />
             <span className="text-xs text-red-500">Connection failed</span>
           </div>
         )}
@@ -187,8 +187,8 @@ export function TerminalDisplay({
   const StatusIcon = shouldShowSpinner(status)
     ? Spinner
     : isErrorStatus(status)
-      ? AlertCircle
-      : TerminalIcon;
+      ? MdErrorOutline
+      : MdTerminal;
 
   return (
     <div className="h-full w-full bg-background flex items-center justify-center">

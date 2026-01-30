@@ -7,7 +7,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Settings } from 'lucide-react';
+import { MdAdd, MdSettings } from 'react-icons/md';
 
 import CreateProjectDialog from '@/components/dialog/create-project-dialog';
 import SettingsDialog from '@/components/dialog/settings-dialog';
@@ -29,7 +29,7 @@ const ProjectListHeader = () => {
              onClick={() => setShowCreateProject(true)}
              className="whitespace-nowrap px-4 py-2 text-sm"
            >
-             <Plus size={16} />
+             <MdAdd size={16} />
              New Project
            </Button>
            
@@ -41,7 +41,7 @@ const ProjectListHeader = () => {
              className="ml-1 rounded-full border-border text-muted-foreground hover:text-foreground hover:border-primary shadow-sm"
              aria-label="User Settings"
            >
-             <Settings size={18} />
+             <MdSettings size={18} />
            </Button>
         </div>
       </div>

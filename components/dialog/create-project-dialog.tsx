@@ -8,7 +8,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Save } from 'lucide-react';
+import { MdSave } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -137,7 +137,7 @@ export default function CreateProjectDialog({ open, onOpenChange }: CreateProjec
                 disabled={isCreating || !projectName.trim()}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50"
               >
-                <Save className="mr-2 h-4 w-4" />
+                <MdSave className="mr-2 h-4 w-4" />
                 {isCreating ? 'Creating...' : 'Create Project'}
               </Button>
               <Button

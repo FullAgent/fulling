@@ -1,4 +1,4 @@
-import { ArrowLeft,FileQuestion, Home } from 'lucide-react';
+import { MdArrowBack, MdHelpOutline, MdHome } from 'react-icons/md';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ export default function NotFound() {
         {/* Header */}
         <div className="mb-8 flex items-start gap-4">
           <div className="shrink-0 mt-1">
-            <FileQuestion className="h-12 w-12 text-gray-400" strokeWidth={1.5} />
+            <MdHelpOutline className="h-12 w-12 text-gray-400" />
           </div>
           <div className="flex-1">
             <h1 className="text-4xl font-semibold text-white mb-2">Page Not Found</h1>
@@ -36,7 +36,7 @@ export default function NotFound() {
               size="lg"
               className="w-full bg-blue-600 hover:bg-blue-700 text-white justify-start gap-3 rounded-md"
             >
-              <Home className="h-5 w-5" />
+              <MdHome className="h-5 w-5" />
               <span>Go to Home</span>
             </Button>
           </Link>
@@ -46,7 +46,7 @@ export default function NotFound() {
               variant="outline"
               className="w-full border-gray-700 text-gray-300 hover:bg-gray-900 hover:text-white justify-start gap-3 rounded-md"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <MdArrowBack className="h-5 w-5" />
               <span>Back to Projects</span>
             </Button>
           </Link>

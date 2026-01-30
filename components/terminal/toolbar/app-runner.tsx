@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { Prisma } from '@prisma/client';
-import { Loader2, Play, Square } from 'lucide-react';
+import { MdPlayArrow, MdRefresh, MdStop } from 'react-icons/md';
 
 import { useAppRunner } from '@/hooks/use-app-runner';
 import { cn } from '@/lib/utils';
@@ -70,11 +70,11 @@ export function AppRunner({ sandbox }: AppRunnerProps) {
           }
         >
           {isStartingApp || isStoppingApp ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
+            <MdRefresh className="h-3 w-3 animate-spin" />
           ) : isAppRunning ? (
-            <Square className="h-3 w-3" />
+            <MdStop className="h-3 w-3" />
           ) : (
-            <Play className="h-3 w-3 text-green-500" />
+            <MdPlayArrow className="h-3 w-3 text-green-500" />
           )}
           <span>
             {isStartingApp ? 'Starting...' : isStoppingApp ? 'Stopping...' : isAppRunning ? 'Running' : 'Run App'}

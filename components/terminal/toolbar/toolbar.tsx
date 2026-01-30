@@ -8,7 +8,7 @@
 
 import { useState } from 'react';
 import type { Prisma } from '@prisma/client';
-import { Network } from 'lucide-react';
+import { MdLan } from 'react-icons/md';
 
 import { AppRunner } from './app-runner';
 import { NetworkDialog } from './network-dialog';
@@ -97,7 +97,7 @@ export function TerminalToolbar({
             className="px-2 py-1 text-xs text-foreground font-semibold hover:text-white hover:bg-zinc-800 rounded transition-colors flex items-center gap-1"
             title="View network endpoints"
           >
-            <Network className="h-3 w-3 text-blue-500" />
+            <MdLan className="h-3 w-3 text-blue-500" />
             <span>Network</span>
           </button>
         </div>

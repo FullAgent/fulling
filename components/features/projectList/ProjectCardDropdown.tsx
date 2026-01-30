@@ -9,7 +9,7 @@
 
 import { useState } from 'react';
 import type { Prisma } from '@prisma/client';
-import { Loader2, MoreVertical, Play, Square, Trash2 } from 'lucide-react';
+import { MdDeleteOutline, MdMoreVert, MdPlayArrow, MdRefresh, MdStop } from 'react-icons/md';
 
 import {
   AlertDialog,
@@ -66,7 +66,7 @@ export default function ProjectCardDropdown({ project }: ProjectCardDropdownProp
             className="h-8 w-8"
             onClick={(e) => e.stopPropagation()}
           >
-            <MoreVertical className="h-4 w-4" />
+            <MdMoreVert className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
@@ -81,12 +81,12 @@ export default function ProjectCardDropdown({ project }: ProjectCardDropdownProp
             >
               {loading === 'START' ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <MdRefresh className="mr-2 h-4 w-4 animate-spin" />
                   Starting...
                 </>
               ) : (
                 <>
-                  <Play className="mr-2 h-4 w-4" />
+                  <MdPlayArrow className="mr-2 h-4 w-4" />
                   Start
                 </>
               )}
@@ -102,12 +102,12 @@ export default function ProjectCardDropdown({ project }: ProjectCardDropdownProp
             >
               {loading === 'STOP' ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <MdRefresh className="mr-2 h-4 w-4 animate-spin" />
                   Stopping...
                 </>
               ) : (
                 <>
-                  <Square className="mr-2 h-4 w-4" />
+                  <MdStop className="mr-2 h-4 w-4" />
                   Stop
                 </>
               )}
@@ -122,7 +122,7 @@ export default function ProjectCardDropdown({ project }: ProjectCardDropdownProp
               disabled={loading !== null}
               className="text-destructive"
             >
-              <Trash2 className="mr-2 h-4 w-4" />
+              <MdDeleteOutline className="mr-2 h-4 w-4" />
               Delete
             </DropdownMenuItem>
           )}

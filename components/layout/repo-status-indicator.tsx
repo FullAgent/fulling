@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Project } from '@prisma/client'
-import { Loader2, RefreshCw } from 'lucide-react'
+import { MdRefresh } from 'react-icons/md'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
@@ -77,9 +77,9 @@ export function RepoStatusIndicator({ project }: RepoStatusIndicatorProps) {
         <div className="flex items-center gap-1 px-1">
           <div className="p-0.5">
             {(!project.githubRepo && isInitializing) ? (
-              <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+              <MdRefresh className="w-3 h-3 animate-spin text-blue-500" />
             ) : (
-              <RefreshCw className="w-3 h-3 text-blue-500" />
+              <MdRefresh className="w-3 h-3 text-blue-500" />
             )}
           </div>
           
@@ -111,9 +111,9 @@ export function RepoStatusIndicator({ project }: RepoStatusIndicatorProps) {
             disabled={isCommitting}
           >
               {isLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <MdRefresh className="w-4 h-4 animate-spin" />
               ) : (
-                <RefreshCw className="w-4 h-4" />
+                <MdRefresh className="w-4 h-4" />
               )}
           </button>
         )}

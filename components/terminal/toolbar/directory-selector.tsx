@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect,useState } from 'react';
-import { ChevronDown, Folder, Loader2 } from 'lucide-react';
+import { MdFolder, MdKeyboardArrowDown, MdRefresh } from 'react-icons/md';
 
 import {
   DropdownMenu,
@@ -92,14 +92,14 @@ export function DirectorySelector({
         >
           <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
             {isLoading ? (
-              <Loader2 className="h-3.5 w-3.5 text-[#858585] animate-spin" />
+              <MdRefresh className="h-3.5 w-3.5 text-[#858585] animate-spin" />
             ) : (
-              <Folder className="h-3.5 w-3.5 text-[#858585] group-hover:text-[#c5c5c5] transition-colors" />
+              <MdFolder className="h-3.5 w-3.5 text-[#858585] group-hover:text-[#c5c5c5] transition-colors" />
             )}
           </div>
           <span className="truncate block">{value}</span>
           <div className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none">
-            <ChevronDown className="h-3 w-3 text-[#858585] group-hover:text-[#c5c5c5] transition-colors" />
+            <MdKeyboardArrowDown className="h-3 w-3 text-[#858585] group-hover:text-[#c5c5c5] transition-colors" />
           </div>
         </button>
       </DropdownMenuTrigger>
@@ -113,7 +113,7 @@ export function DirectorySelector({
             onClick={() => handleSelect(dir)}
             className="text-xs font-mono text-[#cccccc] hover:bg-[#37373d] hover:text-white focus:bg-[#37373d] focus:text-white cursor-pointer"
           >
-            <Folder className="h-3.5 w-3.5 text-[#858585] mr-2 shrink-0" />
+            <MdFolder className="h-3.5 w-3.5 text-[#858585] mr-2 shrink-0" />
             <span className="truncate">{dir}</span>
           </DropdownMenuItem>
         ))}
