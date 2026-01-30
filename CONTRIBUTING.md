@@ -27,8 +27,8 @@ By participating in this project, you agree to abide by our Code of Conduct. Ple
 
 1. **Fork the Repository**
    ```bash
-   git clone https://github.com/FullstackAgent/FullstackAgent.git
-   cd FullstackAgent
+   git clone https://github.com/FullAgent/fulling.git
+   cd fulling
    ```
 
 2. **Create a Feature Branch**
@@ -78,7 +78,7 @@ By participating in this project, you agree to abide by our Code of Conduct. Ple
 ### Local Development
 ```bash
 # Install dependencies
-cd fullstack-agent
+cd fulling
 npm install
 
 # Set up environment
@@ -209,9 +209,9 @@ We follow Semantic Versioning (SemVer):
 ## Getting Help
 
 ### Resources
-- [Documentation](https://github.com/FullstackAgent/FullstackAgent/wiki)
-- [Issue Tracker](https://github.com/FullstackAgent/FullstackAgent/issues)
-- [Discussions](https://github.com/FullstackAgent/FullstackAgent/discussions)
+- [Documentation](https://github.com/FullAgent/fulling/wiki)
+- [Issue Tracker](https://github.com/FullAgent/fulling/issues)
+- [Discussions](https://github.com/FullAgent/fulling/discussions)
 
 ### Contact
 - GitHub Issues for bugs and features

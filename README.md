@@ -1,6 +1,7 @@
 # Fulling - AI-Powered Full-Stack Development Platform
 
 <div align="center">
+  <img src="https://img.shields.io/badge/v1.0.0-stable-green?style=for-the-badge" alt="Version 1.0.0"/>
   <img src="https://img.shields.io/badge/Next.js-16.0.10-black?style=for-the-badge&logo=next.js" alt="Next.js"/>
   <img src="https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript" alt="TypeScript"/>
   <img src="https://img.shields.io/badge/PostgreSQL-14-blue?style=for-the-badge&logo=postgresql" alt="PostgreSQL"/>
@@ -68,7 +69,7 @@ Fulling automatically sets up the following for your project, ready in a minute:
 
 ### Prerequisites
 
-- Node.js 20.x or higher
+- Node.js 22.9.0 or higher
 - PostgreSQL database
 - Kubernetes cluster with KubeBlocks installed
 - GitHub OAuth application credentials
@@ -234,6 +235,8 @@ See [Contributing Guidelines](CONTRIBUTING.md) for details.
 ## License
 
 MIT License - see [LICENSE](LICENSE).
+
+See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## Acknowledgments
 
