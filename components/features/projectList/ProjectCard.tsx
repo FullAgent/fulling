@@ -5,8 +5,8 @@
  */
 
 import { memo } from 'react';
-import type { Prisma } from '@prisma/client';
 import { MdAccessTime } from 'react-icons/md';
+import type { Prisma } from '@prisma/client';
 import Link from 'next/link';
 
 import { Badge } from '@/components/ui/badge';

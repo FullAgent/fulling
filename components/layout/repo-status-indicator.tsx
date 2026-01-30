@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Project } from '@prisma/client'
 import { MdRefresh } from 'react-icons/md'
+import { Project } from '@prisma/client'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 

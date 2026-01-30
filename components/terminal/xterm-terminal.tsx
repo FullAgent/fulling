@@ -33,8 +33,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ITerminalOptions, Terminal as ITerminal } from '@xterm/xterm';
 import { MdArrowDownward } from 'react-icons/md';
+import type { ITerminalOptions, Terminal as ITerminal } from '@xterm/xterm';
 import { toast } from 'sonner';
 
 import { useFileDrop } from './hooks/use-file-drop';

@@ -7,8 +7,8 @@
 'use client';
 
 import { useState } from 'react';
-import type { Prisma } from '@prisma/client';
 import { MdLan } from 'react-icons/md';
+import type { Prisma } from '@prisma/client';
 
 import { AppRunner } from './app-runner';
 import { NetworkDialog } from './network-dialog';

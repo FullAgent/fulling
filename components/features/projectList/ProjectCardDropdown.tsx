@@ -8,8 +8,8 @@
 'use client';
 
 import { useState } from 'react';
-import type { Prisma } from '@prisma/client';
 import { MdDeleteOutline, MdMoreVert, MdPlayArrow, MdRefresh, MdStop } from 'react-icons/md';
+import type { Prisma } from '@prisma/client';
 
 import {
   AlertDialog,

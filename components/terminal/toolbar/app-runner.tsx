@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import type { Prisma } from '@prisma/client';
 import { MdPlayArrow, MdRefresh, MdStop } from 'react-icons/md';
+import type { Prisma } from '@prisma/client';
 
 import { useAppRunner } from '@/hooks/use-app-runner';
 import { cn } from '@/lib/utils';
