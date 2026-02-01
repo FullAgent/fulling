@@ -9,6 +9,13 @@
   <img src="https://img.shields.io/badge/Claude_Code-AI-purple?style=for-the-badge" alt="Claude Code"/>
 </div>
 
+> [!CAUTION]
+> **v2 development in progress**
+>
+> We're rearchitecting Fulling as an Agentic app. Breaking changes expected.
+>
+> For stable, use [`v1.0.0`](https://github.com/FullAgent/fulling/tree/v1.0.0).
+
 ## Overview
 
 Fulling provides a sandboxed environment with Claude Code and PostgreSQL — everything you need to vibe code full-stack apps.
