@@ -1,12 +1,22 @@
 import type { Metadata } from 'next';
-import { Geist } from 'next/font/google';
+import { Noto_Sans, Space_Grotesk } from 'next/font/google';
 
 import { Toaster } from '@/components/ui/sonner';
 import { Providers } from '@/provider/providers';
 
 import './globals.css';
 
-const geist = Geist({ subsets: ['latin'] });
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-heading',
+  weight: ['500', '600', '700'],
+});
+
+const notoSans = Noto_Sans({
+  subsets: ['latin'],
+  variable: '--font-body',
+  weight: ['400', '500'],
+});
 
 export const metadata: Metadata = {
   title: 'Fulling - AI-Powered Full-Stack Development',
@@ -21,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geist.className} bg-background antialiased`}>
+      <body className={`${spaceGrotesk.variable} ${notoSans.variable} bg-background antialiased`}>
         <Providers>{children}</Providers>
         <Toaster
           position="bottom-right"

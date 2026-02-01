@@ -203,7 +203,7 @@
   --destructive-foreground: #ffffff;
 
   /* === Borders & Inputs === */
-  --border: #27272a;
+  --border: #2d3136;
   --input: #27272a;
   --ring: #3b82f6;
 
@@ -213,7 +213,7 @@
   --sidebar-background: #18181b;
   --sidebar-project-background: #09090b;
   --sidebar-accent: #27272a;
-  --sidebar-border: #27272a;
+  --sidebar-border: #2d3136;
 
   /* === Charts === */
   --chart-1: #3b82f6;
@@ -371,6 +371,11 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body), sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading), sans-serif;
   }
 
   h1 {
@@ -387,6 +392,10 @@
 
   span {
     @apply text-muted-foreground;
+  }
+
+  code, pre, .font-mono {
+    font-family: var(--font-mono), monospace;
   }
 }
 

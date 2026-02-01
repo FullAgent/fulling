@@ -16,3 +16,7 @@ Font weights:
 - Headings: 500-700
 - Body: 400-500
 - Code: 400
+
+## Components
+
+Always use shadcn/ui components instead of native HTML elements.
