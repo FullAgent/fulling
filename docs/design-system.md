@@ -17,6 +17,27 @@ Font weights:
 - Body: 400-500
 - Code: 400
 
+### Font Application Guidelines
+
+Apply **Space Grotesk** (`font-[family-name:var(--font-heading)]`) for:
+- Page headings (h1-h6)
+- Sidebar titles and navigation items
+- Search bar placeholder text
+- Primary CTA buttons (e.g., "New Project")
+- Important interactive elements
+
+Apply **Noto Sans** (default, no extra class needed) for:
+- Body text and descriptions
+- Secondary buttons (e.g., "Import")
+- Form labels and helper text
+- General UI text
+
+Apply **JetBrains Mono** (`font-[family-name:var(--font-mono)]` or `font-mono`) for:
+- Code snippets
+- Terminal output
+- Keyboard shortcuts (e.g., "⌘K")
+- Technical identifiers
+
 ## Components
 
 Always use shadcn/ui components instead of native HTML elements.
