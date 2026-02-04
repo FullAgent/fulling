@@ -53,3 +53,34 @@ export const getProject = cache(async function getProject(
     throw error;
   }
 });
+
+/**
+ * Get all projects for a user
+ * Uses React.cache() to deduplicate calls within the same request
+ * @param userId - The user ID
+ * @param include - Optional relation loading (default: all false)
+ */
+export const getProjects = cache(async function getProjects(
+  userId: string,
+  include?: ProjectInclude
+): Promise<ProjectWithRelations[]> {
+  const shouldInclude: Required<ProjectInclude> = {
+    sandboxes: false,
+    databases: false,
+    environments: false,
+    ...include,
+  };
+
+  try {
+    const projects = await prisma.project.findMany({
+      where: { userId },
+      orderBy: { updatedAt: 'desc' },
+      include: shouldInclude,
+    });
+
+    return projects;
+  } catch (error) {
+    logger.error(`Failed to fetch projects for user ${userId}: ${error}`);
+    throw error;
+  }
+});
