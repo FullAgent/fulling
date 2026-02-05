@@ -1,7 +1,8 @@
-import { MdMoreHoriz, MdOpenInNew } from 'react-icons/md'
+import { MdOpenInNew } from 'react-icons/md'
 import Link from 'next/link'
 import { ProjectStatus } from '@prisma/client'
 import { statusConfig } from './status-config'
+import { ProjectActionsMenu } from './project-actions-menu'
 import { cn } from '@/lib/utils'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -26,12 +27,6 @@ export function ProjectCard({
 }: ProjectCardProps) {
   const config = statusConfig[status]
   const initial = name.charAt(0).toUpperCase()
-
-  // Prevent button clicks from triggering card navigation
-  const handleButtonClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-  }
 
   // Handle open project button - open sandbox publicUrl in new tab
   const handleOpenProject = (e: React.MouseEvent) => {
@@ -63,16 +58,12 @@ export function ProjectCard({
           'group-hover:border-primary/20 transition-colors'
         )}
       >
-        {/* More button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:text-white"
-          onClick={handleButtonClick}
-          title="More options"
-        >
-          <MdMoreHoriz className="w-5 h-5" />
-        </Button>
+        {/* More dropdown */}
+        <ProjectActionsMenu
+          projectId={id}
+          projectName={name}
+          status={status}
+        />
 
         {/* Initial Avatar */}
         <div className="w-12 h-12 rounded-lg bg-accent flex items-center justify-center border border-white/5 shadow-inner">
