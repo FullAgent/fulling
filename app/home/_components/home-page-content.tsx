@@ -4,18 +4,10 @@ import { useState } from 'react'
 import { PageHeaderWithFilter } from './page-header-with-filter'
 import { ProjectListClient } from './project-list-client'
 import { ProjectStatus } from './types'
-
-// Prisma Project type (from getProjects)
-interface PrismaProject {
-  id: string
-  name: string
-  description: string | null
-  status: ProjectStatus
-  updatedAt: Date
-}
+import type { ProjectWithRelations } from '@/lib/data/project'
 
 interface HomePageContentProps {
-  projects: PrismaProject[]
+  projects: ProjectWithRelations<{ sandboxes: true }>[]
 }
 
 export function HomePageContent({ projects }: HomePageContentProps) {

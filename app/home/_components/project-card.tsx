@@ -1,6 +1,9 @@
 import { MdMoreHoriz, MdOpenInNew } from 'react-icons/md'
+import Link from 'next/link'
 import { ProjectStatus } from './types'
 import { cn } from '@/lib/utils'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
 interface ProjectCardProps {
   id: string
@@ -8,6 +11,7 @@ interface ProjectCardProps {
   description: string
   status: ProjectStatus
   updatedAt: string
+  publicUrl?: string | null
 }
 
 const statusConfig: Record<
@@ -76,25 +80,45 @@ const statusConfig: Record<
 }
 
 export function ProjectCard({
+  id,
   name,
   description,
   status,
   updatedAt,
+  publicUrl,
 }: ProjectCardProps) {
   const config = statusConfig[status]
   const initial = name.charAt(0).toUpperCase()
 
+  // Prevent button clicks from triggering card navigation
+  const handleButtonClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  // Handle open project button - open sandbox publicUrl in new tab
+  const handleOpenProject = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (publicUrl) {
+      window.open(publicUrl, '_blank', 'noopener,noreferrer')
+    }
+  }
+
   return (
-    <div
+    <Link href={`/projects/${id}`} className="block">
+      <Card
       className={cn(
-        'group bg-card border border-border rounded-xl overflow-hidden',
+        'group border-border rounded-xl overflow-hidden',
         'hover:border-primary/50 transition-all duration-300',
         'hover:shadow-lg hover:shadow-primary/5',
-        'flex flex-col h-full'
+        'flex flex-col h-full',
+        'gap-0 p-0 shadow-none',
+        'text-inherit'
       )}
     >
       {/* Card Header */}
-      <div
+      <CardHeader
         className={cn(
           'h-32 bg-gradient-to-br from-[#1A1D21] to-[#121416]',
           'relative p-5 flex flex-col justify-between',
@@ -103,18 +127,24 @@ export function ProjectCard({
         )}
       >
         {/* More button */}
-        <button className="absolute top-4 right-4 text-muted-foreground hover:text-white transition-colors">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:text-white"
+          onClick={handleButtonClick}
+          title="More options"
+        >
           <MdMoreHoriz className="w-5 h-5" />
-        </button>
+        </Button>
 
         {/* Initial Avatar */}
         <div className="w-12 h-12 rounded-lg bg-[#25282e] flex items-center justify-center border border-white/5 shadow-inner">
           <span className="text-xl font-bold text-white">{initial}</span>
         </div>
-      </div>
+      </CardHeader>
 
-      {/* Card Body */}
-      <div className="p-5 flex flex-col flex-1">
+      {/* Card Content */}
+      <CardContent className="p-5 flex flex-col flex-1">
         <div className="flex items-center gap-2 mb-1">
           <h3
             className={cn(
@@ -132,40 +162,45 @@ export function ProjectCard({
 
         {/* Card Footer */}
         <div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {/* Status indicator */}
-            <div className="relative flex h-2.5 w-2.5">
-              {status === 'RUNNING' && (
-                <span
-                  className={cn(
-                    'animate-ping absolute inline-flex h-full w-full rounded-full opacity-75',
-                    config.bg
-                  )}
-                />
-              )}
+        <div className="flex items-center gap-2">
+          {/* Status indicator */}
+          <div className="relative flex h-2.5 w-2.5">
+            {status === 'RUNNING' && (
               <span
                 className={cn(
-                  'relative inline-flex rounded-full h-2.5 w-2.5',
-                  config.bg,
-                  config.animate
+                  'animate-ping absolute inline-flex h-full w-full rounded-full opacity-75',
+                  config.bg
                 )}
               />
-            </div>
-            <span className={cn('text-xs font-medium', config.color)}>
-              {config.label}
-            </span>
-            <span className="text-xs text-muted-foreground">• {updatedAt}</span>
+            )}
+            <span
+              className={cn(
+                'relative inline-flex rounded-full h-2.5 w-2.5',
+                config.bg,
+                config.animate
+              )}
+            />
           </div>
-
-          {/* Open button */}
-          <button
-            className="text-muted-foreground hover:text-primary transition-colors"
-            title="Open Project"
-          >
-            <MdOpenInNew className="w-5 h-5" />
-          </button>
+          <span className={cn('text-xs font-medium', config.color)}>
+            {config.label}
+          </span>
+          <span className="text-xs text-muted-foreground">• {updatedAt}</span>
         </div>
+
+        {/* Open button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-primary"
+          onClick={handleOpenProject}
+          disabled={!publicUrl}
+          title={publicUrl ? "Open Project" : "No public URL available"}
+        >
+          <MdOpenInNew className="w-5 h-5" />
+        </Button>
       </div>
-    </div>
+      </CardContent>
+    </Card>
+    </Link>
   )
 }
