@@ -4,6 +4,16 @@
 
 Use the `.modern` theme defined in `globals.css`.
 
+| Usage | CSS Variable | Value |
+|-------|--------------|-------|
+| Sidebar background | `--sidebar` | #18181b |
+| Main background | `--background` | #09090b |
+| Primary | `--primary` | #3b82f6 |
+| Main text | `--foreground` | #fafafa |
+| Muted text | `--muted-foreground` | #a1a1aa |
+| Border | `--border` | #27272a |
+| Hover/Accent | `--accent` | #27272a |
+
 ## Typography
 
 | Usage | Font | Fallback |
