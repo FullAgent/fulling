@@ -6,15 +6,15 @@ import { useRouter } from 'next/navigation';
 import { ProjectStatus } from '@prisma/client';
 
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  FullScreenDialog,
+  FullScreenDialogAction,
+  FullScreenDialogClose,
+  FullScreenDialogContent,
+  FullScreenDialogDescription,
+  FullScreenDialogFooter,
+  FullScreenDialogHeader,
+  FullScreenDialogTitle,
+} from '@/components/ui/fullscreen-dialog';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -162,20 +162,17 @@ export function ProjectActionsMenu({ projectId, projectName, status }: ProjectAc
       </DropdownMenu>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={handleDialogOpenChange}>
-        <AlertDialogContent 
-          className="max-w-[500px] p-8 rounded-2xl gap-8"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <AlertDialogHeader className="gap-3">
-            <AlertDialogTitle className="text-2xl font-[family-name:var(--font-heading)] font-bold tracking-tight leading-snug">
+      <FullScreenDialog open={showDeleteDialog} onOpenChange={handleDialogOpenChange}>
+        <FullScreenDialogContent>
+          <FullScreenDialogHeader>
+            <FullScreenDialogTitle>
               Are you sure you want to delete <br />
               <span className="text-white">&quot;{projectName}&quot;</span>?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-sm leading-relaxed">
+            </FullScreenDialogTitle>
+            <FullScreenDialogDescription>
               This will terminate all resources (databases, sandboxes) and cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+            </FullScreenDialogDescription>
+          </FullScreenDialogHeader>
 
           {/* Confirmation Input */}
           <div className="space-y-2">
@@ -190,20 +187,20 @@ export function ProjectActionsMenu({ projectId, projectName, status }: ProjectAc
             />
           </div>
 
-          <AlertDialogFooter className="grid grid-cols-2 gap-3 pt-2">
-            <AlertDialogCancel className="px-6 py-3.5 rounded-xl border-border bg-transparent hover:bg-white/5 text-muted-foreground hover:text-white font-medium text-sm font-[family-name:var(--font-heading)] tracking-wide">
+          <FullScreenDialogFooter>
+            <FullScreenDialogClose>
               Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
+            </FullScreenDialogClose>
+            <FullScreenDialogAction
               onClick={handleDeleteConfirm}
               disabled={!isConfirmValid}
-              className="px-6 py-3.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-500/20 hover:shadow-red-500/30 transition-all active:scale-95 text-sm font-[family-name:var(--font-heading)] tracking-wide disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              variant="destructive"
             >
               Permanently Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </FullScreenDialogAction>
+          </FullScreenDialogFooter>
+        </FullScreenDialogContent>
+      </FullScreenDialog>
     </>
   );
 }

@@ -51,3 +51,26 @@ Apply **JetBrains Mono** (`font-[family-name:var(--font-mono)]` or `font-mono`) 
 ## Components
 
 Always use shadcn/ui components instead of native HTML elements.
+
+## Full Screen Dialog
+
+Use `FullScreenDialog` from `@/components/ui/fullscreen-dialog` for modal dialogs (confirmations, important actions, destructive operations, etc.).
+
+### Available Components
+
+| Component | Purpose |
+|-----------|---------|
+| `FullScreenDialogContent` | Modal container |
+| `FullScreenDialogHeader` | Title + description area |
+| `FullScreenDialogTitle` | Main heading |
+| `FullScreenDialogDescription` | Helper text |
+| `FullScreenDialogFooter` | Action buttons area |
+| `FullScreenDialogClose` | Cancel/close button |
+| `FullScreenDialogAction` | Primary action button |
+
+### Action Button Variants
+
+| Variant | Usage |
+|---------|-------|
+| `default` | Standard primary actions |
+| `destructive` | Dangerous/irreversible actions (red style) |
