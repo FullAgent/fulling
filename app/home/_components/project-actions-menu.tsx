@@ -14,7 +14,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog-vscode';
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -23,6 +23,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useProjectOperations } from '@/hooks/use-project-operations';
 
 interface ProjectActionsMenuProps {
@@ -34,19 +36,32 @@ interface ProjectActionsMenuProps {
 export function ProjectActionsMenu({ projectId, projectName, status }: ProjectActionsMenuProps) {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [confirmInput, setConfirmInput] = useState('');
   const { executeOperation, loading } = useProjectOperations(projectId);
 
   // Determine available actions based on status
   const showStart = status === 'STOPPED';
   const showStop = status !== 'STOPPED';
 
+  // Check if the confirmation input matches the project name
+  const isConfirmValid = confirmInput === projectName;
+
   const handleDeleteClick = () => {
     setShowDeleteDialog(true);
   };
 
   const handleDeleteConfirm = () => {
+    if (!isConfirmValid) return;
     setShowDeleteDialog(false);
+    setConfirmInput('');
     executeOperation('DELETE');
+  };
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setShowDeleteDialog(open);
+    if (!open) {
+      setConfirmInput('');
+    }
   };
 
   const handleSettingsClick = () => {
@@ -147,21 +162,44 @@ export function ProjectActionsMenu({ projectId, projectName, status }: ProjectAc
       </DropdownMenu>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to delete &quot;{projectName}&quot;?</AlertDialogTitle>
-            <AlertDialogDescription>
+      <AlertDialog open={showDeleteDialog} onOpenChange={handleDialogOpenChange}>
+        <AlertDialogContent 
+          className="max-w-[500px] p-8 rounded-2xl gap-8"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <AlertDialogHeader className="gap-3">
+            <AlertDialogTitle className="text-2xl font-[family-name:var(--font-heading)] font-bold tracking-tight leading-snug">
+              Are you sure you want to delete <br />
+              <span className="text-white">&quot;{projectName}&quot;</span>?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm leading-relaxed">
               This will terminate all resources (databases, sandboxes) and cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+
+          {/* Confirmation Input */}
+          <div className="space-y-2">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
+              Type <span className="text-white select-all">{projectName}</span> to confirm
+            </Label>
+            <Input
+              value={confirmInput}
+              onChange={(e) => setConfirmInput(e.target.value)}
+              placeholder={projectName}
+              className="bg-background border-border rounded-xl px-4 py-3 text-white placeholder:text-muted-foreground/30 focus-visible:border-red-500 focus-visible:ring-red-500/50 font-mono text-sm shadow-inner"
+            />
+          </div>
+
+          <AlertDialogFooter className="grid grid-cols-2 gap-3 pt-2">
+            <AlertDialogCancel className="px-6 py-3.5 rounded-xl border-border bg-transparent hover:bg-white/5 text-muted-foreground hover:text-white font-medium text-sm font-[family-name:var(--font-heading)] tracking-wide">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
-              className="bg-destructive hover:bg-destructive/90"
+              disabled={!isConfirmValid}
+              className="px-6 py-3.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-500/20 hover:shadow-red-500/30 transition-all active:scale-95 text-sm font-[family-name:var(--font-heading)] tracking-wide disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
-              Delete
+              Permanently Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
