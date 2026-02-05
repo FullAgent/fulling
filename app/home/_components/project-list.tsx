@@ -1,14 +1,15 @@
 import { ProjectCard } from './project-card'
 import { CreateProjectCard } from './create-project-card'
-import { Project, ProjectStatus } from './types'
+import { ProjectStatus } from '@prisma/client'
 import type { ProjectWithRelations } from '@/lib/data/project'
+import { formatRelativeTime } from '@/lib/util/format-time'
 
-interface ProjectListClientProps {
+interface ProjectListProps {
   projects: ProjectWithRelations<{ sandboxes: true }>[]
   activeFilter: 'ALL' | ProjectStatus
 }
 
-export function ProjectListClient({ projects, activeFilter }: ProjectListClientProps) {
+export function ProjectList({ projects, activeFilter }: ProjectListProps) {
   // Map to frontend format with sandbox publicUrl
   const mappedProjects = projects.map((p) => ({
     id: p.id,
@@ -32,19 +33,4 @@ export function ProjectListClient({ projects, activeFilter }: ProjectListClientP
       <CreateProjectCard />
     </div>
   )
-}
-
-// Helper: Format relative time
-function formatRelativeTime(date: Date): string {
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  const minutes = Math.floor(diff / 60000)
-  const hours = Math.floor(diff / 3600000)
-  const days = Math.floor(diff / 86400000)
-
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  if (hours < 24) return `${hours}h ago`
-  if (days < 7) return `${days}d ago`
-  return date.toLocaleDateString()
 }

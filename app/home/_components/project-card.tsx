@@ -1,6 +1,7 @@
 import { MdMoreHoriz, MdOpenInNew } from 'react-icons/md'
 import Link from 'next/link'
-import { ProjectStatus } from './types'
+import { ProjectStatus } from '@prisma/client'
+import { statusConfig } from './status-config'
 import { cn } from '@/lib/utils'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -14,70 +15,6 @@ interface ProjectCardProps {
   publicUrl?: string | null
 }
 
-const statusConfig: Record<
-  ProjectStatus,
-  { color: string; bg: string; label: string; animate?: string }
-> = {
-  // Stable states
-  RUNNING: {
-    color: 'text-emerald-500',
-    bg: 'bg-emerald-500',
-    label: 'Running',
-    animate: 'animate-pulse',
-  },
-  STOPPED: {
-    color: 'text-gray-500',
-    bg: 'bg-gray-500',
-    label: 'Stopped',
-  },
-  TERMINATED: {
-    color: 'text-gray-600',
-    bg: 'bg-gray-600',
-    label: 'Terminated',
-  },
-  // Transition states
-  CREATING: {
-    color: 'text-yellow-500',
-    bg: 'bg-yellow-500',
-    label: 'Creating',
-    animate: 'animate-pulse',
-  },
-  UPDATING: {
-    color: 'text-blue-500',
-    bg: 'bg-blue-500',
-    label: 'Updating',
-    animate: 'animate-pulse',
-  },
-  STARTING: {
-    color: 'text-cyan-500',
-    bg: 'bg-cyan-500',
-    label: 'Starting',
-    animate: 'animate-pulse',
-  },
-  STOPPING: {
-    color: 'text-orange-500',
-    bg: 'bg-orange-500',
-    label: 'Stopping',
-    animate: 'animate-pulse',
-  },
-  TERMINATING: {
-    color: 'text-red-400',
-    bg: 'bg-red-400',
-    label: 'Terminating',
-    animate: 'animate-pulse',
-  },
-  // Special states
-  ERROR: {
-    color: 'text-red-500',
-    bg: 'bg-red-500',
-    label: 'Error',
-  },
-  PARTIAL: {
-    color: 'text-purple-500',
-    bg: 'bg-purple-500',
-    label: 'Partial',
-  },
-}
 
 export function ProjectCard({
   id,
@@ -120,7 +57,7 @@ export function ProjectCard({
       {/* Card Header */}
       <CardHeader
         className={cn(
-          'h-32 bg-gradient-to-br from-[#1A1D21] to-[#121416]',
+          'h-32 bg-gradient-to-br from-sidebar to-background',
           'relative p-5 flex flex-col justify-between',
           'border-b border-border',
           'group-hover:border-primary/20 transition-colors'
@@ -138,7 +75,7 @@ export function ProjectCard({
         </Button>
 
         {/* Initial Avatar */}
-        <div className="w-12 h-12 rounded-lg bg-[#25282e] flex items-center justify-center border border-white/5 shadow-inner">
+        <div className="w-12 h-12 rounded-lg bg-accent flex items-center justify-center border border-white/5 shadow-inner">
           <span className="text-xl font-bold text-white">{initial}</span>
         </div>
       </CardHeader>

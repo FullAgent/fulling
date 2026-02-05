@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { ProjectStatus } from './types'
+import { ProjectStatus } from '@prisma/client'
 
 type FilterStatus = 'ALL' | ProjectStatus
 

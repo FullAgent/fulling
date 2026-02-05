@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { PageHeaderWithFilter } from './page-header-with-filter'
-import { ProjectListClient } from './project-list-client'
-import { ProjectStatus } from './types'
+import { ProjectList } from './project-list'
+import { ProjectStatus } from '@prisma/client'
 import type { ProjectWithRelations } from '@/lib/data/project'
 
 interface HomePageContentProps {
@@ -16,7 +16,7 @@ export function HomePageContent({ projects }: HomePageContentProps) {
   return (
     <>
       <PageHeaderWithFilter activeFilter={activeFilter} onFilterChange={setActiveFilter} />
-      <ProjectListClient projects={projects} activeFilter={activeFilter} />
+      <ProjectList projects={projects} activeFilter={activeFilter} />
     </>
   )
 }
