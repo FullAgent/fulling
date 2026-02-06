@@ -1,8 +1,9 @@
 'use client'
 
-import { cn } from '@/lib/utils'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { ProjectStatus } from '@prisma/client'
+
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { cn } from '@/lib/utils'
 
 type FilterStatus = 'ALL' | ProjectStatus
 

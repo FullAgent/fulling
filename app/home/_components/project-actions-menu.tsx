@@ -2,9 +2,17 @@
 
 import { useState } from 'react';
 import { MdDeleteOutline, MdMoreHoriz, MdPause, MdPlayArrow, MdRefresh, MdSettings } from 'react-icons/md';
-import { useRouter } from 'next/navigation';
 import { ProjectStatus } from '@prisma/client';
+import { useRouter } from 'next/navigation';
 
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   FullScreenDialog,
   FullScreenDialogAction,
@@ -15,14 +23,6 @@ import {
   FullScreenDialogHeader,
   FullScreenDialogTitle,
 } from '@/components/ui/fullscreen-dialog';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useProjectOperations } from '@/hooks/use-project-operations';

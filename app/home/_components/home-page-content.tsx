@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { ProjectStatus } from '@prisma/client'
+
+import type { ProjectWithRelations } from '@/lib/data/project'
+
 import { PageHeaderWithFilter } from './page-header-with-filter'
 import { ProjectList } from './project-list'
-import { ProjectStatus } from '@prisma/client'
-import type { ProjectWithRelations } from '@/lib/data/project'
 
 interface HomePageContentProps {
   projects: ProjectWithRelations<{ sandboxes: true }>[]

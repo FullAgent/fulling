@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { MdAdd } from 'react-icons/md'
-import { cn } from '@/lib/utils'
+
 import CreateProjectDialog from '@/components/dialog/create-project-dialog'
+import { cn } from '@/lib/utils'
 
 export function CreateProjectCard() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)

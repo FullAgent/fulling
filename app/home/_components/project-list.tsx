@@ -1,8 +1,10 @@
-import { ProjectCard } from './project-card'
-import { CreateProjectCard } from './create-project-card'
 import { ProjectStatus } from '@prisma/client'
+
 import type { ProjectWithRelations } from '@/lib/data/project'
 import { formatRelativeTime } from '@/lib/util/format-time'
+
+import { CreateProjectCard } from './create-project-card'
+import { ProjectCard } from './project-card'
 
 interface ProjectListProps {
   projects: ProjectWithRelations<{ sandboxes: true }>[]

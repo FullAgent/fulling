@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
+
 import { auth } from '@/lib/auth'
 import { getProjects } from '@/lib/data/project'
+
 import { HomePageContent } from './_components/home-page-content'
 
 export const metadata = {

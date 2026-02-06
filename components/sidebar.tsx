@@ -1,10 +1,4 @@
-import Image from 'next/image'
-import Link from 'next/link'
 import { FaGithub } from 'react-icons/fa6'
-
-import { Button } from '@/components/ui/button'
-import packageInfo from '../package.json'
-import { Separator } from '@/components/ui/separator'
 import {
   MdDashboardCustomize,
   MdExtension,
@@ -14,6 +8,13 @@ import {
   MdPsychology,
   MdSettings,
 } from 'react-icons/md'
+import Image from 'next/image'
+import Link from 'next/link'
+
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+
+import packageInfo from '../package.json'
 
 const menuItems = [
   { icon: MdGridView, label: 'Projects', active: true },

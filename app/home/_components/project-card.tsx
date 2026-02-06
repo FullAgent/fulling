@@ -1,11 +1,13 @@
 import { MdOpenInNew } from 'react-icons/md'
-import Link from 'next/link'
 import { ProjectStatus } from '@prisma/client'
-import { statusConfig } from './status-config'
-import { ProjectActionsMenu } from './project-actions-menu'
-import { cn } from '@/lib/utils'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import Link from 'next/link'
+
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
+
+import { ProjectActionsMenu } from './project-actions-menu'
+import { statusConfig } from './status-config'
 
 interface ProjectCardProps {
   id: string
