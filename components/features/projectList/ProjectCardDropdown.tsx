@@ -20,7 +20,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog-vscode';
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -133,7 +133,7 @@ export default function ProjectCardDropdown({ project }: ProjectCardDropdownProp
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to delete &quot;{project.name}&quot;?</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure you want to delete {project.name}?</AlertDialogTitle>
             <AlertDialogDescription>
               This will terminate all resources
               (databases, sandboxes) and cannot be undone.
