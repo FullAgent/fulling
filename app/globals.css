@@ -374,7 +374,12 @@
     font-family: var(--font-body), sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-heading), sans-serif;
   }
 
@@ -390,11 +395,9 @@
     @apply leading-7 text-muted-foreground;
   }
 
-  span {
-    @apply text-muted-foreground;
-  }
-
-  code, pre, .font-mono {
+  code,
+  pre,
+  .font-mono {
     font-family: var(--font-mono), monospace;
   }
 }
@@ -414,4 +417,21 @@
 
 .animate-fade-in {
   animation: fade-in 0.2s ease-out;
+}
+
+/* Cursor blink animation for terminal demo */
+@keyframes blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+.cursor-blink {
+  animation: blink 1s step-end infinite;
 }
