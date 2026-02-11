@@ -1,4 +1,4 @@
-import { MdTerminal, MdCheck, MdArrowOutward, MdAutoAwesome } from 'react-icons/md';
+import { MdArrowOutward, MdAutoAwesome,MdCheck, MdTerminal } from 'react-icons/md';
 
 export function TerminalDemo() {
   return (

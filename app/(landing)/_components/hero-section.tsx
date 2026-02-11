@@ -1,6 +1,6 @@
 'use client';
 
-import { MdRocketLaunch, MdDns, MdCheckCircle } from 'react-icons/md';
+import { MdCheckCircle,MdDns, MdRocketLaunch } from 'react-icons/md';
 
 import { Button } from '@/components/ui/button';
 

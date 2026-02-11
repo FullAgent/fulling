@@ -7,8 +7,8 @@ import { useSession } from 'next-auth/react';
 import { authenticateWithSealos } from '@/lib/actions/sealos-auth';
 import { useSealos } from '@/provider/sealos';
 
-import { LandingHeader } from './landing-header';
 import { HeroSection } from './hero-section';
+import { LandingHeader } from './landing-header';
 import { TerminalDemo } from './terminal-demo';
 
 interface LandingClientProps {
@@ -53,12 +53,16 @@ export function LandingClient({ starCount }: LandingClientProps) {
 
     // Check credentials
     if (!sealosToken || !sealosKubeconfig) {
-      setAuthError('Missing Sealos credentials');
+      queueMicrotask(() => {
+        setAuthError('Missing Sealos credentials');
+      });
       return;
     }
 
     // Trigger authentication
-    setIsAuthenticating(true);
+    queueMicrotask(() => {
+      setIsAuthenticating(true);
+    });
 
     authenticateWithSealos(sealosToken, sealosKubeconfig)
       .then((result) => {
