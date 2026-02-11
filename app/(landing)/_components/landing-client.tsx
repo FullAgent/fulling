@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
@@ -21,11 +21,11 @@ interface LandingClientProps {
  * Handles all interactive logic (auth, navigation) while receiving
  * server-fetched data (starCount) as props.
  *
- * Get Started Button Behavior:
- * - Non-Sealos + Authenticated: Go to /projects
- * - Non-Sealos + Unauthenticated: Go to /login
- * - Sealos + Authenticated: Go to /projects
- * - Sealos + Unauthenticated: Trigger Sealos auth → then go to /projects
+ * Authentication Flow (v2.0.0-alpha-3):
+ * - Sealos environment: Auto-trigger auth on page load if unauthenticated
+ * - Non-Sealos + Authenticated: Show "Go to Projects" button
+ * - Non-Sealos + Unauthenticated: Show "Start Building Now" → /login
+ * - Authentication success: Update button text, user clicks to navigate
  */
 export function LandingClient({ starCount }: LandingClientProps) {
   const router = useRouter();
@@ -34,13 +34,56 @@ export function LandingClient({ starCount }: LandingClientProps) {
 
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const hasAttemptedAuth = useRef(false); // Prevent duplicate auth attempts
 
-  // Determine button action based on environment and auth status
-  const handleGetStarted = useCallback(async () => {
-    // Clear previous errors on retry
+  // Auto-trigger authentication in Sealos environment
+  useEffect(() => {
+    // Wait for Sealos initialization
+    if (!isInitialized || isLoading) return;
+
+    // Already authenticated, no need to auth again
+    if (status === 'authenticated') return;
+
+    // Not in Sealos, don't auto-authenticate
+    if (!isSealos) return;
+
+    // Prevent duplicate attempts
+    if (hasAttemptedAuth.current) return;
+    hasAttemptedAuth.current = true;
+
+    // Check credentials
+    if (!sealosToken || !sealosKubeconfig) {
+      setAuthError('Missing Sealos credentials');
+      return;
+    }
+
+    // Trigger authentication
+    setIsAuthenticating(true);
+
+    authenticateWithSealos(sealosToken, sealosKubeconfig)
+      .then((result) => {
+        if (result.success) {
+          // Authentication successful - don't auto-redirect, let user click
+          setIsAuthenticating(false);
+          router.refresh(); // Refresh session
+        } else {
+          setAuthError(result.error || 'Authentication failed');
+          setIsAuthenticating(false);
+          hasAttemptedAuth.current = false; // Allow retry
+        }
+      })
+      .catch((error) => {
+        setAuthError(error instanceof Error ? error.message : 'Unknown error');
+        setIsAuthenticating(false);
+        hasAttemptedAuth.current = false; // Allow retry
+      });
+  }, [isInitialized, isLoading, status, isSealos, sealosToken, sealosKubeconfig, router]);
+
+  // Handle Get Started button click
+  const handleGetStarted = useCallback(() => {
     setAuthError(null);
 
-    // Already authenticated - go to projects
+    // Authenticated users go to projects
     if (status === 'authenticated') {
       router.push('/projects');
       return;
@@ -52,75 +95,46 @@ export function LandingClient({ starCount }: LandingClientProps) {
       return;
     }
 
-    // Sealos environment + unauthenticated - trigger Sealos auth
-    if (!sealosToken || !sealosKubeconfig) {
-      setAuthError('Missing Sealos credentials');
-      return;
-    }
+    // Sealos environment - retry authentication
+    hasAttemptedAuth.current = false;
+  }, [status, isSealos, router]);
 
-    setIsAuthenticating(true);
-
-    try {
-      const result = await authenticateWithSealos(sealosToken, sealosKubeconfig);
-
-      if (result.success) {
-        // Authentication successful - redirect to projects
-        router.push('/projects');
-        router.refresh();
-      } else {
-        setAuthError(result.error || 'Authentication failed');
-        setIsAuthenticating(false);
-      }
-    } catch (error) {
-      setAuthError(error instanceof Error ? error.message : 'Unknown error');
-      setIsAuthenticating(false);
-    }
-  }, [status, isSealos, sealosToken, sealosKubeconfig, router]);
-
+  // Handle Sign In button click
   const handleSignIn = useCallback(() => {
     if (status === 'authenticated') {
       router.push('/projects');
+    } else if (isSealos) {
+      // Sealos environment - retry auth
+      hasAttemptedAuth.current = false;
+      setAuthError(null);
     } else {
       router.push('/login');
     }
-  }, [status, router]);
+  }, [status, isSealos, router]);
 
-  // Show minimal loading during initialization
+  // Button state and text logic
   const isInitializing = !isInitialized || isLoading;
-  const isButtonDisabled = isInitializing || isAuthenticating;
+  const isButtonLoading = isInitializing || isAuthenticating;
+  const shouldShowGoToProjects = isSealos || status === 'authenticated';
 
   return (
-    <>
-      <div className="h-screen overflow-hidden flex flex-col">
-        <LandingHeader
-          isAuthenticated={status === 'authenticated'}
-          onSignIn={handleSignIn}
-          starCount={starCount}
+    <div className="h-screen overflow-hidden flex flex-col">
+      <LandingHeader
+        isAuthenticated={status === 'authenticated'}
+        isSealos={isSealos}
+        onSignIn={handleSignIn}
+        starCount={starCount}
+        isLoading={isButtonLoading}
+      />
+      <main className="flex-1 flex flex-col lg:flex-row pt-16">
+        <HeroSection
+          onGetStarted={handleGetStarted}
+          isLoading={isButtonLoading}
+          authError={authError}
+          buttonText={shouldShowGoToProjects ? 'Go to Projects' : 'Start Building Now'}
         />
-        <main className="flex-1 flex flex-col lg:flex-row pt-16">
-          <HeroSection
-            onGetStarted={handleGetStarted}
-            isLoading={isButtonDisabled}
-            authError={authError}
-          />
-          <TerminalDemo />
-        </main>
-      </div>
-
-      {/* Authentication overlay - shown during Sealos auth process */}
-      {isAuthenticating && (
-        <div
-          className="fixed inset-0 bg-background/90 flex items-center justify-center z-50"
-          role="dialog"
-          aria-label="Authentication in progress"
-          aria-modal="true"
-        >
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground text-sm">Authenticating with Sealos…</p>
-          </div>
-        </div>
-      )}
-    </>
+        <TerminalDemo />
+      </main>
+    </div>
   );
 }

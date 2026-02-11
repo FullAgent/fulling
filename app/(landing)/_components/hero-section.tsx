@@ -8,12 +8,14 @@ interface HeroSectionProps {
   onGetStarted: () => void;
   isLoading: boolean;
   authError: string | null;
+  buttonText: string;  // Dynamic button text based on auth/environment
 }
 
 export function HeroSection({
   onGetStarted,
   isLoading,
   authError,
+  buttonText,
 }: HeroSectionProps) {
   return (
     <div className="w-full lg:w-1/2 h-full flex flex-col justify-center px-8 sm:px-12 lg:px-20 relative z-10 bg-background">
@@ -71,7 +73,7 @@ export function HeroSection({
             className="w-full sm:w-auto h-11 px-6 font-[family-name:var(--font-heading)] font-medium gap-2"
           >
             <MdRocketLaunch className="text-[20px] -ml-1" />
-            <span>Start Building Now</span>
+            <span>{buttonText}</span>
           </Button>
 
           <Button
@@ -92,19 +94,23 @@ export function HeroSection({
         </div>
 
         {/* Features */}
-        <div className="mt-12 flex items-center gap-4 text-sm text-muted-foreground opacity-60">
-          <div className="flex items-center gap-1">
-            <MdCheckCircle className="text-[16px]" />
-            <span>No config required</span>
-          </div>
-          <div className="w-1 h-1 rounded-full bg-border" />
-          <div className="flex items-center gap-1">
-            <MdCheckCircle className="text-[16px]" />
-            <span>Production ready</span>
-          </div>
-        </div>
+        {FEATURES_JSX}
       </div>
     </div>
   );
 }
 
+// Static JSX hoisted outside component to avoid recreation on every render
+const FEATURES_JSX = (
+  <div className="mt-12 flex items-center gap-4 text-sm text-muted-foreground opacity-60">
+    <div className="flex items-center gap-1">
+      <MdCheckCircle className="text-[16px]" />
+      <span>No config required</span>
+    </div>
+    <div className="w-1 h-1 rounded-full bg-border" aria-hidden="true" />
+    <div className="flex items-center gap-1">
+      <MdCheckCircle className="text-[16px]" />
+      <span>Production ready</span>
+    </div>
+  </div>
+);
