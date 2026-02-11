@@ -13,6 +13,24 @@ interface SealosUserInfo {
 
 let sealosInitPromise: Promise<void> | null = null;
 
+/**
+ * Detect if running inside Sealos iframe environment
+ * Uses ancestorOrigins to check parent frame domain
+ */
+function isSealosIframe(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  try {
+    const ancestorOrigin = window.location.ancestorOrigins?.[0];
+    if (!ancestorOrigin) return false;
+
+    // Check if ancestor domain contains Sealos domains
+    return ancestorOrigin.includes('sealos.io') || ancestorOrigin.includes('sealos.run');
+  } catch {
+    return false;
+  }
+}
+
 interface SealosContextType {
   isInitialized: boolean;
   isLoading: boolean;
@@ -50,6 +68,27 @@ export function SealosProvider({ children }: { children: React.ReactNode }) {
       try {
         setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
+        // First, check if we're in Sealos iframe environment
+        const isInSealosIframe = isSealosIframe();
+
+        if (!isInSealosIframe) {
+          // Not in Sealos environment, skip SDK initialization
+          console.info('Not in Sealos iframe environment');
+          setState({
+            isInitialized: true,
+            isLoading: false,
+            isSealos: false,
+            error: null,
+            sealosToken: null,
+            sealosKubeconfig: null,
+            sealosUser: null,
+            sealosNs: null,
+          });
+          return;
+        }
+
+        // In Sealos iframe, initialize SDK and get credentials
+        console.info('Detected Sealos iframe environment, initializing SDK...');
         const cleanupApp = createSealosApp();
 
         // get session info
@@ -75,7 +114,7 @@ export function SealosProvider({ children }: { children: React.ReactNode }) {
         };
       } catch (error) {
         console.info(
-          'Maybe not in Sealos environment, Sealos initialization failed, error info:',
+          'Sealos SDK initialization failed, falling back to non-Sealos mode:',
           error
         );
         setState((prev) => ({
