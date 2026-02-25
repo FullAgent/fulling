@@ -177,7 +177,7 @@ export function ProjectActionsMenu({ projectId, projectName, status }: ProjectAc
           {/* Confirmation Input */}
           <div className="space-y-2">
             <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
-              Type <span className="text-white select-all">{projectName}</span> to confirm
+              Type <span className="text-white select-all normal-case">{projectName}</span> to confirm
             </Label>
             <Input
               value={confirmInput}
