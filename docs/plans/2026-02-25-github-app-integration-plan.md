@@ -2,6 +2,19 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
+## 📊 进度总览
+
+| 阶段 | 状态 | 提交 | 说明 |
+|------|------|------|------|
+| **Phase 1: 后端基础设施** | ✅ 已完成 | `0940b1e` | Schema、Service、Repo、Callback/Webhook 路由 |
+| **Phase 2: 前端界面** | ⏳ 待开始 | - | GitHub App 安装入口、repo 选择器 |
+| **Phase 3: 数据迁移** | ⏳ 待开始 | - | 用户重新关联 repo 时填充新字段 |
+| **Phase 4: 清理** | ⏳ 待开始 | - | 移除 `githubRepo` 旧字段 |
+
+**当前分支**: `feat/github-app-integration`
+
+---
+
 **目标：** 为平台接入 GitHub App 基础设施 — installation 跟踪、token 管理、webhook 同步，替代现有的 GitHub OAuth 方式操作 repo。
 
 **核心设计决策（经讨论确认）：**
@@ -93,12 +106,12 @@ UserIdentity        → GitHubAppInstallation → Project.githubRepoId
 
 **迁移策略（分阶段交付）：**
 
-| 阶段 | 范围 | 内容 | 时机 |
+| 阶段 | 范围 | 内容 | 状态 |
 |------|------|------|------|
-| **Phase 1: 后端基础设施** | 本次 PR | Schema（expand）、Service 层、Repo 层、Callback/Webhook 路由、构建验证 | 当前 |
-| **Phase 2: 前端界面** | 独立 PR | GitHub App 安装入口、repo 选择器、项目关联/解绑 UI、改造现有 GitHub 页面 | Phase 1 合并后 |
-| **Phase 3: 数据迁移** | 独立 PR | 用户通过新流程重新关联 repo 时填充新字段；旧 `githubRepo` 字段无法自动迁移（只是字符串，缺少 `githubRepoId` 和 `installationId`） | Phase 2 上线后 |
-| **Phase 4: 清理** | 独立 PR | 确认所有项目已迁移或旧数据不再需要后，移除 `githubRepo` 字段 | 未来版本 |
+| **Phase 1: 后端基础设施** | ✅ 已完成 | Schema（expand）、Service 层、Repo 层、Callback/Webhook 路由、构建验证 | 提交 `0940b1e` |
+| **Phase 2: 前端界面** | ⏳ 待开始 | GitHub App 安装入口、repo 选择器、项目关联/解绑 UI、改造现有 GitHub 页面 | Phase 1 合并后 |
+| **Phase 3: 数据迁移** | ⏳ 待开始 | 用户通过新流程重新关联 repo 时填充新字段；旧 `githubRepo` 字段无法自动迁移（只是字符串，缺少 `githubRepoId` 和 `installationId`） | Phase 2 上线后 |
+| **Phase 4: 清理** | ⏳ 待开始 | 确认所有项目已迁移或旧数据不再需要后，移除 `githubRepo` 字段 | 未来版本 |
 
 **分支策略：**
 
@@ -117,9 +130,13 @@ main
 
 ---
 
-### Task 0: 在 GitHub 上创建和配置 GitHub App（手动操作）
+## Phase 1: 后端基础设施 ✅ 已完成
 
-> 这是一个手动配置步骤，不涉及代码。需要在代码实施之前完成，以获取环境变量所需的值。
+> **提交**: `0940b1e` | **分支**: `feat/github-app-integration`
+
+### Task 0: 在 GitHub 上创建和配置 GitHub App ✅
+
+> 已完成：App ID = 2970712，环境变量已配置
 
 **Step 1: 创建 GitHub App**
 
@@ -166,7 +183,9 @@ GITHUB_APP_WEBHOOK_SECRET=<Step 1 中生成的 webhook secret>
 
 ---
 
-### Task 1: Prisma Schema — 新增枚举和模型，修改 Project
+### Task 1: Prisma Schema — 新增枚举和模型，修改 Project ✅
+
+> 已完成：新增 `GitHubInstallationStatus` 枚举、`GitHubAppInstallation` 模型、Project 新字段
 
 **文件：**
 - 修改: `prisma/schema.prisma`
@@ -264,7 +283,9 @@ git commit -m "feat(schema): add GitHubAppInstallation model, expand Project wit
 
 ---
 
-### Task 2: 环境变量
+### Task 2: 环境变量 ✅
+
+> 已完成：添加 `GITHUB_APP_ID`、`GITHUB_APP_PRIVATE_KEY`、`GITHUB_APP_WEBHOOK_SECRET`
 
 **文件：**
 - 修改: `lib/env.ts`
@@ -295,9 +316,18 @@ git commit -m "feat(env): add GitHub App environment variables"
 
 ---
 
-### Task 3: GitHub App Service — JWT、Token 缓存、Webhook 验证
+### Task 3: GitHub App Service — JWT、Token 缓存、Webhook 验证 ✅
 
-**文件：**
+> 已完成：`lib/services/github-app.ts`
++ 
++ 实现功能：
++ - `generateAppJWT()` — 用 App 私钥签发 JWT（10 分钟有效期）
++ - `getInstallationToken(installationId)` — 用 JWT 换取 installation access token，内存缓存（50 分钟 TTL）
++ - `getInstallationDetails(installationId)` — 从 GitHub API 获取 installation 信息
++ - `listInstallationRepos(installationId)` — 列出 installation 可访问的 repo
++ - `verifyWebhookSignature(payload, signature)` — HMAC-SHA256 签名验证
+  
+  **文件：**
 - 新建: `lib/services/github-app.ts`
 
 **Step 1: 创建 service 文件**
@@ -491,7 +521,17 @@ git commit -m "feat: add GitHub App service with JWT, token cache, and webhook v
 
 ---
 
-### Task 4: Repository 层 — Installation CRUD
+### Task 4: Repository 层 — Installation CRUD ✅
+
+> 已完成：`lib/repo/github.ts`
++ 
++ 实现功能：
++ - `upsertInstallation()` — 创建或更新 installation
++ - `updateInstallationStatus()` — 更新状态（防御性处理 P2025）
++ - `getInstallationByGitHubId()` — 按 GitHub ID 查询
++ - `getInstallationsForUser()` — 获取用户的 installations
++ - `linkProjectToRepo()` — 关联项目到 repo
++ - `unlinkProjectFromRepo()` — 解除关联
 
 **文件：**
 - 新建: `lib/repo/github.ts`
@@ -630,7 +670,14 @@ git commit -m "feat: add repository layer for GitHub installations"
 
 ---
 
-### Task 5: Installation Callback 路由
+### Task 5: Installation Callback 路由 ✅
+
+> 已完成：`app/api/github/app/callback/route.ts`
++ 
++ 实现功能：
++ - 处理 GitHub App 安装后的重定向
++ - 所有权校验（防止冒领）
++ - 创建/更新 `GitHubAppInstallation` 记录
 
 **文件：**
 - 新建: `app/api/github/app/callback/route.ts`
@@ -736,7 +783,14 @@ git commit -m "feat: add GitHub App installation callback route"
 
 ---
 
-### Task 6: Webhook 端点
+### Task 6: Webhook 端点 ✅
+
+> 已完成：`app/api/github/app/webhook/route.ts`
++ 
++ 实现功能：
++ - 处理 `installation` 事件（created/deleted/suspend/unsuspend）
++ - Webhook 签名验证
++ - Installation token 缓存失效处理
 
 **文件：**
 - 新建: `app/api/github/app/webhook/route.ts`
@@ -848,7 +902,13 @@ git commit -m "feat: add GitHub App webhook endpoint for installation events"
 
 ---
 
-### Task 7: 完整构建验证
+### Task 7: 完整构建验证 ✅
+
+> 已完成：
+> - `npx prisma generate` ✅
+> - `pnpm lint` ✅
+> - `SKIP_ENV_VALIDATION=1 pnpm build` ✅
+> - `npx prisma db push` ✅（数据库迁移）
 
 **Step 1: 生成 Prisma Client**
 
@@ -876,3 +936,64 @@ SKIP_ENV_VALIDATION=1 pnpm build
 git add -A
 git commit -m "chore: lint fixes for GitHub App integration"
 ```
+
+---
+
+## Phase 2: 前端界面 ⏳ 待开始
+
+> **前置条件**: Phase 1 已合并到集成分支
+
+### 待实现功能
+
+1. **GitHub App 安装入口**
+   - 在设置页面添加 "安装 GitHub App" 按钮
+   - 跳转到 GitHub App 安装页面
+   - 处理安装成功/失败的回调
+
+2. **Repo 选择器**
+   - 显示用户可访问的 repo 列表
+   - 支持搜索和筛选
+   - 选择后关联到项目
+
+3. **项目 GitHub 设置页面**
+   - 显示当前关联的 repo
+   - 支持更换/解除关联
+   - 显示 installation 状态
+
+4. **改造现有 GitHub 页面**
+   - 整合 GitHub OAuth 和 GitHub App 入口
+   - 统一用户体验
+
+### 涉及文件
+
+- `app/projects/[id]/github/page.tsx` - 项目 GitHub 设置页
+- `components/github/` - GitHub 相关组件
+- `app/api/github/app/installations/` - 获取用户 installations API
+- `app/api/github/app/repos/` - 获取 installation repos API
+
+---
+
+## Phase 3: 数据迁移 ⏳ 待开始
+
+> **前置条件**: Phase 2 已上线
+
+### 迁移策略
+
+用户通过新流程重新关联 repo 时自动填充新字段：
+- `githubAppInstallationId`
+- `githubRepoId`
+- `githubRepoFullName`
+
+旧 `githubRepo` 字段无法自动迁移（只是字符串，缺少必要信息）。
+
+---
+
+## Phase 4: 清理 ⏳ 待开始
+
+> **前置条件**: 确认所有项目已迁移或旧数据不再需要
+
+### 清理内容
+
+1. 移除 `Project.githubRepo` 字段
+2. 移除相关的兼容性代码
+3. 更新文档
