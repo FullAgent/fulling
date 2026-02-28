@@ -15,9 +15,10 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  identities UserIdentity[] // One-to-many: User has multiple authentication identities
-  projects   Project[] // One-to-many: User owns multiple projects
-  configs    UserConfig[] // One-to-many: User global configurations
+  identities         UserIdentity[] // One-to-many: User has multiple authentication identities
+  projects           Project[] // One-to-many: User owns multiple projects
+  configs            UserConfig[] // One-to-many: User global configurations
+  githubInstallations GitHubAppInstallation[] // One-to-many: User's GitHub App installations
 }
 
 model UserIdentity {
@@ -64,6 +65,37 @@ model UserConfig {
   @@index([userId, category])
 }
 
+// GitHubAppInstallation: Tracks GitHub App installations
+// Required for obtaining installation access tokens
+model GitHubAppInstallation {
+  id             String                   @id @default(cuid())
+  installationId Int                      @unique // GitHub's numeric installation ID
+  userId         String
+
+  accountId      Int // GitHub account numeric ID
+  accountLogin   String // GitHub username or organization name
+  accountType    String // "User" or "Organization"
+  accountAvatarUrl String?
+
+  repositorySelection String // "all" or "selected"
+
+  permissions Json     @default("{}") // App permissions
+  events      Json     @default("[]") // Subscribed events
+
+  status      GitHubInstallationStatus @default(ACTIVE)
+  suspendedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projects Project[] // Reverse relation: which projects use this installation
+
+  @@index([userId])
+  @@index([accountId])
+}
+
 // Project: Abstract resource collection
 // Status is derived from child resources (databases, sandboxes, environments)
 model Project {
@@ -71,7 +103,14 @@ model Project {
   name        String // Display name
   description String?
   userId      String
-  githubRepo  String? // Optional GitHub repository
+
+  /// @deprecated Use githubAppInstallation + githubRepoId + githubRepoFullName instead
+  githubRepo String? // Optional GitHub repository (legacy)
+
+  // GitHub App integration (Phase 1: Expand)
+  githubAppInstallationId String? // FK → GitHubAppInstallation
+  githubRepoId            Int? // GitHub repo numeric ID (stable across renames)
+  githubRepoFullName      String? // "owner/repo-name", for display
 
   // Aggregated status based on child resources
   status ProjectStatus @default(CREATING)
@@ -80,10 +119,13 @@ model Project {
   updatedAt DateTime @updatedAt
 
   // Relations: Project is a collection of resources
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade) // Many-to-one: Project belongs to a User
-  environments Environment[] // One-to-many: Configuration variables
-  databases    Database[] // One-to-many: Multiple database clusters
-  sandboxes    Sandbox[] // One-to-many: Multiple runtime containers
+  user                User                   @relation(fields: [userId], references: [id], onDelete: Cascade) // Many-to-one: Project belongs to a User
+  environments        Environment[] // One-to-many: Configuration variables
+  databases           Database[] // One-to-many: Multiple database clusters
+  sandboxes           Sandbox[] // One-to-many: Multiple runtime containers
+  githubAppInstallation GitHubAppInstallation? @relation(fields: [githubAppInstallationId], references: [id], onDelete: SetNull)
+
+  @@index([githubAppInstallationId])
 }
 
 // Environment: Configuration key-value pairs for the project
@@ -240,4 +282,10 @@ enum AuthProvider {
   GITHUB // GitHub OAuth
   GOOGLE // Google OAuth (future)
   SEALOS // Sealos OAuth
+}
+
+enum GitHubInstallationStatus {
+  ACTIVE // Installation is active and operational
+  SUSPENDED // Installation is suspended by GitHub
+  DELETED // Installation was deleted
 }
