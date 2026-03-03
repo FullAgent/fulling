@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const session = await auth()
     if (!session?.user?.id) {
       logger.warn('Unauthenticated user attempted GitHub App callback')
-      return NextResponse.redirect(new URL('/login', request.url))
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const searchParams = request.nextUrl.searchParams
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     if (!installationIdStr) {
       logger.error('Missing installation_id in GitHub App callback')
-      return NextResponse.redirect(new URL('/projects?error=missing_installation_id', request.url))
+      return NextResponse.json({ error: 'Missing installation_id' }, { status: 400 })
     }
 
     const installationId = parseInt(installationIdStr, 10)
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
       if (!githubIdentity) {
         logger.warn(`User ${session.user.id} has no GitHub identity linked`)
-        return NextResponse.redirect(new URL('/projects?error=github_not_linked', request.url))
+        return NextResponse.json({ error: 'GitHub account not linked' }, { status: 400 })
       }
 
       const userGitHubId = parseInt(githubIdentity.providerUserId, 10)
@@ -45,15 +45,11 @@ export async function GET(request: NextRequest) {
         logger.warn(
           `User ${session.user.id} (GitHub ID ${userGitHubId}) attempted to claim installation for ${details.account.login} (GitHub ID ${details.account.id})`
         )
-        return NextResponse.redirect(
-          new URL('/projects?error=installation_owner_mismatch', request.url)
-        )
+        return NextResponse.json({ error: 'Installation owner mismatch' }, { status: 403 })
       }
     } else {
       logger.warn(`Organization installation not supported yet: ${details.account.login}`)
-      return NextResponse.redirect(
-        new URL('/projects?error=org_installation_not_supported', request.url)
-      )
+      return NextResponse.json({ error: 'Organization installation not supported' }, { status: 400 })
     }
 
     await upsertInstallation({
@@ -70,9 +66,9 @@ export async function GET(request: NextRequest) {
 
     logger.info(`GitHub App installed: ${details.account.login}`)
 
-    return NextResponse.redirect(new URL('/projects?github=connected', request.url))
+    return NextResponse.json({ success: true, installationId: details.id })
   } catch (error) {
     logger.error(`GitHub App callback error: ${error}`)
-    return NextResponse.redirect(new URL('/projects?error=github_callback_failed', request.url))
+    return NextResponse.json({ error: 'GitHub callback failed' }, { status: 500 })
   }
 }

@@ -45,6 +45,8 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional(),
+    NEXT_PUBLIC_GITHUB_APP_ID: z.string().optional(),
+    NEXT_PUBLIC_GITHUB_APP_NAME: z.string().optional(),
   },
   /*
    * Specify what values should be validated by your schemas above.
@@ -59,6 +61,8 @@ export const env = createEnv({
   // },
   experimental__runtimeEnv: {
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_GITHUB_APP_ID: process.env.NEXT_PUBLIC_GITHUB_APP_ID,
+    NEXT_PUBLIC_GITHUB_APP_NAME: process.env.NEXT_PUBLIC_GITHUB_APP_NAME,
   },
   /*
    * Skip validation during build time (e.g., in CI/CD)

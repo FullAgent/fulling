@@ -4,17 +4,19 @@ import { useState } from 'react'
 import { MdAdd, MdSearch } from 'react-icons/md'
 
 import CreateProjectDialog from '@/components/dialog/create-project-dialog'
+import { ImportGitHubDialog } from '@/components/dialog/import-github-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Kbd } from '@/components/ui/kbd'
 
 export function SearchBar() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
 
   return (
     <>
       <header className="h-16 flex items-center justify-between px-6 border-b border-border bg-background/80 backdrop-blur-md z-10 shrink-0">
-        {/* 搜索框 */}
+        {/* Search input */}
         <div className="flex-1 max-w-xl">
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -35,13 +37,17 @@ export function SearchBar() {
           </div>
         </div>
 
-        {/* 操作按钮 */}
+        {/* Action buttons */}
         <div className="flex items-center gap-4 ml-6">
           <div className="flex items-center shadow-sm rounded-lg overflow-hidden">
-            <Button variant="secondary" className="rounded-r-none border-r-0 focus:z-10">
+            <Button
+              variant="secondary"
+              className="rounded-r-none border-r-0 focus:z-10"
+              onClick={() => setIsImportDialogOpen(true)}
+            >
               Import
             </Button>
-            <Button 
+            <Button
               onClick={() => setIsDialogOpen(true)}
               className="rounded-l-none font-bold font-[family-name:var(--font-heading)] hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] focus:z-10"
             >
@@ -52,10 +58,9 @@ export function SearchBar() {
         </div>
       </header>
 
-      <CreateProjectDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-      />
+      <CreateProjectDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
+
+      <ImportGitHubDialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen} />
     </>
   )
 }

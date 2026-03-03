@@ -13,12 +13,43 @@ const tokenCache = new Map<number, { token: string; expiresAt: number }>()
 const TOKEN_CACHE_TTL_MS = 50 * 60 * 1000
 
 function resolvePrivateKey(raw: string): string {
-  if (!raw.includes('-----BEGIN')) {
-    const decoded = Buffer.from(raw, 'base64').toString('utf-8')
-    if (decoded.includes('-----BEGIN')) {
-      return decoded
-    }
+  if (!raw || raw.trim() === '') {
+    throw new Error('GITHUB_APP_PRIVATE_KEY is empty or not configured')
   }
+
+  // Check if it's already a PEM format
+  if (raw.includes('-----BEGIN')) {
+    return raw.replace(/\\n/g, '\n')
+  }
+
+  // Try base64 decode
+  try {
+    // Remove any whitespace/newlines from base64 string
+    const cleanBase64 = raw.replace(/\s/g, '')
+    const decoded = Buffer.from(cleanBase64, 'base64').toString('utf-8')
+    if (decoded.includes('-----BEGIN')) {
+      // Ensure proper line breaks in PEM format
+      // PEM format should have lines of 64 characters
+      const lines = decoded.split('\n')
+      const formattedLines: string[] = []
+      for (const line of lines) {
+        if (line.startsWith('-----')) {
+          formattedLines.push(line)
+        } else {
+          // Split long lines into 64-character chunks
+          for (let i = 0; i < line.length; i += 64) {
+            formattedLines.push(line.substring(i, i + 64))
+          }
+        }
+      }
+      return formattedLines.join('\n')
+    }
+    logger.warn('Base64 decoded value does not contain -----BEGIN, using raw value')
+  } catch (error) {
+    logger.warn(`Failed to decode base64: ${error}`)
+  }
+
+  // Fallback: treat as raw key with escaped newlines
   return raw.replace(/\\n/g, '\n')
 }
 

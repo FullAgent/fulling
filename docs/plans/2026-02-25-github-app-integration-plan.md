@@ -7,7 +7,7 @@
 | 阶段 | 状态 | 提交 | 说明 |
 |------|------|------|------|
 | **Phase 1: 后端基础设施** | ✅ 已完成 | `0940b1e` | Schema、Service、Repo、Callback/Webhook 路由 |
-| **Phase 2: 前端界面** | ⏳ 待开始 | - | GitHub App 安装入口、repo 选择器 |
+| **Phase 2: 前端界面** | ✅ 已完成 | - | GitHub App 安装入口、repo 选择器、设置页面 |
 | **Phase 3: 数据迁移** | ⏳ 待开始 | - | 用户重新关联 repo 时填充新字段 |
 | **Phase 4: 清理** | ⏳ 待开始 | - | 移除 `githubRepo` 旧字段 |
 
@@ -285,7 +285,7 @@ git commit -m "feat(schema): add GitHubAppInstallation model, expand Project wit
 
 ### Task 2: 环境变量 ✅
 
-> 已完成：添加 `GITHUB_APP_ID`、`GITHUB_APP_PRIVATE_KEY`、`GITHUB_APP_WEBHOOK_SECRET`
+> 已完成：添加 `GITHUB_APP_ID`、`GITHUB_APP_PRIVATE_KEY`、`GITHUB_APP_WEBHOOK_SECRET`、 `NEXT_PUBLIC_GITHUB_APP_ID`
 
 **文件：**
 - 修改: `lib/env.ts`
@@ -301,18 +301,40 @@ git commit -m "feat(schema): add GitHubAppInstallation model, expand Project wit
     GITHUB_APP_WEBHOOK_SECRET: z.string().optional(),
 ```
 
-**Step 2: 验证**
+**Step 2: 在 client schema 中添加公共环境变量**
 
-```bash
-pnpm lint
+```typescript
+  client: {
+    // ... existing client vars
+    NEXT_PUBLIC_GITHUB_APP_ID: z.string().optional(),
+  },
 ```
 
-**Step 3: 提交**
+**Step 3: 在 experimental__runtimeEnv 中添加**
 
-```bash
-git add lib/env.ts
-git commit -m "feat(env): add GitHub App environment variables"
+```typescript
+  experimental__runtimeEnv: {
+    // ... existing runtime env
+    NEXT_PUBLIC_GITHUB_APP_ID: process.env.NEXT_PUBLIC_GITHUB_APP_ID,
+  },
 ```
+
+**说明：**
+
+| 变量 | 类型 | 用途 |
+|------|------|------|
+| `GITHUB_APP_ID` | 服务端 | App 标识符，用于签发 JWT |
+| `GITHUB_APP_PRIVATE_KEY` | 服务端 | App 私钥，用于签发 JWT（敏感） |
+| `GITHUB_APP_WEBHOOK_SECRET` | 服务端 | Webhook 签名验证（敏感） |
+| `NEXT_PUBLIC_GITHUB_APP_ID` | 客户端 | App 标识符（非敏感，可选） |
+| `NEXT_PUBLIC_GITHUB_APP_NAME` | 客户端 | App 名称，用于构建安装 URL（非敏感） |
+
+**为什么需要 `NEXT_PUBLIC_GITHUB_APP_NAME`？**
+- GitHub App 安装 URL 格式：`https://github.com/apps/{app-name}/installations/new`
+- `{app-name}` 是 GitHub App 的 slug（如 `fulling-dev`），不是数字 ID
+- 客户端组件需要构建正确的安装 URL
+
+**Step 4: 验证**
 
 ---
 
@@ -943,33 +965,369 @@ git commit -m "chore: lint fixes for GitHub App integration"
 
 > **前置条件**: Phase 1 已合并到集成分支
 
-### 待实现功能
+### 设计决策
 
-1. **GitHub App 安装入口**
-   - 在设置页面添加 "安装 GitHub App" 按钮
-   - 跳转到 GitHub App 安装页面
-   - 处理安装成功/失败的回调
+#### 用户流程
 
-2. **Repo 选择器**
-   - 显示用户可访问的 repo 列表
-   - 支持搜索和筛选
-   - 选择后关联到项目
+```
+绑定 GitHub（OAuth）→ 安装 GitHub App → 选择 repo 关联到项目
+UserIdentity        → GitHubAppInstallation → Project.githubRepoId
+```
 
-3. **项目 GitHub 设置页面**
-   - 显示当前关联的 repo
-   - 支持更换/解除关联
-   - 显示 installation 状态
+**为什么需要 GitHub OAuth？**
+- 安全校验：callback 路由需要验证 installation 的 owner 与当前用户的 GitHub identity 匹配
+- 防止冒领：防止用户用他人的 installation_id 冒领仓库权限
 
-4. **改造现有 GitHub 页面**
-   - 整合 GitHub OAuth 和 GitHub App 入口
-   - 统一用户体验
+#### 入口设计
+
+| 入口 | 位置 | 形式 | 用途 |
+|------|------|------|------|
+| **设置页面** | 全新页面 | 独立页面 | 用户主动配置 GitHub 集成 |
+| **Import 按钮** | Search Bar | 弹窗 | 导入 GitHub 仓库创建项目 |
+
+#### Import 弹窗流程
+
+```
+┌─────────────────────────────────────────┐
+│           Import from GitHub            │
+├─────────────────────────────────────────┤
+│  Step 1: 检测 GitHub 身份               │
+│  ├── 未绑定 → 显示 "Connect GitHub"     │
+│  │              [Connect GitHub] 按钮   │
+│  │              （跳转 GitHub OAuth）    │
+│  │                                      │
+│  └── 已绑定 → 进入 Step 2               │
+│                                         │
+│  Step 2: 检测 GitHub App                │
+│  ├── 未安装 → 显示 "Install GitHub App" │
+│  │              [Install] 按钮          │
+│  │              （弹窗打开 GitHub 安装页）│
+│  │                                      │
+│  └── 已安装 → 进入 Step 3               │
+│                                         │
+│  Step 3: 选择仓库                       │
+│  ├── 显示 repo 列表（可搜索）           │
+│  ├── 选择一个 repo                      │
+│  └── [Import] 创建项目                  │
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+**弹窗实现细节：**
+- 使用 `window.open()` 打开 GitHub 安装页面
+- 监听弹窗关闭事件，检测安装是否完成
+- 完成后刷新状态，自动进入下一步
+
+#### Repository Access 策略
+
+| 模式 | Phase 2 处理方式 |
+|------|------------------|
+| **All repositories** | ✅ 完整支持，新仓库自动可访问 |
+| **Only select repositories** | 📌 后续迭代，Phase 2 暂不处理 |
+
+**引导策略：** 在 GitHub App 安装页面文案中引导用户选择 "All repositories"
+
+### 范围说明
+
+**Phase 2 范围：仅实现 UI 和基础数据关联**
+
+| 包含 | 不包含 |
+|------|--------|
+| ✅ GitHub 身份绑定 UI | ❌ clone 代码到 sandbox |
+| ✅ GitHub App 安装 UI | ❌ 自动同步代码 |
+| ✅ Repo 选择器 UI | ❌ PR 创建功能 |
+| ✅ 项目与 repo 关联（数据库记录） | ❌ CI/CD 集成 |
+| ✅ 基础错误处理 | ❌ 高级错误恢复 |
+
+**后续行为留待后续迭代实现。**
+
+---
+
+### Task 1: Server Actions — 基础数据获取
+
+> **目标**: 创建 GitHub 相关的 Server Actions，供前端组件调用
+
+**文件：**
+- 新建: `lib/actions/github.ts`
+
+**Step 1: 创建 `getInstallations()` Action**
+
+```typescript
+'use server'
+
+import { auth } from '@/lib/auth'
+import { getInstallationsForUser } from '@/lib/repo/github'
+
+export async function getInstallations() {
+  const session = await auth()
+  if (!session?.user?.id) {
+    throw new Error('Unauthorized')
+  }
+
+  return getInstallationsForUser(session.user.id)
+}
+```
+
+**Step 2: 创建 `getInstallationRepos(installationId)` Action**
+
+```typescript
+export async function getInstallationRepos(installationId: string) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    throw new Error('Unauthorized')
+  }
+
+  // 验证 installation 归属
+  const installation = await getInstallationByGitHubId(parseInt(installationId, 10))
+  if (!installation || installation.userId !== session.user.id) {
+    throw new Error('Installation not found')
+  }
+
+  return listInstallationRepos(installation.installationId)
+}
+```
+
+**Step 3: 验证并提交**
+
+```bash
+pnpm lint
+git add lib/actions/github.ts
+git commit -m "feat(actions): add GitHub Server Actions for installations and repos"
+```
+
+---
+
+### Task 2: 设置页面 — GitHub 集成
+
+> **目标**: 创建全新的设置页面，显示 GitHub 身份和 installations 状态
+
+**文件：**
+- 新建: `app/settings/page.tsx`
+- 新建: `components/github/github-status-card.tsx`
+- 新建: `components/github/installation-list.tsx`
+
+**Step 1: 创建设置页面路由**
+
+```typescript
+// app/settings/page.tsx
+import { auth } from '@/lib/auth'
+import { redirect } from 'next/navigation'
+import GitHubStatusCard from '@/components/github/github-status-card'
+
+export default async function SettingsPage() {
+  const session = await auth()
+  if (!session?.user?.id) {
+    redirect('/login')
+  }
+
+  return (
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-6">Settings</h1>
+      <GitHubStatusCard userId={session.user.id} />
+    </div>
+  )
+}
+```
+
+**Step 2: 创建 GitHub 状态卡片组件**
+
+显示：
+- GitHub 身份绑定状态（已绑定/未绑定）
+- "Connect GitHub" 按钮（未绑定时）
+- 已安装的 installations 列表
+- "Install GitHub App" 按钮
+
+**Step 3: 创建 Installation 列表组件**
+
+显示：
+- Installation 账户信息（头像、用户名）
+- Repository selection 类型（all/selected）
+- 状态（ACTIVE/SUSPENDED）
+
+**Step 4: 验证并提交**
+
+```bash
+pnpm lint
+git add app/settings/ components/github/
+git commit -m "feat(ui): add settings page with GitHub integration status"
+```
+
+---
+
+### Task 3: Import 弹窗 — 三步流程
+
+> **目标**: 创建 Import 弹窗，实现 GitHub 身份 → GitHub App → Repo 选择的三步流程
+
+**文件：**
+- 新建: `components/dialog/import-github-dialog.tsx`
+- 修改: `components/search-bar.tsx`（添加弹窗触发）
+
+**Step 1: 创建 Import 弹窗组件框架**
+
+```typescript
+// components/dialog/import-github-dialog.tsx
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+
+type Step = 'check-github-identity' | 'check-github-app' | 'select-repo'
+
+export function ImportGitHubDialog({ open, onOpenChange }: Props) {
+  const [step, setStep] = useState<Step>('check-github-identity')
+  // ...
+}
+```
+
+**Step 2: 实现 Step 1 — 检测 GitHub 身份**
+
+- 调用 Server Action 检查用户是否有 `UserIdentity(provider=GITHUB)`
+- 未绑定时显示 "Connect GitHub" 按钮
+- 点击按钮跳转 GitHub OAuth
+
+**Step 3: 实现 Step 2 — 检测 GitHub App**
+
+- 调用 `getInstallations()` 检查是否有 installations
+- 未安装时显示 "Install GitHub App" 按钮
+- 点击按钮用 `window.open()` 打开 GitHub App 安装页面
+- 监听弹窗关闭，检测安装状态
+
+**Step 4: 实现 Step 3 — Repo 选择**
+
+- 调用 `getInstallationRepos()` 获取 repo 列表
+- 显示可搜索的 repo 列表
+- 选择 repo 后创建项目
+
+**Step 5: 集成到 Search Bar**
+
+修改 `components/search-bar.tsx`，点击 Import 按钮时打开弹窗。
+
+**Step 6: 验证并提交**
+
+```bash
+pnpm lint
+git add components/dialog/import-github-dialog.tsx components/search-bar.tsx
+git commit -m "feat(ui): add Import GitHub dialog with 3-step flow"
+```
+
+---
+
+### Task 4: Repo 选择器组件
+
+> **目标**: 创建可复用的 Repo 选择器组件，支持搜索和筛选
+
+**文件：**
+- 新建: `components/github/repo-selector.tsx`
+
+**Step 1: 创建 Repo 选择器组件**
+
+```typescript
+// components/github/repo-selector.tsx
+'use client'
+
+import { useState } from 'react'
+import { Input } from '@/components/ui/input'
+import { ScrollArea } from '@/components/ui/scroll-area'
+
+interface Repo {
+  id: number
+  full_name: string
+  description: string | null
+  private: boolean
+  language: string | null
+}
+
+interface Props {
+  repos: Repo[]
+  onSelect: (repo: Repo) => void
+}
+
+export function RepoSelector({ repos, onSelect }: Props) {
+  const [search, setSearch] = useState('')
+  
+  const filteredRepos = repos.filter(repo => 
+    repo.full_name.toLowerCase().includes(search.toLowerCase())
+  )
+  
+  return (
+    // ...
+  )
+}
+```
+
+**Step 2: 添加搜索功能**
+
+- 输入框实时过滤 repo 列表
+- 按 repo 名称搜索
+
+**Step 3: 添加 repo 信息展示**
+
+- 显示 repo 名称、描述、语言、私有/公开标识
+- 点击选中
+
+**Step 4: 验证并提交**
+
+```bash
+pnpm lint
+git add components/github/repo-selector.tsx
+git commit -m "feat(ui): add Repo selector component with search"
+```
+
+---
+
+### Task 5: 集成测试和构建验证
+
+> **目标**: 确保所有功能正常工作，构建通过
+
+**Step 1: 本地测试**
+
+```bash
+pnpm dev
+```
+
+手动测试：
+1. 设置页面显示 GitHub 状态
+2. Import 弹窗三步流程
+3. Repo 选择器搜索功能
+
+**Step 2: Lint 检查**
+
+```bash
+pnpm lint
+```
+
+**Step 3: 构建验证**
+
+```bash
+pnpm build
+```
+
+**Step 4: 最终提交**
+
+```bash
+git add -A
+git commit -m "chore: lint fixes for Phase 2"
+```
+
+---
 
 ### 涉及文件
 
-- `app/projects/[id]/github/page.tsx` - 项目 GitHub 设置页
-- `components/github/` - GitHub 相关组件
-- `app/api/github/app/installations/` - 获取用户 installations API
-- `app/api/github/app/repos/` - 获取 installation repos API
+**前端页面和组件：**
+- `app/settings/page.tsx` - 全新设置页面（入口 1）
+- `components/dialog/import-github-dialog.tsx` - Import 弹窗（入口 2）
+- `components/github/github-status-card.tsx` - GitHub 状态卡片
+- `components/github/repo-selector.tsx` - Repo 选择器
+- `components/github/installation-list.tsx` - Installation 列表
+
+**Server Actions：**
+- `lib/actions/github.ts` - GitHub 相关 Server Actions
+  - `getInstallations()` - 获取用户的 installations
+  - `getInstallationRepos(installationId)` - 获取 installation 的 repos
+
+**API 路由（仅用于外部调用）：**
+- `app/api/github/app/callback/route.ts` - GitHub App 安装回调（Phase 1 已完成）
+- `app/api/github/app/webhook/route.ts` - GitHub Webhook（Phase 1 已完成）
 
 ---
 

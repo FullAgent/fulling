@@ -17,13 +17,13 @@ import { Separator } from '@/components/ui/separator'
 import packageInfo from '../package.json'
 
 const menuItems = [
-  { icon: MdGridView, label: 'Projects', active: true },
-  { icon: MdPsychology, label: 'Skills', active: false },
-  { icon: MdHub, label: 'MCP', active: false },
+  { icon: MdGridView, label: 'Projects', href: '/projects', active: false },
+  { icon: MdPsychology, label: 'Skills', href: '/skills', active: false },
+  { icon: MdHub, label: 'MCP', href: '/mcp', active: false },
   { divider: true },
-  { icon: MdDashboardCustomize, label: 'Templates', active: false },
-  { icon: MdExtension, label: 'Integrations', active: false },
-  { icon: MdSettings, label: 'Settings', active: false },
+  { icon: MdDashboardCustomize, label: 'Templates', href: '/templates', active: false },
+  { icon: MdExtension, label: 'Integrations', href: '/integrations', active: false },
+  { icon: MdSettings, label: 'Settings', href: '/settings', active: false },
 ]
 
 export function Sidebar() {
@@ -73,7 +73,7 @@ function NavMenu() {
         return (
           <Link
             key={item.label}
-            href="#"
+            href={item.href}
             className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
               isActive
                 ? 'bg-primary/10 border border-primary/20'
