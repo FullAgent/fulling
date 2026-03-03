@@ -7,7 +7,7 @@
 | 阶段 | 状态 | 提交 | 说明 |
 |------|------|------|------|
 | **Phase 1: 后端基础设施** | ✅ 已完成 | `0940b1e` | Schema、Service、Repo、Callback/Webhook 路由 |
-| **Phase 2: 前端界面** | ✅ 已完成 | - | GitHub App 安装入口、repo 选择器、设置页面 |
+| **Phase 2: 前端界面** | ✅ 已完成 | `c022e5f` | GitHub App 安装入口、repo 选择器、设置页面 |
 | **Phase 3: 数据迁移** | ⏳ 待开始 | - | 用户重新关联 repo 时填充新字段 |
 | **Phase 4: 清理** | ⏳ 待开始 | - | 移除 `githubRepo` 旧字段 |
 
@@ -1043,7 +1043,7 @@ UserIdentity        → GitHubAppInstallation → Project.githubRepoId
 
 ---
 
-### Task 1: Server Actions — 基础数据获取
+### Task 1: Server Actions — 基础数据获取 ✅
 
 > **目标**: 创建 GitHub 相关的 Server Actions，供前端组件调用
 
@@ -1097,7 +1097,7 @@ git commit -m "feat(actions): add GitHub Server Actions for installations and re
 
 ---
 
-### Task 2: 设置页面 — GitHub 集成
+### Task 2: 设置页面 — GitHub 集成 ✅
 
 > **目标**: 创建全新的设置页面，显示 GitHub 身份和 installations 状态
 
@@ -1154,7 +1154,7 @@ git commit -m "feat(ui): add settings page with GitHub integration status"
 
 ---
 
-### Task 3: Import 弹窗 — 三步流程
+### Task 3: Import 弹窗 — 三步流程 ✅
 
 > **目标**: 创建 Import 弹窗，实现 GitHub 身份 → GitHub App → Repo 选择的三步流程
 
@@ -1212,7 +1212,7 @@ git commit -m "feat(ui): add Import GitHub dialog with 3-step flow"
 
 ---
 
-### Task 4: Repo 选择器组件
+### Task 4: Repo 选择器组件 ✅
 
 > **目标**: 创建可复用的 Repo 选择器组件，支持搜索和筛选
 
@@ -1275,7 +1275,7 @@ git commit -m "feat(ui): add Repo selector component with search"
 
 ---
 
-### Task 5: 集成测试和构建验证
+### Task 5: 集成测试和构建验证 ✅
 
 > **目标**: 确保所有功能正常工作，构建通过
 
