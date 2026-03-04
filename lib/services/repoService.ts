@@ -77,10 +77,14 @@ export async function initializeRepo(projectId: string): Promise<RepoInitResult>
       return { success: false, message: repoResult.message, code: repoResult.code }
     }
 
-    // Save repo URL to database
+    // Save repo info to database (both new fields and legacy field for backward compatibility)
     await prisma.project.update({
       where: { id: projectId },
-      data: { githubRepo: repoResult.repoUrl },
+      data: { 
+        githubRepo: repoResult.repoUrl,
+        githubRepoFullName: repoResult.repoFullName,
+        githubRepoId: repoResult.repoId,
+      },
     })
 
     await runInitCommand(baseUrl, accessToken, authorization)
@@ -115,6 +119,8 @@ export type CreateRepoResult = {
   message: string
   repoUrl?: string
   cloneUrl?: string
+  repoId?: number
+  repoFullName?: string
   code?: string
 }
 
@@ -180,6 +186,8 @@ export async function createGithubRepo(repoName: string): Promise<CreateRepoResu
       message: 'Repository created successfully',
       repoUrl: repoData.html_url,
       cloneUrl: repoData.clone_url,
+      repoId: repoData.id,
+      repoFullName: repoData.full_name,
     }
   } catch (error) {
     console.error('Failed to create GitHub repo:', error)
@@ -241,7 +249,9 @@ export async function pushToGithub(projectId: string): Promise<RepoInitResult> {
   try {
     const { baseUrl, accessToken, authorization, project } = await getTtydContext(projectId, session.user.id)
 
-    if (!project.githubRepo) {
+    // Use new fields with fallback to legacy field
+    const repoFullName = project.githubRepoFullName || project.githubRepo
+    if (!repoFullName) {
       return { success: false, message: 'No GitHub repository linked to this project' }
     }
 
@@ -261,23 +271,9 @@ export async function pushToGithub(projectId: string): Promise<RepoInitResult> {
       return { success: false, message: 'GitHub token not found', code: 'GITHUB_NOT_BOUND' }
     }
 
-    // Validate GitHub URL format to prevent injection attacks
-    // Allow standard GitHub URLs: https://github.com/username/repo or https://github.com/username/repo.git
-    const githubUrlPattern = /^https:\/\/github\.com\/[a-zA-Z0-9-]+\/[a-zA-Z0-9-._]+(\.git)?$/
-    if (!githubUrlPattern.test(project.githubRepo)) {
-      return { success: false, message: 'Invalid GitHub repository URL' }
-    }
-
-    // Extract owner/repo from URL (e.g., https://github.com/owner/repo)
+    // Construct repo URL from full name (owner/repo format)
     // We want to construct: https://oauth2:token@github.com/owner/repo.git
-    let repoUrlStr = project.githubRepo
-    if (!repoUrlStr.endsWith('.git')) {
-      repoUrlStr += '.git'
-    }
-    
-    // Remove protocol to insert auth
-    const urlNoProtocol = repoUrlStr.replace(/^https?:\/\//, '')
-    const authUrl = `https://oauth2:${githubToken}@${urlNoProtocol}`
+    const authUrl = `https://oauth2:${githubToken}@github.com/${repoFullName}.git`
 
     // Configure remote and push
     // We use 'git remote set-url' if origin exists, or 'git remote add' if it doesn't

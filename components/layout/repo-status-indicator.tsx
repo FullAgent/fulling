@@ -10,7 +10,7 @@ import SettingsDialog from '@/components/dialog/settings-dialog'
 import { commitChanges, initializeRepo } from '@/lib/services/repoService'
 
 interface RepoStatusIndicatorProps {
-  project: Pick<Project, 'id' | 'githubRepo' | 'name'>
+  project: Pick<Project, 'id' | 'githubRepo' | 'name' | 'githubRepoFullName' | 'githubRepoId' | 'githubAppInstallationId'>
 }
 
 export function RepoStatusIndicator({ project }: RepoStatusIndicatorProps) {
@@ -19,9 +19,12 @@ export function RepoStatusIndicator({ project }: RepoStatusIndicatorProps) {
   const [isCommitting, setIsCommitting] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
 
+  const repoFullName = project.githubRepoFullName || project.githubRepo
+  const hasRepo = Boolean(repoFullName)
+
   // Create a new repository on GitHub
   const handleInitialize = async () => {
-    if (project.githubRepo || isInitializing) return
+    if (hasRepo || isInitializing) return
 
     setIsInitializing(true)
     try {
@@ -71,26 +74,30 @@ export function RepoStatusIndicator({ project }: RepoStatusIndicatorProps) {
 
   const isLoading = isInitializing || isCommitting
 
+  const repoUrl = repoFullName 
+    ? `https://github.com/${repoFullName}` 
+    : null
+
   return (
     <>
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1 px-1">
           <div className="p-0.5">
-            {(!project.githubRepo && isInitializing) ? (
+            {(!hasRepo && isInitializing) ? (
               <MdRefresh className="w-3 h-3 animate-spin text-blue-500" />
             ) : (
               <MdRefresh className="w-3 h-3 text-blue-500" />
             )}
           </div>
           
-          {project.githubRepo ? (
+          {hasRepo ? (
             <a 
-              href={project.githubRepo}
+              href={repoUrl!}
               target="_blank"
               rel="noopener noreferrer" 
               className="hover:underline cursor-pointer"
             >
-              {project.name}
+              {repoFullName}
             </a>
           ) : (
             <button 
@@ -103,7 +110,7 @@ export function RepoStatusIndicator({ project }: RepoStatusIndicatorProps) {
           )}
         </div>
 
-        {project.githubRepo && (
+        {hasRepo && (
           <button 
             className="flex items-center gap-1 px-1 rounded cursor-pointer transition-colors hover:bg-white/10"
             onClick={handleCommit}

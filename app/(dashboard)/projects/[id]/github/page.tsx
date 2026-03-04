@@ -24,9 +24,15 @@ export default function GithubPage() {
   const [isCommitting, setIsCommitting] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
+  const repoFullName = project?.githubRepoFullName || project?.githubRepo;
+  const hasRepo = Boolean(repoFullName);
+  const repoUrl = repoFullName 
+    ? `https://github.com/${repoFullName}` 
+    : null;
+
   // Create a new repository on GitHub
   const handleInitialize = async () => {
-    if (project?.githubRepo || isInitializing) return;
+    if (hasRepo || isInitializing) return;
 
     setIsInitializing(true);
     try {
@@ -89,10 +95,10 @@ export default function GithubPage() {
             </div>
             <div className="space-y-1">
               <h3 className="text-lg font-medium text-foreground">
-                {project?.githubRepo ? 'Connected to GitHub' : 'GitHub Repository'}
+                {hasRepo ? 'Connected to GitHub' : 'GitHub Repository'}
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed max-w-lg">
-                {project?.githubRepo
+                {hasRepo
                   ? 'Your project is currently active and synced with a remote GitHub repository. You can push your latest changes below.'
                   : 'Initialize a new repository to start tracking changes. This will create a private repository in your GitHub account and push the initial code.'}
               </p>
@@ -101,17 +107,17 @@ export default function GithubPage() {
 
           {/* Actions */}
           <div className="pl-[76px]">
-            {project?.githubRepo ? (
+            {hasRepo ? (
               <div className="space-y-6">
                 <div className="flex flex-col gap-2 p-3 bg-secondary/30 rounded-md border border-border/50">
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Repository URL</span>
                   <a
-                    href={project.githubRepo}
+                    href={repoUrl!}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 hover:underline text-primary hover:text-primary-hover font-mono text-sm break-all"
                   >
-                    {project.githubRepo}
+                    {repoFullName}
                     <MdOpenInNew className="w-3.5 h-3.5" />
                   </a>
                 </div>
@@ -136,7 +142,7 @@ export default function GithubPage() {
                   </Button>
                   <Button 
                     variant="outline" 
-                    onClick={() => window.open(project.githubRepo!, '_blank')}
+                    onClick={() => window.open(repoUrl!, '_blank')}
                   >
                     View on GitHub
                   </Button>
