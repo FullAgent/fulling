@@ -1559,28 +1559,166 @@ function createCallbackPage(success: boolean, message: string): NextResponse {
 
 ---
 
-## Phase 4: 数据迁移 ⏳ 待开始
+## Phase 4: 代码迁移 ⏳ 待开始
 
-> **前置条件**: Phase 3 已上线
+> **前置条件**: Phase 3 已上线  
+> **预计工作量**: 1-2 小时
+
+### 背景
+
+Phase 3 完成了后端基础设施，但前端代码仍在使用旧的 `githubRepo` 字段。需要更新前端代码使用新字段，同时保持向后兼容。
+
+### 为什么不是"数据迁移"？
+
+**原计划（数据迁移）**：
+- ❌ 旧数据无法自动迁移（`githubRepo` 只是字符串，缺少 `installationId` 和 `repoId`）
+- ✅ 用户重新关联 repo 时会自动填充新字段
+
+**新计划（代码迁移）**：
+- ✅ 更新前端代码优先使用新字段
+- ✅ 保留旧字段作为 fallback（向后兼容）
+- ✅ 确保新旧数据都能正常工作
 
 ### 迁移策略
 
-用户通过新流程重新关联 repo 时自动填充新字段：
-- `githubAppInstallationId`
-- `githubRepoId`
-- `githubRepoFullName`
+**优先级顺序**：
+```typescript
+// 优先使用新字段，fallback 到旧字段
+const repoFullName = project.githubRepoFullName || project.githubRepo
+const repoId = project.githubRepoId
+const installationId = project.githubAppInstallationId
+```
 
-旧 `githubRepo` 字段无法自动迁移（只是字符串，缺少必要信息）。
+### 需要更新的文件
+
+#### 1. 前端组件
+
+**`components/layout/repo-status-indicator.tsx`**
+- 当前：使用 `project.githubRepo`
+- 更新：优先使用 `project.githubRepoFullName`，fallback 到 `project.githubRepo`
+- 显示：repo 链接、状态指示器
+
+**`app/(dashboard)/projects/[id]/github/page.tsx`**
+- 当前：使用 `project.githubRepo`
+- 更新：优先使用新字段，显示更丰富的信息
+- 新增：显示 installation 信息（如果有的话）
+
+#### 2. 服务层
+
+**`lib/services/repoService.ts`**
+- 当前：使用 `project.githubRepo` 进行 Git 操作
+- 更新：
+  - 优先使用 `githubRepoFullName` 获取 repo 名称
+  - 使用 `githubAppInstallationId` 获取 installation token
+  - 使用 `githubRepoId` 进行 API 操作
+
+#### 3. 类型定义
+
+**确保 TypeScript 类型正确**：
+```typescript
+interface Project {
+  // ... existing fields
+  githubRepo?: string | null // @deprecated
+  githubAppInstallationId?: string | null
+  githubRepoId?: number | null
+  githubRepoFullName?: string | null
+  githubAppInstallation?: GitHubAppInstallation | null
+}
+```
+
+### 实施步骤
+
+#### Task 1: 更新 repo-status-indicator 组件
+
+**文件**: `components/layout/repo-status-indicator.tsx`
+
+**变更**：
+```typescript
+// Before
+{project.githubRepo ? (
+  <a href={project.githubRepo}>...</a>
+) : ...}
+
+// After
+{(project.githubRepoFullName || project.githubRepo) ? (
+  <a href={`https://github.com/${project.githubRepoFullName || project.githubRepo}`}>
+    {project.githubRepoFullName || project.githubRepo}
+  </a>
+) : ...}
+```
+
+#### Task 2: 更新 GitHub 页面
+
+**文件**: `app/(dashboard)/projects/[id]/github/page.tsx`
+
+**变更**：
+- 使用新字段显示 repo 信息
+- 如果有 `githubAppInstallation`，显示 installation 详情
+- 保留旧字段的 fallback 逻辑
+
+#### Task 3: 更新 repoService
+
+**文件**: `lib/services/repoService.ts`
+
+**变更**：
+- 使用 `githubRepoFullName` 或 `githubRepo` 获取 repo 名称
+- 使用 `githubAppInstallationId` 获取 installation（如果有）
+- 实现优先级逻辑
+
+#### Task 4: 测试验证
+
+**测试场景**：
+1. ✅ 旧数据（只有 `githubRepo`）- 应该正常显示
+2. ✅ 新数据（有新字段）- 应该优先使用新字段
+3. ✅ 混合数据（同时有新旧字段）- 应该优先使用新字段
+4. ✅ 没有数据 - 应该显示"未连接"状态
+
+### 向后兼容性
+
+**保证**：
+- ✅ 旧数据仍然可以正常工作
+- ✅ 新数据会使用更准确的信息
+- ✅ 用户重新关联 repo 时会自动填充新字段
+- ✅ 不需要强制迁移旧数据
 
 ---
 
-## Phase 5: 清理 ⏳ 待开始
+## Phase 5: 清理 ⏳ 待开始（可选）
 
-> **前置条件**: 确认所有项目已迁移或旧数据不再需要
+> **前置条件**: Phase 4 上线后至少 3-6 个月，确认旧数据不再需要  
+> **优先级**: 低（可以延后或跳过）
 
 ### 清理内容
 
-1. 移除 `Project.githubRepo` 字段
-2. 移除相关的兼容性代码
-3. 移除废弃的 GitHub OAuth 路由
-4. 更新文档
+**数据库清理**：
+1. 移除 `Project.githubRepo` 字段（schema 变更）
+2. 运行数据库迁移
+
+**代码清理**：
+3. 移除所有对 `githubRepo` 的引用
+4. 移除废弃的 GitHub OAuth 路由：
+   - `app/api/user/github/bind/route.ts`
+   - `app/api/auth/github/callback/route.ts`
+   - `app/api/user/github/route.ts`
+5. 移除 `lib/actions/github.ts` 中的 `checkGitHubIdentity()`
+
+**文档更新**：
+6. 更新 API 文档
+7. 更新用户文档
+
+### 为什么可以延后？
+
+**向后兼容性好**：
+- ✅ 新旧字段可以共存
+- ✅ Fallback 逻辑确保旧数据可用
+- ✅ 不影响用户体验
+
+**风险低**：
+- ✅ 旧字段只是 deprecated，不是 bug
+- ✅ 保留旧字段不影响性能
+- ✅ 可以在未来版本中清理
+
+**建议时机**：
+- Phase 4 上线后 3-6 个月
+- 或者当大部分用户已经使用新流程时
+- 或者直接跳过，保持向后兼容
