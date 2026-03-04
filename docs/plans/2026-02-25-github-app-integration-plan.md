@@ -8,7 +8,7 @@
 |------|------|------|------|
 | **Phase 1: 后端基础设施** | ✅ 已完成 | `0940b1e` | Schema、Service、Repo、Callback/Webhook 路由 |
 | **Phase 2: 前端界面** | ✅ 已完成 | `c022e5f` | GitHub App 安装入口、repo 选择器、设置页面 |
-| **Phase 3: Octokit + 合并 OAuth** | ⏳ 待开始 | - | 迁移到 Octokit，合并身份验证和授权流程 |
+| **Phase 3: Octokit + 合并 OAuth** | 🚧 进行中 | - | 迁移到 Octokit，合并身份验证和授权流程 |
 | **Phase 4: 数据迁移** | ⏳ 待开始 | - | 用户重新关联 repo 时填充新字段 |
 | **Phase 5: 清理** | ⏳ 待开始 | - | 移除 `githubRepo` 旧字段和废弃代码 |
 
@@ -1359,43 +1359,357 @@ GitHub App Installation (勾选 OAuth during install)
 自动创建 UserIdentity + GitHubAppInstallation
 ```
 
+### GitHub App OAuth Flow 详解
+
+当勾选 "Request user authorization during installation" 后，用户安装 GitHub App 的流程：
+
+```
+1. 用户点击 "Install GitHub App"
+   ↓
+2. GitHub 重定向到 OAuth 授权页面
+   ↓
+3. 用户授权后，GitHub 重定向到 callback URL，参数：
+   - installation_id: number
+   - setup_action: "install" | "update"
+   - code: string (用于换取 user access token)
+   ↓
+4. 服务端处理：
+   a. 用 code 换取 user access token + refresh token
+   b. 用 user token 获取 GitHub 用户信息
+   c. 创建/更新 UserIdentity (provider=GITHUB)
+   d. 创建/更新 GitHubAppInstallation
+   e. 存储 tokens（可选）
+```
+
+**Token 类型**：
+- `access_token` (ghu_*): 8 小时过期
+- `refresh_token` (ghr_*): 6 个月过期
+
 ### Task 列表
 
-#### Task 1: 安装 Octokit
+---
+
+#### Task 1: 安装 Octokit 依赖
 
 ```bash
 pnpm add @octokit/rest @octokit/auth-app @octokit/webhooks
 ```
 
-#### Task 2: 迁移 `lib/services/github-app.ts`
+**依赖说明**：
+- `@octokit/rest` - GitHub REST API 客户端
+- `@octokit/auth-app` - GitHub App 认证策略（JWT、installation token、OAuth）
+- `@octokit/webhooks` - Webhook 签名验证
 
-使用 Octokit 的 App 认证策略，自动处理：
-- JWT 签发
-- Installation token 获取和缓存
-- API 调用
+---
 
-#### Task 3: 更新 GitHub App 配置
+#### Task 2: 重构 `lib/services/github-app.ts` 使用 Octokit
 
-在 GitHub App 设置页面勾选：
-- **"Request user authorization (OAuth) during installation"**
+**文件**: `lib/services/github-app.ts`
 
-#### Task 4: 更新 callback 路由
+**变化**：
+1. 使用 `createAppAuth` 替代手写 JWT 签发
+2. Octokit 自动缓存 installation token，移除手动缓存逻辑
+3. 新增 `exchangeCodeForUserToken()` 处理 OAuth code exchange
+4. 新增 `refreshUserToken()` 处理 token 刷新
+5. 移除 `generateAppJWT()` 和 `resolvePrivateKey()`（Octokit 内部处理）
 
-修改 `app/api/github/app/callback/route.ts`：
-- 处理 GitHub 返回的 user access token
-- 自动创建或更新 `UserIdentity`
-- 创建 `GitHubAppInstallation`
+**新 API**：
+```typescript
+// 获取 Octokit 实例（作为 App）
+export function getAppOctokit(): Octokit
 
-#### Task 5: 废弃独立的 GitHub OAuth 绑定入口
+// 获取 Octokit 实例（作为 Installation）
+export async function getInstallationOctokit(installationId: number): Promise<Octokit>
 
-- 移除 `/api/user/github/bind` 路由（或标记为 deprecated）
-- 更新前端组件，移除 "Connect GitHub" 按钮
-- 用户只需安装 GitHub App，自动完成身份绑定
+// 获取 installation token（Octokit 自动缓存）
+export async function getInstallationToken(installationId: number): Promise<string>
+
+// 获取 installation 详情
+export async function getInstallationDetails(installationId: number): Promise<Installation>
+
+// 列出 installation 可访问的 repos
+export async function listInstallationRepos(installationId: number): Promise<Repo[]>
+
+// 用 code 换取 user access token（新增）
+export async function exchangeCodeForUserToken(code: string): Promise<{
+  accessToken: string
+  refreshToken?: string
+  expiresAt?: string
+  refreshTokenExpiresAt?: string
+}>
+
+// 刷新 user access token（新增）
+export async function refreshUserToken(refreshToken: string): Promise<{
+  accessToken: string
+  refreshToken: string
+  expiresAt: string
+  refreshTokenExpiresAt: string
+}>
+
+// 获取有效的 user access token（自动刷新）（新增）
+export async function getValidUserAccessToken(userId: string): Promise<string>
+
+// 获取 GitHub 用户信息（新增）
+export async function getGitHubUser(accessToken: string): Promise<{
+  id: number
+  login: string
+  name: string | null
+  email: string | null
+  avatarUrl: string
+}>
+```
+
+**Token 自动刷新逻辑**：
+```typescript
+// 在 getValidUserAccessToken 中实现
+async function getValidUserAccessToken(userId: string): Promise<string> {
+  const identity = await prisma.userIdentity.findFirst({
+    where: { userId, provider: 'GITHUB' },
+  })
+  
+  const metadata = identity?.metadata as {
+    accessToken?: string
+    refreshToken?: string
+    expiresAt?: string
+  }
+  
+  // 检查 token 是否过期
+  if (metadata.expiresAt && new Date(metadata.expiresAt) > new Date()) {
+    return metadata.accessToken!
+  }
+  
+  // Token 已过期，使用 refresh token 刷新
+  if (metadata.refreshToken) {
+    const newTokens = await refreshUserToken(metadata.refreshToken)
+    
+    // 更新数据库
+    await prisma.userIdentity.update({
+      where: { id: identity.id },
+      data: {
+        metadata: {
+          ...metadata,
+          accessToken: newTokens.accessToken,
+          refreshToken: newTokens.refreshToken,
+          expiresAt: newTokens.expiresAt,
+          refreshTokenExpiresAt: newTokens.refreshTokenExpiresAt,
+        },
+      },
+    })
+    
+    return newTokens.accessToken
+  }
+  
+  throw new Error('GitHub token expired and no refresh token available')
+}
+```
+
+---
+
+#### Task 3: 更新 callback 路由处理 user OAuth flow
+
+**文件**: `app/api/github/app/callback/route.ts`
+
+**关键变化**：
+当勾选 "Request user authorization during installation" 后，callback 会收到额外参数 `code`。
+
+**新流程**：
+```typescript
+export async function GET(request: NextRequest) {
+  const installationId = parseInt(searchParams.get('installation_id')!, 10)
+  const setupAction = searchParams.get('setup_action')
+  const code = searchParams.get('code') // 新增：OAuth code
+
+  // 1. 获取 installation 详情
+  const details = await getInstallationDetails(installationId)
+
+  // 2. 如果有 code，换取 user access token
+  if (code) {
+    const tokenInfo = await exchangeCodeForUserToken(code)
+    const githubUser = await getGitHubUser(tokenInfo.accessToken)
+
+    // 3. 创建/更新 UserIdentity
+    await prisma.userIdentity.upsert({
+      where: {
+        unique_provider_user: {
+          provider: 'GITHUB',
+          providerUserId: String(githubUser.id),
+        },
+      },
+      create: {
+        userId: session.user.id,
+        provider: 'GITHUB',
+        providerUserId: String(githubUser.id),
+        metadata: {
+          login: githubUser.login,
+          name: githubUser.name,
+          avatarUrl: githubUser.avatarUrl,
+          accessToken: tokenInfo.accessToken,
+          refreshToken: tokenInfo.refreshToken,
+          expiresAt: tokenInfo.expiresAt,
+        },
+        isPrimary: true,
+      },
+      update: {
+        metadata: {
+          // ... 更新 token 信息
+        },
+      },
+    })
+  }
+
+  // 4. 创建/更新 GitHubAppInstallation
+  await upsertInstallation({
+    installationId: details.id,
+    userId: session.user.id,
+    // ...
+  })
+
+  return NextResponse.redirect(new URL('/projects?github=connected', request.url))
+}
+```
+
+**注意**：移除所有权校验逻辑（通过 GitHub App OAuth 流程已经验证了用户身份）。
+
+---
+
+#### Task 4: 更新 webhook 路由使用 `@octokit/webhooks`
+
+**文件**: `app/api/github/app/webhook/route.ts`
+
+**变化**：
+- 使用 `Webhooks` 类自动验证签名
+- 移除手动 `verifyWebhookSignature()`
+
+```typescript
+import { Webhooks } from '@octokit/webhooks'
+
+const webhooks = new Webhooks({
+  secret: env.GITHUB_APP_WEBHOOK_SECRET,
+})
+
+export async function POST(request: NextRequest) {
+  const payload = await request.text()
+  const signature = request.headers.get('x-hub-signature-256') || ''
+  const eventName = request.headers.get('x-github-event') || ''
+
+  // Octokit 自动验证签名
+  const { name, data } = await webhooks.verifyAndReceive({
+    id: request.headers.get('x-github-delivery') || '',
+    name: eventName,
+    payload,
+    signature,
+  })
+
+  // 处理事件...
+}
+
+// 注册事件处理器
+webhooks.on('installation', handleInstallationEvent)
+```
+
+---
+
+#### Task 5: 移除独立的 GitHub OAuth 相关代码
+
+**删除文件**：
+- `app/api/user/github/bind/route.ts` - GitHub OAuth 绑定入口
+- `app/api/auth/github/callback/route.ts` - GitHub OAuth callback
+- `app/api/user/github/route.ts` - GitHub 状态查询/解绑 API
+
+**修改文件**：
+- `lib/auth.ts` - 保留 GitHub provider 但标记 deprecated
+  ```typescript
+  // GitHub OAuth (DEPRECATED - will be removed in future version)
+  // Use GitHub App installation instead
+  if (env.ENABLE_GITHUB_AUTH) {
+    logger.warn(
+      'GitHub OAuth provider is DEPRECATED. Use GitHub App installation instead.'
+    )
+    // ... 保留现有代码
+  }
+  ```
+
+**更新 `lib/env.ts`**：
+- 保留 `GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET`、`ENABLE_GITHUB_AUTH`（向后兼容）
+- 新增 `GITHUB_APP_CLIENT_ID`、`GITHUB_APP_CLIENT_SECRET`（Octokit OAuth 需要）
+
+---
 
 #### Task 6: 更新前端组件
 
-- `components/github/github-status-card.tsx`：移除 GitHub OAuth 相关逻辑
-- `components/dialog/import-github-dialog.tsx`：简化流程，移除 Step 1（检测 GitHub 身份）
+**修改文件**：
+
+1. **`components/github/github-status-card.tsx`**
+   - 移除 "Connect GitHub" 按钮和相关逻辑
+   - 简化为只显示 "Install GitHub App" 按钮
+   - 移除 `handleConnectGitHub()` 函数
+   - 移除 popup OAuth 监听逻辑
+
+2. **`components/dialog/import-github-dialog.tsx`**
+   - 移除 Step 1（检测 GitHub 身份）
+   - 简化为两步流程：检查安装 → 选择仓库
+   - 更新 `Step` 类型：`'check-github-app' | 'select-repo'`
+
+3. **`lib/actions/github.ts`**
+   - 移除 `checkGitHubIdentity()` action
+   - 保留 `getInstallations()` 和 `getInstallationRepos()`
+
+---
+
+#### Task 7: 更新环境变量配置
+
+**修改 `lib/env.ts`**：
+
+```typescript
+// 保留（向后兼容，标记 deprecated）
+ENABLE_GITHUB_AUTH: z
+  .string()
+  .optional()
+  .default('false')
+  .transform((val) => val === 'true'), // DEPRECATED: Use GitHub App instead
+GITHUB_CLIENT_ID: z.string().optional(), // DEPRECATED
+GITHUB_CLIENT_SECRET: z.string().optional(), // DEPRECATED
+
+// 现有 GitHub App 配置
+GITHUB_APP_ID: z.string().optional(),
+GITHUB_APP_PRIVATE_KEY: z.string().optional(),
+GITHUB_APP_WEBHOOK_SECRET: z.string().optional(),
+
+// 新增（Octokit OAuth 需要）
+GITHUB_APP_CLIENT_ID: z.string().optional(),
+GITHUB_APP_CLIENT_SECRET: z.string().optional(),
+```
+
+**说明**：
+- `GITHUB_APP_CLIENT_ID` 和 `GITHUB_APP_CLIENT_SECRET` 可在 GitHub App 设置页面找到
+- 这些是 Octokit 进行 OAuth exchange 所必需的
+- 旧的 `GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET` 保留用于向后兼容
+
+---
+
+#### Task 8: 构建验证和测试
+
+**Step 1: 生成 Prisma Client**
+```bash
+npx prisma generate
+```
+
+**Step 2: Lint 检查**
+```bash
+pnpm lint
+```
+
+**Step 3: 构建**
+```bash
+pnpm build
+```
+
+**Step 4: 本地测试**
+- 测试 GitHub App 安装流程
+- 验证 UserIdentity 和 GitHubAppInstallation 正确创建
+- 测试 webhook 事件处理
+
+---
 
 ### 优点
 
@@ -1405,6 +1719,43 @@ pnpm add @octokit/rest @octokit/auth-app @octokit/webhooks
 | **代码维护** | Octokit 提供类型安全和自动更新 |
 | **依赖管理** | 减少自定义代码，依赖官方库 |
 | **错误处理** | Octokit 内置重试和速率限制处理 |
+| **Token 管理** | Octokit 自动缓存 installation token |
+
+---
+
+### 已确认问题
+
+#### 问题 1: NextAuth GitHub Provider 处理 ✅ 已确认
+
+**决定：B) 保留但标记 deprecated**
+
+- 保留 `lib/auth.ts` 中的 GitHub OAuth provider
+- 添加 deprecated 注释和警告日志
+- 向后兼容现有用户
+- 未来版本中删除
+
+#### 问题 2: 现有用户数据迁移 ✅ 已确认
+
+**决定：用相同的 providerUserId (GitHub ID) 创建/更新 identity**
+
+- 新流程使用 upsert 操作
+- 用相同的 `providerUserId` (GitHub ID) 创建或更新 `UserIdentity`
+- 不会产生冲突
+
+#### 问题 3: GitHub Enterprise 支持 ✅ 已确认
+
+**决定：不需要支持**
+
+- 只支持 GitHub.com
+- 不需要配置 `baseUrl`
+
+#### 问题 4: User Token 存储 ✅ 已确认
+
+**决定：B) 存储 refresh token 并自动刷新**
+
+- 存储 `accessToken`、`refreshToken`、`expiresAt`、`refreshTokenExpiresAt`
+- 实现 `refreshUserToken()` 函数
+- 当 token 过期时自动刷新
 
 ---
 
