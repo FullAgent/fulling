@@ -8,8 +8,9 @@
 |------|------|------|------|
 | **Phase 1: 后端基础设施** | ✅ 已完成 | `0940b1e` | Schema、Service、Repo、Callback/Webhook 路由 |
 | **Phase 2: 前端界面** | ✅ 已完成 | `c022e5f` | GitHub App 安装入口、repo 选择器、设置页面 |
-| **Phase 3: 数据迁移** | ⏳ 待开始 | - | 用户重新关联 repo 时填充新字段 |
-| **Phase 4: 清理** | ⏳ 待开始 | - | 移除 `githubRepo` 旧字段 |
+| **Phase 3: Octokit + 合并 OAuth** | ⏳ 待开始 | - | 迁移到 Octokit，合并身份验证和授权流程 |
+| **Phase 4: 数据迁移** | ⏳ 待开始 | - | 用户重新关联 repo 时填充新字段 |
+| **Phase 5: 清理** | ⏳ 待开始 | - | 移除 `githubRepo` 旧字段和废弃代码 |
 
 **当前分支**: `feat/github-app-integration`
 
@@ -1331,9 +1332,85 @@ git commit -m "chore: lint fixes for Phase 2"
 
 ---
 
-## Phase 3: 数据迁移 ⏳ 待开始
+## Phase 3: 迁移到 Octokit + 合并 OAuth 流程 ⏳ 待开始
 
 > **前置条件**: Phase 2 已上线
+
+### 目标
+
+1. 使用 Octokit 替代手写 fetch，提高可维护性
+2. 勾选 "Request user authorization during installation"，合并身份验证和授权流程
+3. 废弃独立的 GitHub OAuth 绑定入口
+
+### 架构变化
+
+**之前（Phase 1-2）：**
+```
+GitHub OAuth (身份) → UserIdentity
+GitHub App (授权)   → GitHubAppInstallation
+```
+
+**之后（Phase 3+）：**
+```
+GitHub App Installation (勾选 OAuth during install)
+    ↓
+同时获取 user access token + installation token
+    ↓
+自动创建 UserIdentity + GitHubAppInstallation
+```
+
+### Task 列表
+
+#### Task 1: 安装 Octokit
+
+```bash
+pnpm add @octokit/rest @octokit/auth-app @octokit/webhooks
+```
+
+#### Task 2: 迁移 `lib/services/github-app.ts`
+
+使用 Octokit 的 App 认证策略，自动处理：
+- JWT 签发
+- Installation token 获取和缓存
+- API 调用
+
+#### Task 3: 更新 GitHub App 配置
+
+在 GitHub App 设置页面勾选：
+- **"Request user authorization (OAuth) during installation"**
+
+#### Task 4: 更新 callback 路由
+
+修改 `app/api/github/app/callback/route.ts`：
+- 处理 GitHub 返回的 user access token
+- 自动创建或更新 `UserIdentity`
+- 创建 `GitHubAppInstallation`
+
+#### Task 5: 废弃独立的 GitHub OAuth 绑定入口
+
+- 移除 `/api/user/github/bind` 路由（或标记为 deprecated）
+- 更新前端组件，移除 "Connect GitHub" 按钮
+- 用户只需安装 GitHub App，自动完成身份绑定
+
+#### Task 6: 更新前端组件
+
+- `components/github/github-status-card.tsx`：移除 GitHub OAuth 相关逻辑
+- `components/dialog/import-github-dialog.tsx`：简化流程，移除 Step 1（检测 GitHub 身份）
+
+### 优点
+
+| 方面 | 改进 |
+|------|------|
+| **用户体验** | 一步完成身份验证 + 授权，无需两次跳转 |
+| **代码维护** | Octokit 提供类型安全和自动更新 |
+| **依赖管理** | 减少自定义代码，依赖官方库 |
+| **错误处理** | Octokit 内置重试和速率限制处理 |
+
+---
+
+## Phase 4: 数据迁移 ⏳ 待开始
+
+> **前置条件**: Phase 3 已上线
 
 ### 迁移策略
 
@@ -1346,7 +1423,7 @@ git commit -m "chore: lint fixes for Phase 2"
 
 ---
 
-## Phase 4: 清理 ⏳ 待开始
+## Phase 5: 清理 ⏳ 待开始
 
 > **前置条件**: 确认所有项目已迁移或旧数据不再需要
 
@@ -1354,4 +1431,5 @@ git commit -m "chore: lint fixes for Phase 2"
 
 1. 移除 `Project.githubRepo` 字段
 2. 移除相关的兼容性代码
-3. 更新文档
+3. 移除废弃的 GitHub OAuth 路由
+4. 更新文档
