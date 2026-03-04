@@ -7,11 +7,7 @@ import Image from 'next/image'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
-import {
-  checkGitHubIdentity,
-  getInstallations,
-  type GitHubInstallation,
-} from '@/lib/actions/github'
+import { getInstallations, type GitHubInstallation } from '@/lib/actions/github'
 import { env } from '@/lib/env'
 
 interface GitHubStatusCardProps {
@@ -20,12 +16,6 @@ interface GitHubStatusCardProps {
 
 export function GitHubStatusCard({ onInstallApp }: GitHubStatusCardProps) {
   const [isLoading, setIsLoading] = useState(true)
-  const [isConnecting, setIsConnecting] = useState(false)
-  const [githubIdentity, setGithubIdentity] = useState<{
-    linked: boolean
-    githubId?: string
-    githubLogin?: string
-  } | null>(null)
   const [installations, setInstallations] = useState<GitHubInstallation[]>([])
 
   useEffect(() => {
@@ -35,14 +25,7 @@ export function GitHubStatusCard({ onInstallApp }: GitHubStatusCardProps) {
   const loadData = async () => {
     setIsLoading(true)
     try {
-      const [identityResult, installationsResult] = await Promise.all([
-        checkGitHubIdentity(),
-        getInstallations(),
-      ])
-
-      if (identityResult.success) {
-        setGithubIdentity(identityResult.data)
-      }
+      const installationsResult = await getInstallations()
 
       if (installationsResult.success) {
         setInstallations(installationsResult.data)
@@ -54,58 +37,7 @@ export function GitHubStatusCard({ onInstallApp }: GitHubStatusCardProps) {
     }
   }
 
-  const handleConnectGitHub = () => {
-    setIsConnecting(true)
-
-    const width = 600
-    const height = 700
-    const left = window.screen.width / 2 - width / 2
-    const top = window.screen.height / 2 - height / 2
-
-    const popup = window.open(
-      '/api/user/github/bind',
-      'github-oauth',
-      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
-    )
-
-    if (!popup) {
-      toast.error('Failed to open popup window. Please allow popups for this site.')
-      setIsConnecting(false)
-      return
-    }
-
-    const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return
-      if (event.data.type !== 'github-oauth-callback') return
-
-      if (event.data.success) {
-        toast.success('GitHub account connected successfully!')
-        loadData()
-      } else {
-        toast.error(event.data.message || 'Failed to connect GitHub account')
-      }
-
-      setIsConnecting(false)
-      window.removeEventListener('message', handleMessage)
-    }
-
-    window.addEventListener('message', handleMessage)
-
-    const checkClosed = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(checkClosed)
-        setIsConnecting(false)
-        window.removeEventListener('message', handleMessage)
-      }
-    }, 500)
-  }
-
   const handleInstallApp = () => {
-    if (!githubIdentity?.linked) {
-      toast.error('Please connect your GitHub account first')
-      return
-    }
-
     const appName = env.NEXT_PUBLIC_GITHUB_APP_NAME
     if (!appName) {
       toast.error('GitHub App is not configured')
@@ -179,7 +111,7 @@ export function GitHubStatusCard({ onInstallApp }: GitHubStatusCardProps) {
         </div>
 
         <div className="pl-[76px]">
-          {githubIdentity?.linked ? (
+          {installations.length > 0 ? (
             <div className="flex items-center gap-4 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
               <div className="flex items-center justify-center w-10 h-10 bg-green-500/20 rounded-full">
                 <MdCheck className="w-5 h-5 text-green-600 dark:text-green-500" />
@@ -187,7 +119,7 @@ export function GitHubStatusCard({ onInstallApp }: GitHubStatusCardProps) {
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-foreground">
-                    {githubIdentity.githubLogin || 'Connected'}
+                    {installations[0].accountLogin || 'Connected'}
                   </span>
                   <span className="text-xs text-green-600 dark:text-green-500">● Connected</span>
                 </div>
@@ -200,18 +132,16 @@ export function GitHubStatusCard({ onInstallApp }: GitHubStatusCardProps) {
             <div className="space-y-4">
               <div className="p-4 bg-muted/50 border border-border rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  No GitHub account connected. Connect your GitHub account to access repositories
-                  and enable version control features.
+                  Install the GitHub App to connect your account and access repositories.
                 </p>
               </div>
 
               <Button
-                onClick={handleConnectGitHub}
-                disabled={isConnecting}
+                onClick={handleInstallApp}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <FaGithub className="mr-2 h-4 w-4" />
-                {isConnecting ? 'Connecting...' : 'Connect GitHub Account'}
+                Install GitHub App
               </Button>
             </div>
           )}
@@ -219,7 +149,7 @@ export function GitHubStatusCard({ onInstallApp }: GitHubStatusCardProps) {
       </div>
 
       {/* GitHub App Installations Section */}
-      {githubIdentity?.linked && (
+      {installations.length > 0 && (
         <div className="p-6 bg-card/50 border border-border rounded-lg">
           <div className="flex items-start gap-5 mb-6">
             <div className="p-3 bg-secondary/50 rounded-xl border border-border">

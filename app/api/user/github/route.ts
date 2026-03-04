@@ -9,8 +9,13 @@ const logger = baseLogger.child({ module: 'api/user/github' })
 /**
  * GET /api/user/github
  * Returns the GitHub binding status for the current user
+ *
+ * @deprecated This endpoint is deprecated in favor of GitHub App OAuth flow.
+ * Will be removed in v0.5.0. Use GitHub App installation flow instead.
  */
 export async function GET() {
+  logger.warn('DEPRECATED: /api/user/github GET called - use GitHub App OAuth flow instead')
+
   try {
     const session = await auth()
 
@@ -50,8 +55,13 @@ export async function GET() {
 /**
  * DELETE /api/user/github
  * Unbinds the GitHub account from the current user
+ *
+ * @deprecated This endpoint is deprecated in favor of GitHub App OAuth flow.
+ * Will be removed in v0.5.0. Use GitHub App installation flow instead.
  */
 export async function DELETE() {
+  logger.warn('DEPRECATED: /api/user/github DELETE called - use GitHub App OAuth flow instead')
+
   try {
     const session = await auth()
 

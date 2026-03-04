@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { logger as baseLogger } from '@/lib/logger'
 import { getInstallationByGitHubId, updateInstallationStatus } from '@/lib/repo/github'
-import { invalidateInstallationToken, verifyWebhookSignature } from '@/lib/services/github-app'
+import { verifyWebhookSignature } from '@/lib/services/github-app'
 
 const logger = baseLogger.child({ module: 'api/github/app/webhook' })
 
@@ -12,7 +12,8 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get('x-hub-signature-256') || ''
     const event = request.headers.get('x-github-event') || ''
 
-    if (!verifyWebhookSignature(payload, signature)) {
+    // UPDATED: verifyWebhookSignature is now async (uses Octokit)
+    if (!(await verifyWebhookSignature(payload, signature))) {
       logger.warn('Invalid webhook signature')
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
@@ -61,12 +62,12 @@ async function handleInstallationEvent(
     }
     case 'deleted':
       await updateInstallationStatus(inst.id, 'DELETED')
-      invalidateInstallationToken(inst.id)
+      // Note: Octokit handles token cache invalidation automatically
       logger.info(`Installation ${inst.id} deleted`)
       break
     case 'suspend':
       await updateInstallationStatus(inst.id, 'SUSPENDED')
-      invalidateInstallationToken(inst.id)
+      // Note: Octokit handles token cache invalidation automatically
       logger.info(`Installation ${inst.id} suspended`)
       break
     case 'unsuspend':

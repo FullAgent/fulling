@@ -33,6 +33,9 @@ export const env = createEnv({
     GITHUB_APP_ID: z.string().optional(),
     GITHUB_APP_PRIVATE_KEY: z.string().optional(),
     GITHUB_APP_WEBHOOK_SECRET: z.string().optional(),
+    // GitHub App OAuth credentials (for user token exchange)
+    GITHUB_APP_CLIENT_ID: z.string().optional(),
+    GITHUB_APP_CLIENT_SECRET: z.string().optional(),
     ANTHROPIC_BASE_URL: z.string().optional(),
     AIPROXY_ENDPOINT: z.string().optional(),
     ANTHROPIC_SMALL_FAST_MODEL: z.string().optional(),

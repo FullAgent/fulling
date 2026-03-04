@@ -33,9 +33,16 @@ export interface GitHubRepo {
   html_url: string
 }
 
+/**
+ * @deprecated Use GitHub App OAuth flow instead
+ * Check if user has GitHub identity linked
+ * Will be removed in v0.5.0
+ */
 export async function checkGitHubIdentity(): Promise<
   ActionResult<{ linked: boolean; githubId?: string; githubLogin?: string }>
 > {
+  logger.warn('checkGitHubIdentity() is deprecated - use GitHub App OAuth flow')
+
   const session = await auth()
 
   if (!session?.user?.id) {

@@ -1,16 +1,35 @@
-import crypto from 'crypto'
-import jwt from 'jsonwebtoken'
+import { App } from '@octokit/app'
+import { Octokit } from '@octokit/rest'
+import { Webhooks } from '@octokit/webhooks'
 
 import { env } from '@/lib/env'
 import { logger as baseLogger } from '@/lib/logger'
 
 const logger = baseLogger.child({ module: 'lib/services/github-app' })
 
-const GITHUB_API_BASE = 'https://api.github.com'
+// ============================================================================
+// App Instance (Octokit)
+// ============================================================================
 
-const tokenCache = new Map<number, { token: string; expiresAt: number }>()
+let appInstance: App | null = null
 
-const TOKEN_CACHE_TTL_MS = 50 * 60 * 1000
+function getAppInstance(): App {
+  if (!appInstance) {
+    if (!env.GITHUB_APP_ID || !env.GITHUB_APP_PRIVATE_KEY) {
+      throw new Error('GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY must be configured')
+    }
+
+    appInstance = new App({
+      appId: env.GITHUB_APP_ID,
+      privateKey: resolvePrivateKey(env.GITHUB_APP_PRIVATE_KEY),
+    })
+  }
+  return appInstance
+}
+
+// ============================================================================
+// Private Key Resolution (Keep for backward compatibility)
+// ============================================================================
 
 function resolvePrivateKey(raw: string): string {
   if (!raw || raw.trim() === '') {
@@ -53,136 +72,203 @@ function resolvePrivateKey(raw: string): string {
   return raw.replace(/\\n/g, '\n')
 }
 
-function generateAppJWT(): string {
-  const appId = env.GITHUB_APP_ID
-  const rawKey = env.GITHUB_APP_PRIVATE_KEY
-
-  if (!appId || !rawKey) {
-    throw new Error('GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY must be configured')
-  }
-
-  const privateKey = resolvePrivateKey(rawKey)
-  const now = Math.floor(Date.now() / 1000)
-
-  return jwt.sign(
-    {
-      iat: now - 60,
-      exp: now + 10 * 60,
-      iss: appId,
-    },
-    privateKey,
-    { algorithm: 'RS256' }
-  )
-}
-
 export async function getInstallationToken(installationId: number): Promise<string> {
-  const cached = tokenCache.get(installationId)
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached.token
-  }
+  const app = getAppInstance()
+  const octokit = await app.getInstallationOctokit(installationId)
 
-  const appJwt = generateAppJWT()
+  // Octokit automatically manages token lifecycle and caching
+  const authResult = (await octokit.auth({ type: 'installation' })) as { token: string }
 
-  const response = await fetch(
-    `${GITHUB_API_BASE}/app/installations/${installationId}/access_tokens`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${appJwt}`,
-        Accept: 'application/vnd.github.v3+json',
-      },
-    }
-  )
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    logger.error(`Failed to get installation token for ${installationId}: ${response.status} ${errorText}`)
-    throw new Error(`Failed to get installation token: ${response.status}`)
-  }
-
-  const data = await response.json()
-  const token = data.token as string
-
-  tokenCache.set(installationId, {
-    token,
-    expiresAt: Date.now() + TOKEN_CACHE_TTL_MS,
-  })
-
-  logger.info(`Installation token generated for installation ${installationId}`)
-  return token
-}
-
-export function invalidateInstallationToken(installationId: number): void {
-  tokenCache.delete(installationId)
+  logger.info(`Installation token retrieved for installation ${installationId}`)
+  return authResult.token
 }
 
 export async function getInstallationDetails(installationId: number) {
-  const appJwt = generateAppJWT()
+  const app = getAppInstance()
+  const octokit = await app.getInstallationOctokit(installationId)
 
-  const response = await fetch(`${GITHUB_API_BASE}/app/installations/${installationId}`, {
+  const { data } = await octokit.request('GET /app/installations/{installation_id}', {
+    installation_id: installationId,
+  })
+
+  return data
+}
+
+export async function listInstallationRepos(installationId: number) {
+  const app = getAppInstance()
+  const octokit = await app.getInstallationOctokit(installationId)
+
+  const { data } = await octokit.request('GET /installation/repositories', {
+    per_page: 100,
+  })
+
+  return data.repositories
+}
+
+// ============================================================================
+// Webhook Verification (Octokit)
+// ============================================================================
+
+let webhooksInstance: Webhooks | null = null
+
+function getWebhooksInstance(): Webhooks {
+  if (!webhooksInstance) {
+    const secret = env.GITHUB_APP_WEBHOOK_SECRET
+    if (!secret) {
+      throw new Error('GITHUB_APP_WEBHOOK_SECRET is not configured')
+    }
+    webhooksInstance = new Webhooks({ secret })
+  }
+  return webhooksInstance
+}
+
+export async function verifyWebhookSignature(payload: string, signature: string): Promise<boolean> {
+  try {
+    const webhooks = getWebhooksInstance()
+    return await webhooks.verify(payload, signature)
+  } catch (error) {
+    logger.error(`Webhook signature verification failed: ${error}`)
+    return false
+  }
+}
+
+// ============================================================================
+// User-level Authentication (OAuth Tokens)
+// ============================================================================
+
+interface UserTokenResponse {
+  accessToken: string
+  refreshToken: string
+  expiresAt: string
+  tokenType: string
+  scope: string
+}
+
+interface GitHubUser {
+  id: number
+  login: string
+  name: string | null
+  email: string | null
+  avatar_url: string
+}
+
+/**
+ * Exchange OAuth code for user access token + refresh token
+ * Called during GitHub App installation callback when OAuth is enabled
+ */
+export async function exchangeCodeForUserToken(code: string): Promise<UserTokenResponse> {
+  if (!env.GITHUB_APP_CLIENT_ID || !env.GITHUB_APP_CLIENT_SECRET) {
+    throw new Error('GITHUB_APP_CLIENT_ID and GITHUB_APP_CLIENT_SECRET must be configured')
+  }
+
+  const response = await fetch('https://github.com/login/oauth/access_token', {
+    method: 'POST',
     headers: {
-      Authorization: `Bearer ${appJwt}`,
-      Accept: 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
     },
+    body: JSON.stringify({
+      client_id: env.GITHUB_APP_CLIENT_ID,
+      client_secret: env.GITHUB_APP_CLIENT_SECRET,
+      code,
+    }),
   })
 
   if (!response.ok) {
     const errorText = await response.text()
-    logger.error(`Failed to get installation details for ${installationId}: ${response.status} ${errorText}`)
-    throw new Error(`Failed to get installation details: ${response.status}`)
+    logger.error(`Failed to exchange code for access token: ${response.status} ${errorText}`)
+    throw new Error(`Failed to exchange code for access token: ${response.status}`)
   }
 
-  return response.json()
+  const data = await response.json()
+
+  if (!data.access_token) {
+    logger.error({ data }, 'No access_token in OAuth response')
+    throw new Error('Failed to exchange code for access token - no token returned')
+  }
+
+  const expiresAt = new Date(Date.now() + (data.expires_in || 28800) * 1000).toISOString()
+  logger.info('User access token obtained via OAuth code exchange')
+
+  return {
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token,
+    expiresAt,
+    tokenType: data.token_type || 'bearer',
+    scope: data.scope || '',
+  }
 }
 
-export async function listInstallationRepos(installationId: number) {
-  const token = await getInstallationToken(installationId)
-  const repos = []
-  let page = 1
-  const perPage = 100
-
-  while (true) {
-    const response = await fetch(
-      `${GITHUB_API_BASE}/installation/repositories?per_page=${perPage}&page=${page}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/vnd.github.v3+json',
-        },
-      }
-    )
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      logger.error(`Failed to list installation repos: ${response.status} ${errorText}`)
-      throw new Error(`Failed to list installation repos: ${response.status}`)
-    }
-
-    const data = await response.json()
-    repos.push(...data.repositories)
-
-    if (data.repositories.length < perPage) break
-    page++
+/**
+ * Refresh user access token using refresh token
+ * Returns new access token + refresh token
+ */
+export async function refreshUserToken(refreshToken: string): Promise<UserTokenResponse> {
+  if (!env.GITHUB_APP_CLIENT_ID || !env.GITHUB_APP_CLIENT_SECRET) {
+    throw new Error('GITHUB_APP_CLIENT_ID and GITHUB_APP_CLIENT_SECRET must be configured')
   }
 
-  return repos
+  const response = await fetch('https://github.com/login/oauth/access_token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      client_id: env.GITHUB_APP_CLIENT_ID,
+      client_secret: env.GITHUB_APP_CLIENT_SECRET,
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+    }),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    logger.error(`Failed to refresh access token: ${response.status} ${errorText}`)
+    throw new Error(`Failed to refresh access token: ${response.status}`)
+  }
+
+  const data = await response.json()
+
+  if (!data.access_token) {
+    logger.error({ data }, 'No access_token in refresh token response')
+    throw new Error('Failed to refresh access token - no token returned')
+  }
+
+  const expiresAt = new Date(Date.now() + (data.expires_in || 28800) * 1000).toISOString()
+  logger.info('User access token refreshed successfully')
+
+  return {
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token,
+    expiresAt,
+    tokenType: data.token_type || 'bearer',
+    scope: data.scope || '',
+  }
 }
 
-export function verifyWebhookSignature(payload: string, signature: string): boolean {
-  const secret = env.GITHUB_APP_WEBHOOK_SECRET
-  if (!secret) {
-    logger.error('GITHUB_APP_WEBHOOK_SECRET is not configured')
-    return false
+/**
+ * Get GitHub user info using access token
+ */
+export async function getGitHubUser(accessToken: string): Promise<GitHubUser> {
+  const octokit = new Octokit({ auth: accessToken })
+  const { data } = await octokit.request('GET /user')
+
+  return {
+    id: data.id,
+    login: data.login,
+    name: data.name,
+    email: data.email,
+    avatar_url: data.avatar_url,
   }
+}
 
-  const expectedSignature = 'sha256=' + crypto.createHmac('sha256', secret).update(payload).digest('hex')
-
-  const expected = Buffer.from(expectedSignature)
-  const received = Buffer.from(signature)
-
-  if (expected.byteLength !== received.byteLength) {
-    return false
-  }
-
-  return crypto.timingSafeEqual(expected, received)
+/**
+ * Check if user token needs refresh (proactive refresh 1 hour before expiry)
+ */
+export function shouldRefreshToken(expiresAt: string): boolean {
+  const expiryTime = new Date(expiresAt).getTime()
+  const now = Date.now()
+  const oneHour = 60 * 60 * 1000
+  return expiryTime - now < oneHour
 }

@@ -9,8 +9,13 @@ const logger = baseLogger.child({ module: 'api/auth/github/callback' })
 /**
  * GET /api/auth/github/callback
  * Handles the OAuth callback from GitHub for account binding
+ *
+ * @deprecated This endpoint is deprecated in favor of GitHub App OAuth flow.
+ * Will be removed in v0.5.0. Use GitHub App installation flow instead.
  */
 export async function GET(request: NextRequest) {
+  logger.warn('DEPRECATED: /api/auth/github/callback called - use GitHub App OAuth flow instead')
+
   try {
     const searchParams = request.nextUrl.searchParams
     const code = searchParams.get('code')

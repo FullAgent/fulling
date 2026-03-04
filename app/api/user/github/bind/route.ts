@@ -11,8 +11,13 @@ const logger = baseLogger.child({ module: 'api/user/github/bind' })
  * GET /api/user/github/bind
  * Initiates the GitHub OAuth flow for binding
  * Redirects to GitHub authorization page with a secure state parameter
+ *
+ * @deprecated This endpoint is deprecated in favor of GitHub App OAuth flow.
+ * Will be removed in v0.5.0. Use GitHub App installation flow instead.
  */
 export async function GET() {
+  logger.warn('DEPRECATED: /api/user/github/bind called - use GitHub App OAuth flow instead')
+
   try {
     const session = await auth()
 
