@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import { MdAdd, MdSearch } from 'react-icons/md'
 
-import CreateProjectDialog from '@/components/dialog/create-project-dialog'
-import { ImportGitHubDialog } from '@/components/dialog/import-github-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Kbd } from '@/components/ui/kbd'
+
+import CreateProjectDialog from './create-project-dialog'
+import { ImportGitHubDialog } from './import-github-dialog'
 
 export function SearchBar() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
