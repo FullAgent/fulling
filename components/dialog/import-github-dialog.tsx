@@ -39,7 +39,7 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
 
   const resetState = useCallback(() => {
     setStep('check-github-app')
-    setIsLoading(false)
+    setIsLoading(true)
     setSearchQuery('')
     setHasInstallation(false)
     setRepos([])
@@ -173,7 +173,7 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
         }
 
         return (
-          <div className="space-y-4">
+          <div className="space-y-4 w-full">
             <div className="p-4 bg-muted/50 border border-border rounded-lg">
               <p className="text-sm text-muted-foreground">
                 Install the GitHub App to grant access to your repositories.
@@ -193,7 +193,7 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
 
       case 'select-repo':
         return (
-          <div className="space-y-4">
+          <div className="space-y-4 w-full min-w-0">
             <Input
               placeholder="Search repositories..."
               value={searchQuery}
@@ -201,21 +201,22 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
               className="bg-input border-border"
             />
 
-            <ScrollArea className="h-[300px]">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MdRefresh className="w-4 h-4 animate-spin" />
-                    <span>Loading repositories...</span>
+            <ScrollArea className="h-[300px] w-full">
+              <div className="pr-4">
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <MdRefresh className="w-4 h-4 animate-spin" />
+                      <span>Loading repositories...</span>
+                    </div>
                   </div>
-                </div>
-              ) : filteredRepos.length === 0 ? (
-                <div className="flex items-center justify-center py-8 text-muted-foreground">
-                  No repositories found
-                </div>
-              ) : (
-                <div className="space-y-2 pr-4">
-                  {filteredRepos.map((repo) => (
+                ) : filteredRepos.length === 0 ? (
+                  <div className="flex items-center justify-center py-8 text-muted-foreground">
+                    No repositories found
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredRepos.map((repo) => (
                     <button
                       key={repo.id}
                       onClick={() => handleSelectRepo(repo)}
@@ -225,32 +226,21 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
                           : 'bg-card/50 border-border hover:bg-secondary/50'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-foreground truncate">
-                              {repo.full_name}
-                            </span>
-                            {repo.private && (
-                              <span className="text-xs px-1.5 py-0.5 bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 rounded">
-                                Private
-                              </span>
-                            )}
-                          </div>
-                          {repo.description && (
-                            <p className="text-xs text-muted-foreground mt-1 truncate">
-                              {repo.description}
-                            </p>
-                          )}
-                        </div>
-                        {repo.language && (
-                          <span className="text-xs text-muted-foreground ml-2">{repo.language}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-foreground truncate">
+                          {repo.full_name}
+                        </span>
+                        {repo.private && (
+                          <span className="text-xs px-1.5 py-0.5 bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 rounded shrink-0 whitespace-nowrap">
+                            Private
+                          </span>
                         )}
                       </div>
                     </button>
                   ))}
                 </div>
               )}
+              </div>
             </ScrollArea>
 
             {selectedRepo && (
@@ -291,12 +281,12 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg bg-card border-border text-foreground">
+      <DialogContent className="bg-card border-border text-foreground max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl text-foreground">{getStepTitle()}</DialogTitle>
         </DialogHeader>
 
-        <div className="py-4">{renderStepContent()}</div>
+        <div className="py-4 w-full min-w-0">{renderStepContent()}</div>
 
         {/* Step indicators */}
         <div className="flex items-center justify-center gap-2 pt-2 border-t border-border">
