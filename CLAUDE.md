@@ -52,6 +52,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - API routes: kebab-case
 - Files: kebab-case
 
+### Component Organization
+- **Route-specific components**: Place in `_components/` directory under the route folder
+  - Use `_` prefix to prevent Next.js from treating it as a route
+  - Example: `app/(dashboard)/settings/_components/github-status-card.tsx`
+- **Shared components**: Place in top-level `components/` directory
+  - Only for components used across multiple routes
+  - Example: `components/ui/button.tsx`, `components/sidebar.tsx`
+
 ### Important Patterns
 
 1. **Always use user-specific K8s service**:

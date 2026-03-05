@@ -1,5 +1,6 @@
-import { SearchBar } from '@/components/search-bar'
 import { Sidebar } from '@/components/sidebar'
+
+import { SearchBar } from '../_components/search-bar'
 
 export default function HomeLayout({
   children,
