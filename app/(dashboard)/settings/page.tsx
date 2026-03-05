@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation'
 
-import { GitHubStatusCard } from '@/components/github/github-status-card'
 import { Sidebar } from '@/components/sidebar'
 import { auth } from '@/lib/auth'
+
+import { GitHubStatusCard } from './_components/github-status-card'
 
 export const metadata = {
   title: 'Settings | Fulling',
