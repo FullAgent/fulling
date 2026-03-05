@@ -15,11 +15,8 @@ export default function IntegrationsPage() {
         </p>
       </header>
 
-      <div className="space-y-8">
-        <section>
-          <h2 className="text-xl font-semibold text-foreground mb-4">GitHub Integration</h2>
-          <GitHubStatusCard />
-        </section>
+      <div className="bg-card/50 border border-border rounded-lg px-6">
+        <GitHubStatusCard />
       </div>
     </>
   )

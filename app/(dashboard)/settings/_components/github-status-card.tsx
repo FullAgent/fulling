@@ -80,20 +80,28 @@ export function GitHubStatusCard() {
 
   if (isLoading) {
     return (
-      <div className="p-6 bg-card/50 border border-border rounded-lg animate-pulse">
-        <div className="h-32 bg-muted/50 rounded" />
+      <div className="py-6 animate-pulse">
+        <div className="flex gap-8">
+          <div className="flex-shrink-0 space-y-4">
+            <div className="h-6 w-32 bg-muted/50 rounded" />
+            <div className="w-20 h-20 bg-muted/50 rounded-xl" />
+          </div>
+          <div className="flex-1 space-y-3">
+            <div className="h-5 w-48 bg-muted/50 rounded" />
+            <div className="h-4 w-full bg-muted/50 rounded" />
+            <div className="h-4 w-3/4 bg-muted/50 rounded" />
+            <div className="h-9 w-36 bg-muted/50 rounded" />
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="p-6 bg-card/50 border border-border rounded-lg">
+    <div className="py-6">
       <div className="flex gap-8">
         <div className="flex-shrink-0">
-          <h3 className="text-lg font-medium text-foreground mb-1">GitHub Integration</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Connect your GitHub account to Fulling
-          </p>
+          <h3 className="text-lg font-medium text-foreground mb-4">GitHub Integration</h3>
           <div className="w-20 h-20 bg-secondary/50 border border-border rounded-xl flex items-center justify-center">
             {installation ? (
               <div className="relative">
@@ -113,7 +121,7 @@ export function GitHubStatusCard() {
             What does the GitHub Integration do?
           </h4>
           <p className="text-sm text-muted-foreground mb-4">
-            Connecting to GitHub allows you to sync your project to fulling, and automatically deploys your production-ready project to Sealos.
+            Connecting to GitHub allows you to sync your project to Fulling, and automatically deploys your production-ready project to Sealos.
           </p>
 
           {installation ? (
