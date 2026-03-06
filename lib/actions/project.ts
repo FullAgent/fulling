@@ -101,10 +101,9 @@ export async function createProject(
   const ttydAuthToken = generateRandomString(24) // 24 chars = ~143 bits entropy for terminal auth
   const fileBrowserUsername = `fb-${randomSuffix}` // filebrowser username
   const fileBrowserPassword = generateRandomString(16) // 16 char random password
-  const databaseName = `${k8sProjectName}-${randomSuffix}`
   const sandboxName = `${k8sProjectName}-${randomSuffix}`
 
-  // Create project with database and sandbox in a transaction
+  // Create project with sandbox in a transaction
   const result = await prisma.$transaction(
     async (tx) => {
       // 1. Create Project with status CREATING
@@ -117,25 +116,7 @@ export async function createProject(
         },
       })
 
-      // 2. Create Database record - lockedUntil is null so reconcile job can process immediately
-      const database = await tx.database.create({
-        data: {
-          projectId: project.id,
-          name: databaseName,
-          k8sNamespace: namespace,
-          databaseName: databaseName,
-          status: 'CREATING',
-          lockedUntil: null, // Unlocked - ready for reconcile job to process
-          // Resource configuration from versions
-          storageSize: VERSIONS.STORAGE.DATABASE_SIZE,
-          cpuRequest: VERSIONS.RESOURCES.DATABASE.requests.cpu,
-          cpuLimit: VERSIONS.RESOURCES.DATABASE.limits.cpu,
-          memoryRequest: VERSIONS.RESOURCES.DATABASE.requests.memory,
-          memoryLimit: VERSIONS.RESOURCES.DATABASE.limits.memory,
-        },
-      })
-
-      // 3. Create Sandbox record - lockedUntil is null so reconcile job can process immediately
+      // 2. Create Sandbox record - lockedUntil is null so reconcile job can process immediately
       const sandbox = await tx.sandbox.create({
         data: {
           projectId: project.id,
@@ -153,7 +134,7 @@ export async function createProject(
         },
       })
 
-      // 4. Create Environment record for ttyd access token
+      // 3. Create Environment record for ttyd access token
       const ttydEnv = await tx.environment.create({
         data: {
           projectId: project.id,
@@ -164,7 +145,7 @@ export async function createProject(
         },
       })
 
-      // 5. Create Environment records for filebrowser credentials
+      // 4. Create Environment records for filebrowser credentials
       const fileBrowserUsernameEnv = await tx.environment.create({
         data: {
           projectId: project.id,
@@ -187,7 +168,6 @@ export async function createProject(
 
       return {
         project,
-        database,
         sandbox,
         ttydEnv,
         fileBrowserUsernameEnv,
@@ -200,7 +180,7 @@ export async function createProject(
   )
 
   logger.info(
-    `Project created: ${result.project.id} with database: ${result.database.id}, sandbox: ${result.sandbox.id}`
+    `Project created: ${result.project.id} with sandbox: ${result.sandbox.id}`
   )
 
   return { success: true, data: result.project }

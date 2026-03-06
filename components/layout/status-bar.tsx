@@ -14,7 +14,6 @@ export function StatusBar({ projectId }: StatusBarProps) {
   const { data: project } = useProject(projectId);
   
   const database = project?.databases?.[0];
-  const dbStatus = database?.status || 'CREATING';
   const sandbox = project?.sandboxes?.[0];
   const sbStatus = sandbox?.status || 'CREATING';
 
@@ -35,10 +34,17 @@ export function StatusBar({ projectId }: StatusBarProps) {
           <span>Sandbox: {sbStatus}</span>
         </div>
         <div className="w-px h-3 bg-card-foreground/60 mx-1" />
-        <div className="flex items-center gap-1.5 px-1 rounded cursor-pointer transition-colors">
-          <div className={`w-2 h-2 rounded-full shadow-[0_0_1px_0.5px_currentColor] ${getStatusBgColor(dbStatus)}`} />
-          <span>Database: {dbStatus}</span>
-        </div>
+        {database ? (
+          <div className="flex items-center gap-1.5 px-1 rounded cursor-pointer transition-colors">
+            <div className={`w-2 h-2 rounded-full shadow-[0_0_1px_0.5px_currentColor] ${getStatusBgColor(database.status)}`} />
+            <span>Database: {database.status}</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 px-1 rounded cursor-pointer transition-colors opacity-60">
+            <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+            <span>Database: Not Configured</span>
+          </div>
+        )}
       </div>
     </div>
   );

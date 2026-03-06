@@ -14,13 +14,17 @@ import type { ProjectStatus, ResourceStatus } from '@prisma/client'
  *    - TERMINATING: All resources ∈ {TERMINATED, TERMINATING}
  * 6. PARTIAL: Inconsistent mixed states
  *
+ * Note: Empty array returns TERMINATED (used when all resources are deleted)
+ *
  * @param resourceStatuses - Array of resource statuses
  * @returns Aggregated project status
  */
 export function aggregateProjectStatus(resourceStatuses: ResourceStatus[]): ProjectStatus {
-  // Handle empty case
+  // Handle empty case - this happens when all resources (sandbox + database) are deleted
+  // In the new design, projects without databases are valid, so this only triggers
+  // when the project truly has no resources left
   if (resourceStatuses.length === 0) {
-    return 'TERMINATED' // Default to TERMINATED for projects with no resources
+    return 'TERMINATED'
   }
 
   // Rule 1: Check for ERROR - highest priority

@@ -10,9 +10,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Key Features**:
 - **Flexible Project Creation**: Import from GitHub repositories or create new projects from scratch
+- **Optional Database**: Add PostgreSQL database on-demand when needed
 - **AI Agent Ecosystem**: AI agents handle development, testing, deployment, and infrastructure management
 - **Automated Operations**: Deployment, scaling, and infrastructure management happen automatically in the background
-- **Full-Stack Development**: Complete environment with database, terminal, and file management
+- **Full-Stack Development**: Complete environment with optional database, terminal, and file management
 - **Zero Infrastructure Knowledge Required**: Users don't need to understand Kubernetes, networking, or DevOps
 
 **Architecture**: The platform uses an **asynchronous reconciliation pattern** where API endpoints return immediately and background jobs sync desired state (database) with actual state (Kubernetes) every 3 seconds.
@@ -158,6 +159,10 @@ npx prisma db push    # Push schema to database
 - `lib/k8s/k8s-service-helper.ts` - User-specific K8s service
 - `lib/events/sandbox/sandboxListener.ts` - Sandbox lifecycle handlers
 - `lib/jobs/sandbox/sandboxReconcile.ts` - Sandbox reconciliation job
+- `lib/events/database/databaseListener.ts` - Database lifecycle handlers
+- `lib/jobs/database/databaseReconcile.ts` - Database reconciliation job
+- `lib/actions/project.ts` - Project creation (creates Sandbox only)
+- `lib/actions/database.ts` - Database creation/deletion (on-demand)
 - `prisma/schema.prisma` - Database schema
 - `instrumentation.ts` - Application startup
 
@@ -181,10 +186,11 @@ npx prisma db push    # Push schema to database
 
 ## Important Notes
 
+- **Project Resources**: Each project includes a Sandbox (required) and can optionally have a Database (PostgreSQL). Database can be added on-demand after project creation.
 - **Reconciliation Delay**: Status updates may take up to 3 seconds
 - **User-Specific Namespaces**: Each user operates in their own K8s namespace
 - **Frontend Polling**: Client components poll every 3 seconds for status updates
-- **Database Wait Time**: PostgreSQL cluster takes 2-3 minutes to reach "Running"
+- **Database Wait Time**: PostgreSQL cluster takes 2-3 minutes to reach "Running" (when added)
 - **Idempotent Operations**: All K8s methods can be called multiple times safely
 - **Lock Duration**: Optimistic locks held for 30 seconds
 - **Deployment Domain**: Main app listens on `0.0.0.0:3000` (not localhost) for Sealos
