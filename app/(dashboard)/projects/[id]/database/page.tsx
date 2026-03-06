@@ -6,6 +6,7 @@ import { getProject } from '@/lib/data/project';
 
 import { SettingsLayout } from '../_components/settings-layout';
 
+import { AddDatabaseCard } from './_components/add-database-card';
 import { ConnectionString } from './_components/connection-string';
 import { FeatureCards } from './_components/feature-cards';
 import { ReadOnlyField } from './_components/read-only-field';
@@ -28,7 +29,17 @@ export default async function DatabasePage({ params }: { params: Promise<{ id: s
   if (!project) notFound();
 
   const database = project.databases[0];
-  const connectionString = database?.connectionUrl || '';
+
+  // If no database exists, show "Add Database" card
+  if (!database) {
+    return (
+      <SettingsLayout title="Database Information" description="Add a PostgreSQL database to your project">
+        <AddDatabaseCard projectId={project.id} projectName={project.name} />
+      </SettingsLayout>
+    );
+  }
+
+  const connectionString = database.connectionUrl || '';
   const connectionInfo = parseConnectionUrl(connectionString) || {
     host: '', port: '', database: '', username: '', password: ''
   };
@@ -57,9 +68,9 @@ export default async function DatabasePage({ params }: { params: Promise<{ id: s
         </>
       ) : (
         <div className="py-12 text-center">
-          <p className="text-sm text-muted-foreground">No database configured</p>
+          <p className="text-sm text-muted-foreground">Database is being created...</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Database will be automatically provisioned when sandbox is created
+            Connection details will appear once the database is ready
           </p>
         </div>
       )}
