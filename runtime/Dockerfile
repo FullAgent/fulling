@@ -30,6 +30,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     ANTHROPIC_AUTH_TOKEN="" \
     ANTHROPIC_MODEL="" \
     ANTHROPIC_SMALL_FAST_MODEL="" \
+    GEMINI_API_KEY="" \
+    OPENAI_API_KEY="" \
     DOCKER_HUB_NAME="" \
     DOCKER_HUB_PASSWD=""
 
@@ -83,6 +85,8 @@ RUN set -eux; \
 # -----------------------------------------------------------------------------
 RUN npm install -g \
         @anthropic-ai/claude-code \
+        @google/gemini-cli \
+        @openai/codex \
         create-next-app@${NEXT_VERSION} \
         pnpm \
         prisma \

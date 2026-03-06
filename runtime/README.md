@@ -22,7 +22,9 @@ The FullStack Web Runtime is a production-ready Ubuntu 24.04-based container tha
 
 ### AI Integration
 - **Claude Code CLI**: Latest @anthropic-ai/claude-code package
-- Auto-starts on first terminal connection
+- **Gemini CLI**: Latest @google/gemini-cli package
+- **Codex CLI**: Latest @openai/codex package
+- Claude Code auto-starts on first terminal connection
 - Configured for seamless AI-assisted development
 
 ### Container Tools
@@ -119,6 +121,12 @@ The Claude Code CLI will auto-start on first connection.
 - `ANTHROPIC_BASE_URL` - API endpoint (optional, uses default)
 - `ANTHROPIC_MODEL` - Model to use (e.g., claude-sonnet-4-5-20250929)
 - `ANTHROPIC_SMALL_FAST_MODEL` - Fast model for quick tasks
+
+### Gemini CLI Configuration
+- `GEMINI_API_KEY` - Your Google AI API key (required for Gemini CLI)
+
+### Codex CLI Configuration
+- `OPENAI_API_KEY` - Your OpenAI API key (required for Codex CLI)
 
 ### Project Configuration
 - `PROJECT_NAME` - Project name shown in terminal prompt (default: sandbox)
