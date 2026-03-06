@@ -3,7 +3,6 @@
 import type { GitHubAppInstallation } from '@prisma/client'
 
 import { auth } from '@/lib/auth'
-import { prisma } from '@/lib/db'
 import { logger as baseLogger } from '@/lib/logger'
 import { getInstallationByGitHubId, getInstallationsForUser } from '@/lib/repo/github'
 import { listInstallationRepos } from '@/lib/services/github-app'
@@ -31,43 +30,6 @@ export interface GitHubRepo {
   private: boolean
   language: string | null
   html_url: string
-}
-
-/**
- * @deprecated Use GitHub App OAuth flow instead
- * Check if user has GitHub identity linked
- * Will be removed in v0.5.0
- */
-export async function checkGitHubIdentity(): Promise<
-  ActionResult<{ linked: boolean; githubId?: string; githubLogin?: string }>
-> {
-  logger.warn('checkGitHubIdentity() is deprecated - use GitHub App OAuth flow')
-
-  const session = await auth()
-
-  if (!session?.user?.id) {
-    return { success: false, error: 'Unauthorized' }
-  }
-
-  const githubIdentity = await prisma.userIdentity.findFirst({
-    where: {
-      userId: session.user.id,
-      provider: 'GITHUB',
-    },
-  })
-
-  if (!githubIdentity) {
-    return { success: true, data: { linked: false } }
-  }
-
-  return {
-    success: true,
-    data: {
-      linked: true,
-      githubId: githubIdentity.providerUserId,
-      githubLogin: (githubIdentity.metadata as Record<string, string>)?.login,
-    },
-  }
 }
 
 export async function getInstallations(): Promise<ActionResult<GitHubInstallation[]>> {

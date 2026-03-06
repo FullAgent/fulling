@@ -22,6 +22,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { getInstallations, type GitHubInstallation } from '@/lib/actions/github';
+import { env } from '@/lib/env';
 import * as fetchClient from '@/lib/fetch-client';
 import { useSealos } from '@/provider/sealos';
 
@@ -61,12 +63,6 @@ const DEFAULT_SYSTEM_PROMPT = `You are an AI full-stack developer working in a N
 
 type TabType = 'system-prompt' | 'kubeconfig' | 'anthropic' | 'github';
 
-interface GitHubStatus {
-  connected: boolean;
-  login?: string;
-  avatar_url?: string;
-}
-
 export default function SettingsDialog({
   open,
   onOpenChange,
@@ -95,7 +91,7 @@ export default function SettingsDialog({
   const [isAnthropicInitialLoading, setIsAnthropicInitialLoading] = useState(true);
 
   // GitHub state
-  const [githubStatus, setGithubStatus] = useState<GitHubStatus>({ connected: false });
+  const [githubInstallation, setGithubInstallation] = useState<GitHubInstallation | null>(null);
   const [isGithubLoading, setIsGithubLoading] = useState(false);
   const [isGithubInitialLoading, setIsGithubInitialLoading] = useState(true);
 
@@ -176,11 +172,15 @@ export default function SettingsDialog({
 
   const loadGithubStatus = async () => {
     try {
-      const data = await fetchClient.GET<GitHubStatus>('/api/user/github');
-      setGithubStatus(data);
+      const result = await getInstallations();
+      if (result.success && result.data.length > 0) {
+        setGithubInstallation(result.data[0]);
+      } else {
+        setGithubInstallation(null);
+      }
     } catch (error) {
       console.error('Failed to load GitHub status:', error);
-      setGithubStatus({ connected: false });
+      setGithubInstallation(null);
     } finally {
       setIsGithubInitialLoading(false);
     }
@@ -280,17 +280,24 @@ export default function SettingsDialog({
   };
 
   const handleConnectGithub = () => {
+    const appName = env.NEXT_PUBLIC_GITHUB_APP_NAME;
+    if (!appName) {
+      toast.error('GitHub App is not configured');
+      return;
+    }
+
     setIsGithubLoading(true);
 
-    // Open popup window for GitHub OAuth
-    const width = 600;
-    const height = 700;
+    const installUrl = `https://github.com/apps/${appName}/installations/new`;
+
+    const width = 800;
+    const height = 800;
     const left = window.screen.width / 2 - width / 2;
     const top = window.screen.height / 2 - height / 2;
 
     const popup = window.open(
-      '/api/user/github/bind',
-      'github-oauth',
+      installUrl,
+      'github-app-install',
       `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
     );
 
@@ -300,43 +307,35 @@ export default function SettingsDialog({
       return;
     }
 
-    // Listen for message from popup
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
-      if (event.data.type !== 'github-oauth-callback') return;
+      if (event.data.type !== 'github-app-installed') return;
 
+      window.removeEventListener('message', handleMessage);
       if (event.data.success) {
-        toast.success('GitHub account connected successfully!');
+        toast.success('GitHub App installed successfully!');
         loadGithubStatus();
       } else {
-        toast.error(event.data.message || 'Failed to connect GitHub account');
+        toast.error(event.data.message || 'Failed to install GitHub App');
       }
-
       setIsGithubLoading(false);
-      window.removeEventListener('message', handleMessage);
     };
 
     window.addEventListener('message', handleMessage);
 
-    // Fallback: stop loading after timeout
-    setTimeout(() => {
-      setIsGithubLoading(false);
-      window.removeEventListener('message', handleMessage);
-    }, 60000); // 1 minute timeout
+    const checkClosed = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkClosed);
+        window.removeEventListener('message', handleMessage);
+        setIsGithubLoading(false);
+      }
+    }, 500);
   };
 
   const handleDisconnectGithub = async () => {
-    setIsGithubLoading(true);
-    try {
-      await fetchClient.DELETE('/api/user/github');
-      toast.success('GitHub account disconnected successfully');
-      setGithubStatus({ connected: false });
-    } catch (error: unknown) {
-      console.error('Failed to disconnect GitHub:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to disconnect GitHub account');
-    } finally {
-      setIsGithubLoading(false);
-    }
+    toast.info(
+      'To disconnect, please go to GitHub Settings > Applications and revoke access to the app.'
+    );
   };
 
   return (
@@ -601,7 +600,7 @@ export default function SettingsDialog({
               <TabsContent value="github" className="mt-0 h-full overflow-y-auto">
                 <div className="space-y-4 pb-4">
                   <div className="space-y-2">
-                    <Label className="text-foreground text-sm font-medium">GitHub Account</Label>
+                    <Label className="text-foreground text-sm font-medium">GitHub App</Label>
                     <p className="text-xs text-muted-foreground">
                       Connect your GitHub account to enable repository access and code management features.
                     </p>
@@ -611,13 +610,12 @@ export default function SettingsDialog({
                     <div className="flex items-center justify-center py-8">
                       <div className="text-muted-foreground">Loading...</div>
                     </div>
-                  ) : githubStatus.connected ? (
-                    // Connected state
+                  ) : githubInstallation ? (
                     <div className="space-y-4">
                       <div className="flex items-center gap-4 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-                        {githubStatus.avatar_url && (
+                        {githubInstallation.accountAvatarUrl && (
                           <Image
-                            src={githubStatus.avatar_url}
+                            src={githubInstallation.accountAvatarUrl}
                             alt="GitHub Avatar"
                             width={48}
                             height={48}
@@ -627,12 +625,12 @@ export default function SettingsDialog({
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-foreground">
-                              {githubStatus.login}
+                              {githubInstallation.accountLogin}
                             </span>
                             <span className="text-xs text-green-600 dark:text-green-500">● Connected</span>
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Your GitHub account is connected and ready to use.
+                            Your GitHub App is installed and ready to use.
                           </p>
                         </div>
                       </div>
@@ -643,15 +641,14 @@ export default function SettingsDialog({
                         disabled={isGithubLoading}
                         className="border-border text-muted-foreground hover:text-foreground hover:bg-accent"
                       >
-                        {isGithubLoading ? 'Disconnecting...' : 'Disconnect GitHub Account'}
+                        Disconnect GitHub App
                       </Button>
                     </div>
                   ) : (
-                    // Not connected state
                     <div className="space-y-4">
                       <div className="p-4 bg-muted/50 border border-border rounded-lg">
                         <p className="text-sm text-muted-foreground">
-                          No GitHub account connected. Connect your GitHub account to access repositories and enable version control features.
+                          No GitHub App installed. Connect your GitHub account to access repositories and enable version control features.
                         </p>
                       </div>
 
@@ -661,7 +658,7 @@ export default function SettingsDialog({
                         className="bg-primary hover:bg-primary/90 text-primary-foreground"
                       >
                         <FaGithub className="mr-2 h-4 w-4" />
-                        {isGithubLoading ? 'Connecting...' : 'Connect GitHub Account'}
+                        {isGithubLoading ? 'Connecting...' : 'Connect GitHub App'}
                       </Button>
                     </div>
                   )}

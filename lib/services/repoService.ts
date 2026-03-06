@@ -2,6 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { getUserGitHubToken } from '@/lib/services/github-token-refresh'
 import { execCommand, TtydExecError } from '@/lib/util/ttyd-exec'
 
 export type RepoInitResult = {
@@ -136,26 +137,12 @@ export async function createGithubRepo(repoName: string): Promise<CreateRepoResu
   }
 
   try {
-    // Find UserIdentity for GitHub to get the token
-    const identity = await prisma.userIdentity.findFirst({
-      where: {
-        userId: session.user.id,
-        provider: 'GITHUB',
-      },
-    })
+    const token = await getUserGitHubToken(session.user.id)
 
-    if (!identity) {
+    if (!token) {
       return { success: false, message: 'GitHub identity not found. Please link your GitHub account.', code: 'GITHUB_NOT_BOUND' }
     }
 
-    const metadata = identity.metadata as { token?: string }
-    const token = metadata?.token
-
-    if (!token) {
-      return { success: false, message: 'GitHub token not found in identity metadata.', code: 'GITHUB_NOT_BOUND' }
-    }
-
-    // Call GitHub API to create repository
     const response = await fetch('https://api.github.com/user/repos', {
       method: 'POST',
       headers: {
@@ -165,9 +152,9 @@ export async function createGithubRepo(repoName: string): Promise<CreateRepoResu
       },
       body: JSON.stringify({
         name: repoName,
-        private: true, // Default to private
+        private: true,
         description: 'Created by Fulling, Powered by Sealos',
-        auto_init: false, // Don't create README/LICENSE, we'll push existing code
+        auto_init: false,
       }),
     })
 
@@ -249,35 +236,19 @@ export async function pushToGithub(projectId: string): Promise<RepoInitResult> {
   try {
     const { baseUrl, accessToken, authorization, project } = await getTtydContext(projectId, session.user.id)
 
-    // Use new fields with fallback to legacy field
     const repoFullName = project.githubRepoFullName || project.githubRepo
     if (!repoFullName) {
       return { success: false, message: 'No GitHub repository linked to this project' }
     }
 
-    // Get GitHub token
-    const identity = await prisma.userIdentity.findFirst({
-      where: {
-        userId: session.user.id,
-        provider: 'GITHUB',
-      },
-    })
-    
-    // Type checking for metadata token
-    const metadata = identity?.metadata as { token?: string } | undefined
-    const githubToken = metadata?.token
+    const githubToken = await getUserGitHubToken(session.user.id)
 
     if (!githubToken) {
       return { success: false, message: 'GitHub token not found', code: 'GITHUB_NOT_BOUND' }
     }
 
-    // Construct repo URL from full name (owner/repo format)
-    // We want to construct: https://oauth2:token@github.com/owner/repo.git
     const authUrl = `https://oauth2:${githubToken}@github.com/${repoFullName}.git`
 
-    // Configure remote and push
-    // We use 'git remote set-url' if origin exists, or 'git remote add' if it doesn't
-    // SECURITY: Use single quotes around URL to prevent command injection
     const command = `
       (git remote get-url origin > /dev/null 2>&1 && git remote set-url origin '${authUrl}') || git remote add origin '${authUrl}' &&
       git branch -M main &&

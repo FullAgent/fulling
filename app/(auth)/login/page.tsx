@@ -117,7 +117,7 @@ export default function LoginPage() {
           </div>
 
           <Button
-            onClick={() => signIn('github', { callbackUrl: '/projects' })}
+            onClick={() => signIn('github-app', { callbackUrl: '/projects?github_install=true' })}
             className="w-full bg-secondary text-secondary-foreground hover:bg-muted rounded-md"
             size="lg"
             variant="outline"

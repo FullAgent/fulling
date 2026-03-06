@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs'
 import NextAuth from 'next-auth'
+import type { OAuthConfig, OAuthUserConfig } from 'next-auth/providers'
 import Credentials from 'next-auth/providers/credentials'
-import GitHub from 'next-auth/providers/github'
 
 import { prisma } from '@/lib/db'
 import { env } from '@/lib/env'
@@ -11,6 +11,58 @@ import { logger as baseLogger } from '@/lib/logger'
 import { createAiproxyToken } from '@/lib/services/aiproxy'
 
 const logger = baseLogger.child({ module: 'lib/auth' })
+
+interface GitHubAppProfile {
+  id: number
+  login: string
+  name: string | null
+  email: string | null
+  avatar_url: string
+}
+
+function GitHubApp<P extends GitHubAppProfile>(options: OAuthUserConfig<P>): OAuthConfig<P> {
+  return {
+    id: 'github-app',
+    name: 'GitHub',
+    type: 'oauth',
+    clientId: options.clientId,
+    clientSecret: options.clientSecret,
+    authorization: {
+      url: 'https://github.com/login/oauth/authorize',
+      params: {
+        scope: 'repo read:user user:email',
+      },
+    },
+    token: 'https://github.com/login/oauth/access_token',
+    userinfo: {
+      url: 'https://api.github.com/user',
+      async request({ tokens }: { tokens: { access_token: string } }) {
+        const res = await fetch('https://api.github.com/user', {
+          headers: {
+            Authorization: `Bearer ${tokens.access_token}`,
+            'User-Agent': 'next-auth',
+          },
+        })
+        if (!res.ok) {
+          throw new Error(`Failed to fetch user info: ${res.status}`)
+        }
+        return await res.json()
+      },
+    },
+    profile(profile) {
+      return {
+        id: profile.id.toString(),
+        name: profile.name || profile.login,
+        email: profile.email,
+        image: profile.avatar_url,
+      }
+    },
+    style: {
+      brandColor: '#24292F',
+      logo: '/github.svg',
+    },
+  }
+}
 
 // Build providers array dynamically based on feature flags
 const buildProviders = () => {
@@ -359,23 +411,18 @@ const buildProviders = () => {
     logger.info('Sealos authentication is DISABLED')
   }
 
-  // GitHub OAuth
+  // GitHub App OAuth (replaces legacy GitHub OAuth)
   if (env.ENABLE_GITHUB_AUTH) {
     logger.info('GitHub authentication is ENABLED')
-    if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) {
+    if (!env.GITHUB_APP_CLIENT_ID || !env.GITHUB_APP_CLIENT_SECRET) {
       logger.warn(
-        'GitHub authentication is enabled but GITHUB_CLIENT_ID or GITHUB_CLIENT_SECRET is missing'
+        'GitHub authentication is enabled but GITHUB_APP_CLIENT_ID or GITHUB_APP_CLIENT_SECRET is missing'
       )
     } else {
       providers.push(
-        GitHub({
-          clientId: env.GITHUB_CLIENT_ID,
-          clientSecret: env.GITHUB_CLIENT_SECRET,
-          authorization: {
-            params: {
-              scope: 'repo read:user',
-            },
-          },
+        GitHubApp({
+          clientId: env.GITHUB_APP_CLIENT_ID,
+          clientSecret: env.GITHUB_APP_CLIENT_SECRET,
         })
       )
     }
@@ -394,13 +441,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: buildProviders(),
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (account?.provider === 'github') {
+      if (account?.provider === 'github-app') {
         try {
           const githubId = account.providerAccountId
-          const githubToken = account.access_token
-          const scope = account.scope || 'repo read:user'
+          const accessToken = account.access_token
+          const refreshToken = account.refresh_token
+          const expiresAt = account.expires_at
+            ? new Date(account.expires_at * 1000).toISOString()
+            : new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString()
+          const scope = account.scope || 'repo read:user user:email'
 
-          // Check if identity exists
+          const githubProfile = profile as { login?: string; name?: string; avatar_url?: string; email?: string }
+
           const existingIdentity = await prisma.userIdentity.findUnique({
             where: {
               unique_provider_user: {
@@ -414,27 +466,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           })
 
           if (existingIdentity) {
-            // Update GitHub token in metadata
             await prisma.userIdentity.update({
               where: { id: existingIdentity.id },
               data: {
                 metadata: {
-                  token: githubToken,
+                  accessToken,
+                  refreshToken,
+                  expiresAt,
+                  tokenType: 'bearer',
                   scope,
+                  login: githubProfile.login,
+                  name: githubProfile.name,
+                  avatarUrl: githubProfile.avatar_url,
+                  email: githubProfile.email,
+                  githubId: parseInt(githubId, 10),
                 },
               },
             })
 
-            // Set user info for JWT callback
             user.id = existingIdentity.user.id
             user.name = existingIdentity.user.name
           } else {
-            // Create new user with GitHub identity
             const newUser = await prisma.user.create({
               data: {
                 name:
-                  (profile?.name as string) ||
-                  (profile?.login as string) ||
+                  githubProfile.name ||
+                  githubProfile.login ||
                   user.name ||
                   'GitHub User',
                 identities: {
@@ -442,8 +499,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     provider: 'GITHUB',
                     providerUserId: githubId,
                     metadata: {
-                      token: githubToken,
+                      accessToken,
+                      refreshToken,
+                      expiresAt,
+                      tokenType: 'bearer',
                       scope,
+                      login: githubProfile.login,
+                      name: githubProfile.name,
+                      avatarUrl: githubProfile.avatar_url,
+                      email: githubProfile.email,
+                      githubId: parseInt(githubId, 10),
                     },
                     isPrimary: true,
                   },
@@ -455,7 +520,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             user.name = newUser.name
           }
         } catch (error) {
-          logger.error(`Error in GitHub signIn callback: ${error}`)
+          logger.error(`Error in GitHub App signIn callback: ${error}`)
           return false
         }
       }
