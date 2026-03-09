@@ -7,7 +7,7 @@
  * instead of API Routes directly.
  */
 
-import type { Project } from '@prisma/client'
+import type { Project, ProjectImportStatus } from '@prisma/client'
 
 import { auth } from '@/lib/auth'
 import { EnvironmentCategory } from '@/lib/const'
@@ -16,6 +16,8 @@ import { getK8sServiceForUser } from '@/lib/k8s/k8s-service-helper'
 import { KubernetesUtils } from '@/lib/k8s/kubernetes-utils'
 import { VERSIONS } from '@/lib/k8s/versions'
 import { logger as baseLogger } from '@/lib/logger'
+import { getInstallationByGitHubId } from '@/lib/repo/github'
+import { listInstallationRepos } from '@/lib/services/github-app'
 import { generateRandomString } from '@/lib/util/common'
 
 import type { ActionResult } from './types'
@@ -54,6 +56,129 @@ function validateProjectName(name: string): { valid: boolean; error?: string } {
   return { valid: true }
 }
 
+type CreateProjectWithSandboxOptions = {
+  userId: string
+  name: string
+  description?: string
+  importData?: {
+    importStatus: ProjectImportStatus
+    githubAppInstallationId: string
+    githubRepoId: number
+    githubRepoFullName: string
+    githubRepoDefaultBranch?: string
+  }
+}
+
+/**
+ * Shared project creation flow used by both "New Project" and "Import from GitHub".
+ * Creates Project + Sandbox + required environment variables in one transaction.
+ */
+async function createProjectWithSandbox({
+  userId,
+  name,
+  description,
+  importData,
+}: CreateProjectWithSandboxOptions): Promise<ActionResult<Project>> {
+  logger.info(`Creating project: ${name} for user: ${userId}`)
+
+  let k8sService
+  let namespace
+  try {
+    k8sService = await getK8sServiceForUser(userId)
+    namespace = k8sService.getDefaultNamespace()
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('does not have KUBECONFIG configured')) {
+      logger.warn(`Project creation failed - missing kubeconfig for user: ${userId}`)
+      return {
+        success: false,
+        error: 'Please configure your kubeconfig before creating a project',
+      }
+    }
+    throw error
+  }
+
+  const k8sProjectName = KubernetesUtils.toK8sProjectName(name)
+  const randomSuffix = KubernetesUtils.generateRandomString()
+  const ttydAuthToken = generateRandomString(24)
+  const fileBrowserUsername = `fb-${randomSuffix}`
+  const fileBrowserPassword = generateRandomString(16)
+  const sandboxName = `${k8sProjectName}-${randomSuffix}`
+
+  const result = await prisma.$transaction(
+    async (tx) => {
+      const project = await tx.project.create({
+        data: {
+          name,
+          description,
+          userId,
+          status: 'CREATING',
+          importStatus: importData?.importStatus ?? 'READY',
+          githubAppInstallationId: importData?.githubAppInstallationId,
+          githubRepoId: importData?.githubRepoId,
+          githubRepoFullName: importData?.githubRepoFullName,
+          githubRepoDefaultBranch: importData?.githubRepoDefaultBranch,
+          importError: null,
+          importLockedUntil: null,
+        },
+      })
+
+      const sandbox = await tx.sandbox.create({
+        data: {
+          projectId: project.id,
+          name: sandboxName,
+          k8sNamespace: namespace,
+          sandboxName: sandboxName,
+          status: 'CREATING',
+          lockedUntil: null,
+          runtimeImage: VERSIONS.RUNTIME_IMAGE,
+          cpuRequest: VERSIONS.RESOURCES.SANDBOX.requests.cpu,
+          cpuLimit: VERSIONS.RESOURCES.SANDBOX.limits.cpu,
+          memoryRequest: VERSIONS.RESOURCES.SANDBOX.requests.memory,
+          memoryLimit: VERSIONS.RESOURCES.SANDBOX.limits.memory,
+        },
+      })
+
+      await tx.environment.create({
+        data: {
+          projectId: project.id,
+          key: 'TTYD_ACCESS_TOKEN',
+          value: ttydAuthToken,
+          category: EnvironmentCategory.TTYD,
+          isSecret: true,
+        },
+      })
+
+      await tx.environment.create({
+        data: {
+          projectId: project.id,
+          key: 'FILE_BROWSER_USERNAME',
+          value: fileBrowserUsername,
+          category: EnvironmentCategory.FILE_BROWSER,
+          isSecret: false,
+        },
+      })
+
+      await tx.environment.create({
+        data: {
+          projectId: project.id,
+          key: 'FILE_BROWSER_PASSWORD',
+          value: fileBrowserPassword,
+          category: EnvironmentCategory.FILE_BROWSER,
+          isSecret: true,
+        },
+      })
+
+      return { project, sandbox }
+    },
+    {
+      timeout: 20000,
+    }
+  )
+
+  logger.info(`Project created: ${result.project.id} with sandbox: ${result.sandbox.id}`)
+  return { success: true, data: result.project }
+}
+
 /**
  * Create a new project with database and sandbox.
  *
@@ -76,112 +201,73 @@ export async function createProject(
     return { success: false, error: nameValidation.error || 'Invalid project name format' }
   }
 
-  logger.info(`Creating project: ${name} for user: ${session.user.id}`)
+  return createProjectWithSandbox({
+    userId: session.user.id,
+    name,
+    description,
+  })
+}
 
-  // Get K8s service for user
-  let k8sService
-  let namespace
-  try {
-    k8sService = await getK8sServiceForUser(session.user.id)
-    namespace = k8sService.getDefaultNamespace()
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('does not have KUBECONFIG configured')) {
-      logger.warn(`Project creation failed - missing kubeconfig for user: ${session.user.id}`)
-      return {
-        success: false,
-        error: 'Please configure your kubeconfig before creating a project',
-      }
-    }
-    throw error
+export interface ImportProjectPayload {
+  installationId: number
+  repoId: number
+  repoName: string
+  repoFullName: string
+  defaultBranch: string
+  description?: string
+}
+
+/**
+ * Create project in import mode. This only creates project + sandbox metadata and returns immediately.
+ * The background import reconcile job performs the actual clone when sandbox becomes RUNNING.
+ */
+export async function importProjectFromGitHub(
+  payload: ImportProjectPayload
+): Promise<ActionResult<Project>> {
+  const session = await auth()
+
+  if (!session) {
+    return { success: false, error: 'Unauthorized' }
   }
 
-  // Generate K8s compatible names
-  const k8sProjectName = KubernetesUtils.toK8sProjectName(name)
-  const randomSuffix = KubernetesUtils.generateRandomString()
-  const ttydAuthToken = generateRandomString(24) // 24 chars = ~143 bits entropy for terminal auth
-  const fileBrowserUsername = `fb-${randomSuffix}` // filebrowser username
-  const fileBrowserPassword = generateRandomString(16) // 16 char random password
-  const sandboxName = `${k8sProjectName}-${randomSuffix}`
+  if (!payload.repoName || !payload.repoFullName || !payload.defaultBranch) {
+    return { success: false, error: 'Repository metadata is required' }
+  }
 
-  // Create project with sandbox in a transaction
-  const result = await prisma.$transaction(
-    async (tx) => {
-      // 1. Create Project with status CREATING
-      const project = await tx.project.create({
-        data: {
-          name,
-          description,
-          userId: session.user.id,
-          status: 'CREATING',
-        },
-      })
+  const nameValidation = validateProjectName(payload.repoName)
+  if (!nameValidation.valid) {
+    return { success: false, error: nameValidation.error || 'Invalid project name format' }
+  }
 
-      // 2. Create Sandbox record - lockedUntil is null so reconcile job can process immediately
-      const sandbox = await tx.sandbox.create({
-        data: {
-          projectId: project.id,
-          name: sandboxName,
-          k8sNamespace: namespace,
-          sandboxName: sandboxName,
-          status: 'CREATING',
-          lockedUntil: null, // Unlocked - ready for reconcile job to process
-          // Resource configuration from versions
-          runtimeImage: VERSIONS.RUNTIME_IMAGE,
-          cpuRequest: VERSIONS.RESOURCES.SANDBOX.requests.cpu,
-          cpuLimit: VERSIONS.RESOURCES.SANDBOX.limits.cpu,
-          memoryRequest: VERSIONS.RESOURCES.SANDBOX.requests.memory,
-          memoryLimit: VERSIONS.RESOURCES.SANDBOX.limits.memory,
-        },
-      })
+  const installation = await getInstallationByGitHubId(payload.installationId)
+  if (!installation || installation.userId !== session.user.id) {
+    return { success: false, error: 'Installation not found' }
+  }
 
-      // 3. Create Environment record for ttyd access token
-      const ttydEnv = await tx.environment.create({
-        data: {
-          projectId: project.id,
-          key: 'TTYD_ACCESS_TOKEN',
-          value: ttydAuthToken,
-          category: EnvironmentCategory.TTYD,
-          isSecret: true, // Mark as secret since it's an access token
-        },
-      })
+  try {
+    const repos = await listInstallationRepos(installation.installationId)
+    const matchedRepo = repos.find(
+      (repo) => repo.id === payload.repoId && repo.full_name === payload.repoFullName
+    )
 
-      // 4. Create Environment records for filebrowser credentials
-      const fileBrowserUsernameEnv = await tx.environment.create({
-        data: {
-          projectId: project.id,
-          key: 'FILE_BROWSER_USERNAME',
-          value: fileBrowserUsername,
-          category: EnvironmentCategory.FILE_BROWSER,
-          isSecret: false,
-        },
-      })
-
-      const fileBrowserPasswordEnv = await tx.environment.create({
-        data: {
-          projectId: project.id,
-          key: 'FILE_BROWSER_PASSWORD',
-          value: fileBrowserPassword,
-          category: EnvironmentCategory.FILE_BROWSER,
-          isSecret: true, // Mark as secret since it's a password
-        },
-      })
-
-      return {
-        project,
-        sandbox,
-        ttydEnv,
-        fileBrowserUsernameEnv,
-        fileBrowserPasswordEnv,
-      }
-    },
-    {
-      timeout: 20000,
+    if (!matchedRepo) {
+      return { success: false, error: 'Repository not found in selected installation' }
     }
-  )
+  } catch (error) {
+    logger.error(`Failed to verify repository for import: ${error}`)
+    return { success: false, error: 'Failed to verify repository access' }
+  }
 
-  logger.info(
-    `Project created: ${result.project.id} with sandbox: ${result.sandbox.id}`
-  )
-
-  return { success: true, data: result.project }
+  return createProjectWithSandbox({
+    userId: session.user.id,
+    name: payload.repoName,
+    description: payload.description,
+    importData: {
+      importStatus: 'PENDING',
+      githubAppInstallationId: installation.id,
+      githubRepoId: payload.repoId,
+      githubRepoFullName: payload.repoFullName,
+      githubRepoDefaultBranch: payload.defaultBranch,
+    },
+  })
 }

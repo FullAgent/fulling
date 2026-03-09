@@ -1,3 +1,4 @@
+import { triggerProjectImportForProject } from '@/lib/jobs/project-import'
 import { getK8sServiceForUser } from '@/lib/k8s/k8s-service-helper'
 import { logger as baseLogger } from '@/lib/logger'
 import { getProjectEnvironments } from '@/lib/repo/environment'
@@ -117,6 +118,7 @@ async function handleStartSandbox(payload: SandboxEventPayload): Promise<void> {
       await updateSandboxStatus(sandbox.id, 'RUNNING')
       await projectStatusReconcile(project.id)
       logger.info(`Sandbox ${sandbox.id} is now RUNNING`)
+      void triggerImportOnSandboxRunning(project.id)
     } else {
       logger.info(`Sandbox ${sandbox.id} is still starting (K8s status: ${k8sStatus})`)
       // Keep status as STARTING, may need to poll again
@@ -306,6 +308,7 @@ async function handleUpdateSandbox(payload: SandboxEventPayload): Promise<void> 
       await updateSandboxStatus(sandbox.id, 'RUNNING')
       await projectStatusReconcile(project.id)
       logger.info(`Sandbox ${sandbox.id} is now RUNNING`)
+      void triggerImportOnSandboxRunning(project.id)
     } else if (k8sStatus === 'STARTING') {
       // Pod is restarting due to env var changes - change status to STARTING
       await updateSandboxStatus(sandbox.id, 'STARTING')
@@ -349,3 +352,11 @@ export function registerSandboxListeners(): void {
 
 // Auto-register listeners when module is imported
 registerSandboxListeners()
+
+async function triggerImportOnSandboxRunning(projectId: string): Promise<void> {
+  try {
+    await triggerProjectImportForProject(projectId)
+  } catch (error) {
+    logger.error(`Failed to trigger project import for ${projectId}: ${error}`)
+  }
+}
