@@ -194,7 +194,8 @@ async function cloneRepoToSandbox(project: ImportProjectWithRelations, sandboxId
   const authUrl = `https://x-access-token:${installationToken}@github.com/${project.githubRepoFullName}.git`
   const escapedAuthUrl = shellEscapeSingleQuoted(authUrl)
   const escapedBranch = shellEscapeSingleQuoted(project.githubRepoDefaultBranch!)
-  const repoName = project.githubRepoFullName.split('/').at(-1) || 'repo'
+  const repoFullName = project.githubRepoFullName!
+  const repoName = repoFullName.split('/').at(-1) || 'repo'
   const importDirName = repoName.replace(/[^a-zA-Z0-9._-]/g, '-')
   const uniqueImportDirName = `${importDirName}-${project.id}`
   const escapedImportDirName = shellEscapeSingleQuoted(uniqueImportDirName)
