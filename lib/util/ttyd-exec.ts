@@ -261,17 +261,23 @@ export async function executeTtydCommand(options: TtydExecOptions): Promise<Ttyd
   // Text encoder/decoder
   const textEncoder = new TextEncoder()
   const textDecoder = new TextDecoder()
+  let commandSent = false
 
   return new Promise((resolve, reject) => {
     let outputBuffer = ''
     let isResolved = false
     let timeoutHandle: ReturnType<typeof setTimeout> | null = null
+    let fallbackSendHandle: ReturnType<typeof setTimeout> | null = null
     let ws: UnifiedWebSocket | null = null
 
     const cleanup = () => {
       if (timeoutHandle) {
         clearTimeout(timeoutHandle)
         timeoutHandle = null
+      }
+      if (fallbackSendHandle) {
+        clearTimeout(fallbackSendHandle)
+        fallbackSendHandle = null
       }
       if (ws) {
         try {
@@ -414,23 +420,11 @@ export async function executeTtydCommand(options: TtydExecOptions): Promise<Ttyd
           })
           ws.send(textEncoder.encode(initMsg))
 
-          // Wait a bit for shell to initialize, then send command
-          setTimeout(() => {
-            if (!ws || ws.readyState !== WS_OPEN) return
-
-            // Send the wrapped command
-            const wrappedCommand = wrapCommand(command, markerId)
-            const inputPayload = new Uint8Array(wrappedCommand.length * 3 + 1)
-            inputPayload[0] = ClientCommand.INPUT.charCodeAt(0)
-            const stats = textEncoder.encodeInto(wrappedCommand, inputPayload.subarray(1))
-            ws.send(inputPayload.subarray(0, (stats.written as number) + 1))
-
-            // Send Enter key
-            const enterPayload = new Uint8Array(2)
-            enterPayload[0] = ClientCommand.INPUT.charCodeAt(0)
-            enterPayload[1] = 0x0d // Carriage return
-            ws.send(enterPayload)
-          }, 100)
+          // Fallback: if shell banner/prompt does not arrive soon, still send command.
+          fallbackSendHandle = setTimeout(() => {
+            if (!ws || ws.readyState !== WS_OPEN || commandSent) return
+            sendWrappedCommand(ws)
+          }, 1000)
         })
 
         // Handle message event
@@ -443,6 +437,12 @@ export async function executeTtydCommand(options: TtydExecOptions): Promise<Ttyd
           const payload = rawData.slice(1)
 
           if (cmd === ServerCommand.OUTPUT) {
+            // Prefer sending command when first shell output arrives to avoid race
+            // where input is sent before shell is ready.
+            if (!commandSent && ws && ws.readyState === WS_OPEN) {
+              sendWrappedCommand(ws)
+            }
+
             const text = textDecoder.decode(payload)
             outputBuffer += text
 
@@ -527,6 +527,24 @@ export async function executeTtydCommand(options: TtydExecOptions): Promise<Ttyd
         )
       })
   })
+
+  function sendWrappedCommand(socket: UnifiedWebSocket) {
+    if (commandSent) return
+    commandSent = true
+
+    // Send the wrapped command
+    const wrappedCommand = wrapCommand(command, markerId)
+    const inputPayload = new Uint8Array(wrappedCommand.length * 3 + 1)
+    inputPayload[0] = ClientCommand.INPUT.charCodeAt(0)
+    const stats = textEncoder.encodeInto(wrappedCommand, inputPayload.subarray(1))
+    socket.send(inputPayload.subarray(0, (stats.written as number) + 1))
+
+    // Send Enter key
+    const enterPayload = new Uint8Array(2)
+    enterPayload[0] = ClientCommand.INPUT.charCodeAt(0)
+    enterPayload[1] = 0x0d // Carriage return
+    socket.send(enterPayload)
+  }
 }
 
 // ============================================================================

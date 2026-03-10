@@ -111,6 +111,12 @@ model Project {
   githubAppInstallationId String? // FK → GitHubAppInstallation
   githubRepoId            Int? // GitHub repo numeric ID (stable across renames)
   githubRepoFullName      String? // "owner/repo-name", for display
+  githubRepoDefaultBranch String? // Repository default branch for import workflow
+
+  // GitHub import lifecycle
+  importStatus     ProjectImportStatus @default(READY)
+  importError      String?
+  importLockedUntil DateTime? // Lock for import reconcile job
 
   // Aggregated status based on child resources
   status ProjectStatus @default(CREATING)
@@ -261,6 +267,14 @@ enum ProjectStatus {
   // Special states
   ERROR // At least one resource has ERROR - requires attention
   PARTIAL // Inconsistent mixed states - manual intervention needed
+}
+
+// GitHub repository import lifecycle for a project
+enum ProjectImportStatus {
+  PENDING  // Waiting for sandbox to become RUNNING
+  CLONING  // Repository clone in progress
+  READY    // Import finished or not an imported project
+  FAILED   // Import failed; project remains usable as empty project
 }
 
 // Individual resource status (Database and Sandbox)

@@ -77,10 +77,17 @@ async function startBackgroundJobs() {
     const sandboxJob = startSandboxReconcileJob()
     logger.info('✅ Sandbox reconcile job started')
 
+    // Start project import reconciliation job
+    // Runs every 3 seconds to process GitHub imports when sandboxes become RUNNING
+    const { startProjectImportReconcileJob } = await import('@/lib/jobs/project-import')
+    const projectImportJob = startProjectImportReconcileJob()
+    logger.info('✅ Project import reconcile job started')
+
     // Store job references for potential cleanup (optional)
     // In most cases, these jobs will run for the lifetime of the server
     globalThis.__databaseReconcileJob = databaseJob
     globalThis.__sandboxReconcileJob = sandboxJob
+    globalThis.__projectImportReconcileJob = projectImportJob
 
     logger.info('All background jobs started successfully')
   } catch (error) {
@@ -116,6 +123,13 @@ export function cleanup() {
       logger.info('✅ Sandbox reconcile job stopped')
     }
 
+    // Stop project import reconcile job if it exists
+    if (globalThis.__projectImportReconcileJob) {
+      globalThis.__projectImportReconcileJob.stop()
+      globalThis.__projectImportReconcileJob = undefined
+      logger.info('✅ Project import reconcile job stopped')
+    }
+
     logger.info('✅ Cleanup completed')
   } catch (error) {
     logger.error(`❌ Cleanup failed: ${error}`)
@@ -127,4 +141,6 @@ declare global {
   var __databaseReconcileJob: Cron | undefined
 
   var __sandboxReconcileJob: Cron | undefined
+
+  var __projectImportReconcileJob: Cron | undefined
 }

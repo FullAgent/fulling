@@ -8,18 +8,22 @@ const logger = baseLogger.child({ module: 'lib/jobs/sandbox/sandboxReconcile' })
 
 // Maximum number of sandboxes to process per reconcile cycle
 const MAX_SANDBOXES_PER_CYCLE = parseInt(process.env.MAX_SANDBOXES_PER_RECONCILE || '10', 10)
+const RECONCILE_INTERVAL_SECONDS = parseInt(
+  process.env.SANDBOX_RECONCILE_INTERVAL_SECONDS || '10',
+  10
+)
 
 /**
  * Sandbox reconciliation job
- * Runs every 3 seconds to find sandboxes in transition states and emit events
+ * Runs on interval to find sandboxes in transition states and emit events
  */
 export function startSandboxReconcileJob() {
   logger.info('Starting sandbox reconcile job')
   logger.info(`Lock duration: ${LOCK_DURATION_SECONDS} seconds`)
   logger.info(`Max sandboxes per cycle: ${MAX_SANDBOXES_PER_CYCLE}`)
+  logger.info(`Reconcile interval: ${RECONCILE_INTERVAL_SECONDS} seconds`)
 
-  // Run every 3 seconds
-  const job = new Cron('*/3 * * * * *', async () => {
+  const job = new Cron(`*/${RECONCILE_INTERVAL_SECONDS} * * * * *`, async () => {
     try {
       await reconcileSandboxes()
     } catch (error) {
@@ -27,7 +31,7 @@ export function startSandboxReconcileJob() {
     }
   })
 
-  logger.info('✅ Sandbox reconcile job started (every 3 seconds)')
+  logger.info(`✅ Sandbox reconcile job started (every ${RECONCILE_INTERVAL_SECONDS} seconds)`)
 
   return job
 }

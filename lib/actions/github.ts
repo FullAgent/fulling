@@ -26,6 +26,7 @@ export interface GitHubRepo {
   id: number
   name: string
   full_name: string
+  default_branch: string
   description: string | null
   private: boolean
   language: string | null
@@ -81,6 +82,7 @@ export async function getInstallationRepos(
       id: repo.id,
       name: repo.name,
       full_name: repo.full_name,
+      default_branch: repo.default_branch,
       description: repo.description,
       private: repo.private,
       language: repo.language,

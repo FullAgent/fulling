@@ -8,18 +8,22 @@ const logger = baseLogger.child({ module: 'lib/jobs/database/databaseReconcile' 
 
 // Maximum number of databases to process per reconcile cycle
 const MAX_DATABASES_PER_CYCLE = parseInt(process.env.MAX_DATABASES_PER_RECONCILE || '10', 10)
+const RECONCILE_INTERVAL_SECONDS = parseInt(
+  process.env.DATABASE_RECONCILE_INTERVAL_SECONDS || '10',
+  10
+)
 
 /**
  * Database reconciliation job
- * Runs every 3 seconds to find databases in transition states and emit events
+ * Runs on interval to find databases in transition states and emit events
  */
 export function startDatabaseReconcileJob() {
   logger.info('Starting database reconcile job')
   logger.info(`Lock duration: ${LOCK_DURATION_SECONDS} seconds`)
   logger.info(`Max databases per cycle: ${MAX_DATABASES_PER_CYCLE}`)
+  logger.info(`Reconcile interval: ${RECONCILE_INTERVAL_SECONDS} seconds`)
 
-  // Run every 3 seconds
-  const job = new Cron('*/3 * * * * *', async () => {
+  const job = new Cron(`*/${RECONCILE_INTERVAL_SECONDS} * * * * *`, async () => {
     try {
       await reconcileDatabases()
     } catch (error) {
@@ -27,7 +31,7 @@ export function startDatabaseReconcileJob() {
     }
   })
 
-  logger.info(' Database reconcile job started (every 3 seconds)')
+  logger.info(`✅ Database reconcile job started (every ${RECONCILE_INTERVAL_SECONDS} seconds)`)
 
   return job
 }

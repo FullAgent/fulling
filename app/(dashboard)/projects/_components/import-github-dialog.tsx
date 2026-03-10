@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { FaGithub } from 'react-icons/fa'
 import { MdRefresh } from 'react-icons/md'
+import type { ProjectImportStatus } from '@prisma/client'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -14,8 +16,9 @@ import {
   getInstallations,
   type GitHubRepo,
 } from '@/lib/actions/github'
-import { createProject } from '@/lib/actions/project'
+import { importProjectFromGitHub } from '@/lib/actions/project'
 import { env } from '@/lib/env'
+import { GET } from '@/lib/fetch-client'
 
 type Step = 'loading' | 'check-github-app' | 'select-repo'
 
@@ -25,26 +28,31 @@ interface ImportGitHubDialogProps {
 }
 
 export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogProps) {
+  const router = useRouter()
   const [step, setStep] = useState<Step>('loading')
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
 
   // Step 1 state
   const [hasInstallation, setHasInstallation] = useState(false)
+  const [installationId, setInstallationId] = useState<number | null>(null)
 
   // Step 2 state
   const [repos, setRepos] = useState<GitHubRepo[]>([])
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null)
   const [isCreating, setIsCreating] = useState(false)
+  const [importProjectId, setImportProjectId] = useState<string | null>(null)
 
   const resetState = useCallback(() => {
     setStep('loading')
     setIsLoading(true)
     setSearchQuery('')
     setHasInstallation(false)
+    setInstallationId(null)
     setRepos([])
     setSelectedRepo(null)
     setIsCreating(false)
+    setImportProjectId(null)
   }, [])
 
   const checkIdentity = useCallback(async () => {
@@ -54,8 +62,10 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
       // Directly check for GitHub App installation
       const installResult = await getInstallations()
       if (installResult.success && installResult.data.length > 0) {
+        const firstInstallationId = installResult.data[0].installationId
         setHasInstallation(true)
-        const repoResult = await getInstallationRepos(installResult.data[0].installationId.toString())
+        setInstallationId(firstInstallationId)
+        const repoResult = await getInstallationRepos(firstInstallationId.toString())
         if (repoResult.success) {
           setRepos(repoResult.data)
           setStep('select-repo')
@@ -79,6 +89,41 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
       checkIdentity()
     }
   }, [open, resetState, checkIdentity])
+
+  useEffect(() => {
+    if (!open || !importProjectId) {
+      return
+    }
+
+    const pollImportStatus = async () => {
+      try {
+        const project = await GET<{ importStatus: ProjectImportStatus }>(
+          `/api/projects/${importProjectId}`
+        )
+
+        if (project.importStatus === 'READY') {
+          toast.success('Repository imported successfully')
+          onOpenChange(false)
+          setImportProjectId(null)
+          router.refresh()
+          return
+        }
+
+        if (project.importStatus === 'FAILED') {
+          toast.error('Repository import failed. An empty project was created instead.')
+          onOpenChange(false)
+          setImportProjectId(null)
+          router.refresh()
+        }
+      } catch (error) {
+        console.error('Failed to poll import status:', error)
+      }
+    }
+
+    const timer = setInterval(pollImportStatus, 3000)
+    void pollImportStatus()
+    return () => clearInterval(timer)
+  }, [importProjectId, onOpenChange, open, router])
 
   const handleInstallApp = () => {
     const appName = env.NEXT_PUBLIC_GITHUB_APP_NAME
@@ -134,20 +179,27 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
   }
 
   const handleImport = async () => {
-    if (!selectedRepo) return
+    if (!selectedRepo || !installationId) return
 
     setIsCreating(true)
     try {
-      const result = await createProject(selectedRepo.name)
+      const result = await importProjectFromGitHub({
+        installationId,
+        repoId: selectedRepo.id,
+        repoName: selectedRepo.name,
+        repoFullName: selectedRepo.full_name,
+        defaultBranch: selectedRepo.default_branch,
+      })
+
       if (result.success) {
-        toast.success(`Project "${selectedRepo.name}" created successfully!`)
-        onOpenChange(false)
+        toast.success(`Project "${selectedRepo.name}" is being imported...`)
+        setImportProjectId(result.data.id)
       } else {
-        toast.error(result.error || 'Failed to create project')
+        toast.error(result.error || 'Failed to import project')
       }
     } catch (error) {
-      console.error('Failed to create project:', error)
-      toast.error('Failed to create project')
+      console.error('Failed to import project:', error)
+      toast.error('Failed to import project')
     } finally {
       setIsCreating(false)
     }
@@ -254,7 +306,7 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
                   {isCreating ? (
                     <>
                       <MdRefresh className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
+                      Importing...
                     </>
                   ) : (
                     'Import'
