@@ -20,7 +20,7 @@ import { importProjectFromGitHub } from '@/lib/actions/project'
 import { env } from '@/lib/env'
 import { GET } from '@/lib/fetch-client'
 
-type Step = 'check-github-app' | 'select-repo'
+type Step = 'loading' | 'check-github-app' | 'select-repo'
 
 interface ImportGitHubDialogProps {
   open: boolean
@@ -29,8 +29,8 @@ interface ImportGitHubDialogProps {
 
 export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogProps) {
   const router = useRouter()
-  const [step, setStep] = useState<Step>('check-github-app')
-  const [isLoading, setIsLoading] = useState(false)
+  const [step, setStep] = useState<Step>('loading')
+  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
 
   // Step 1 state
@@ -44,7 +44,7 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
   const [importProjectId, setImportProjectId] = useState<string | null>(null)
 
   const resetState = useCallback(() => {
-    setStep('check-github-app')
+    setStep('loading')
     setIsLoading(true)
     setSearchQuery('')
     setHasInstallation(false)
@@ -56,6 +56,7 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
   }, [])
 
   const checkIdentity = useCallback(async () => {
+    setStep('loading')
     setIsLoading(true)
     try {
       // Directly check for GitHub App installation
@@ -68,6 +69,8 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
         if (repoResult.success) {
           setRepos(repoResult.data)
           setStep('select-repo')
+        } else {
+          setStep('check-github-app')
         }
       } else {
         setHasInstallation(false)
@@ -207,18 +210,17 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
   )
 
   const renderStepContent = () => {
-    if (isLoading && step === 'check-github-app' && !hasInstallation) {
-      return (
-        <div className="flex items-center justify-center py-12">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <MdRefresh className="w-4 h-4 animate-spin" />
-            <span>Checking GitHub App installation...</span>
-          </div>
-        </div>
-      )
-    }
-
     switch (step) {
+      case 'loading':
+        return (
+          <div className="flex items-center justify-center py-12">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <MdRefresh className="w-4 h-4 animate-spin" />
+              <span>Loading your GitHub repositories...</span>
+            </div>
+          </div>
+        )
+
       case 'check-github-app':
         if (hasInstallation) {
           return null
@@ -322,6 +324,8 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
 
   const getStepTitle = () => {
     switch (step) {
+      case 'loading':
+        return 'Import from GitHub'
       case 'check-github-app':
         return 'Install GitHub App'
       case 'select-repo':
