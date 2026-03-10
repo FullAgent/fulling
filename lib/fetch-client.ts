@@ -9,10 +9,10 @@
  * import { GET, POST, PUT, DELETE } from '@/lib/fetch-client'
  *
  * // GET request
- * const projects = await GET<Project[]>('/api/projects')
+ * const projects = await GET<Project[]>('/api/my-resource')
  *
  * // POST with body
- * const newProject = await POST<Project>('/api/projects', {
+ * const newProject = await POST<Project>('/api/my-resource', {
  *   name: 'My Project',
  *   description: 'A cool project'
  * })
