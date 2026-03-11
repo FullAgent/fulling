@@ -1,12 +1,19 @@
-import { useCallback, useEffect, useMemo,useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 const BASE_DIR = '/home/fulling/next';
 
-export function useAppRunner(sandboxId: string | undefined, deployDir: string = './') {
-  const [isStartingApp, setIsStartingApp] = useState(false);
-  const [isStoppingApp, setIsStoppingApp] = useState(false);
-  const [isAppRunning, setIsAppRunning] = useState(false);
+function buildSkillPrompt(repoUrl?: string) {
+  void repoUrl;
+  return '/fulling-deploy';
+}
+
+export function useAppRunner(
+  sandboxId: string | undefined,
+  deployDir: string = './',
+  repoUrl?: string
+) {
+  const [isRunningSkill, setIsRunningSkill] = useState(false);
 
   // Calculate workdir based on deployDir
   const workdir = useMemo(() => {
@@ -18,120 +25,43 @@ export function useAppRunner(sandboxId: string | undefined, deployDir: string = 
     return `${BASE_DIR}/${relativePath}`;
   }, [deployDir]);
 
-  // Check app status on mount
-  useEffect(() => {
-    if (!sandboxId) return;
+  const runDeploySkill = useCallback(async () => {
+    if (!sandboxId || isRunningSkill) return;
 
-    const checkStatus = async () => {
-      try {
-        const response = await fetch(`/api/sandbox/${sandboxId}/app-status`);
-        const data = await response.json();
-        setIsAppRunning(data.running);
-      } catch (error) {
-        console.error('Failed to check app status:', error);
-      }
-    };
-
-    checkStatus();
-  }, [sandboxId]);
-
-  // Start application in background
-  const startApp = useCallback(async () => {
-    if (!sandboxId || isStartingApp) return;
-
-    setIsStartingApp(true);
-
-    // Send exec command (fire and forget, don't wait for response)
-    fetch(`/api/sandbox/${sandboxId}/exec`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        command: 'pnpm run build && pnpm run start',
-        workdir,
-      }),
-    }).catch(() => {
-      // Ignore errors, we'll detect success via port polling
-    });
-
-    toast.info('Starting...', {
-      description: 'Building and starting your app. This may take a few minutes.',
-    });
-
-    // Poll for app status every 10 seconds, max 5 minutes
-    const maxAttempts = 30; // 30 * 10s = 5 minutes
-    let attempts = 0;
-
-    const pollStatus = async (): Promise<boolean> => {
-      try {
-        const response = await fetch(`/api/sandbox/${sandboxId}/app-status`);
-        const data = await response.json();
-        return data.running;
-      } catch {
-        return false;
-      }
-    };
-
-    const poll = async () => {
-      while (attempts < maxAttempts) {
-        attempts++;
-        const running = await pollStatus();
-        if (running) {
-          setIsAppRunning(true);
-          setIsStartingApp(false);
-          toast.success('App Running', {
-            description: 'Your app is live in the background',
-          });
-          return;
-        }
-        // Wait 10 seconds before next check
-        await new Promise((resolve) => setTimeout(resolve, 10000));
-      }
-
-      // Timeout after max attempts
-      setIsStartingApp(false);
-      toast.error('Start Timeout', {
-        description: 'App did not start within 5 minutes. Check terminal for errors.',
-      });
-    };
-
-    poll();
-  }, [sandboxId, isStartingApp, workdir]);
-
-  // Stop application
-  const stopApp = useCallback(async () => {
-    if (!sandboxId || isStoppingApp) return;
-
-    setIsStoppingApp(true);
+    setIsRunningSkill(true);
     try {
-      const response = await fetch(`/api/sandbox/${sandboxId}/app-status`, {
-        method: 'DELETE',
+      const prompt = buildSkillPrompt(repoUrl);
+      const response = await fetch(`/api/sandbox/${sandboxId}/exec`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          command: `claude -p ${JSON.stringify(prompt)}`,
+          workdir,
+        }),
       });
-
       const result = await response.json();
 
-      if (result.success) {
-        setIsAppRunning(false);
-        toast.success('App Stopped');
+      if (response.ok && result.success) {
+        toast.success('Deploy Prep Started', {
+          description: 'The /fulling-deploy skill is running in the sandbox background.',
+        });
       } else {
-        toast.error('Stop Failed', {
+        toast.error('Failed to Start Deploy Prep', {
           description: result.error || 'Unknown error',
         });
       }
     } catch (error) {
-      console.error('Failed to stop app:', error);
-      toast.error('Stop Failed', {
+      console.error('Failed to start deploy prep skill:', error);
+      toast.error('Failed to Start Deploy Prep', {
         description: 'Network error, please try again',
       });
     } finally {
-      setIsStoppingApp(false);
+      setIsRunningSkill(false);
     }
-  }, [sandboxId, isStoppingApp]);
+  }, [sandboxId, isRunningSkill, repoUrl, workdir]);
 
   return {
-    isStartingApp,
-    isStoppingApp,
-    isAppRunning,
-    startApp,
-    stopApp,
+    isRunningSkill,
+    runDeploySkill,
   };
 }

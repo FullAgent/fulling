@@ -122,7 +122,6 @@ export function TerminalContainer({ project, sandbox, isVisible = true }: Termin
     <div className="flex flex-col flex-1 min-h-0 bg-background">
       {/* Toolbar with tabs and operations */}
       <TerminalToolbar
-        project={project}
         sandbox={sandbox}
         tabs={tabs}
         activeTabId={activeTabId}

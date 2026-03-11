@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { MdPlayArrow, MdRefresh, MdStop } from 'react-icons/md';
+import { MdRefresh, MdRocketLaunch } from 'react-icons/md';
 import type { Prisma } from '@prisma/client';
 
 import { useAppRunner } from '@/hooks/use-app-runner';
@@ -17,28 +17,20 @@ interface AppRunnerProps {
 }
 
 export function AppRunner({ sandbox }: AppRunnerProps) {
-  const [showStartConfirm, setShowStartConfirm] = useState(false);
+  const [showRunConfirm, setShowRunConfirm] = useState(false);
   const [deployDirectory, setDeployDirectory] = useState('./');
   const {
-    isStartingApp,
-    isStoppingApp,
-    isAppRunning,
-    startApp,
-    stopApp,
+    isRunningSkill,
+    runDeploySkill,
   } = useAppRunner(sandbox?.id, deployDirectory);
 
-  // Toggle app start/stop
-  const handleToggleApp = () => {
-    if (isAppRunning) {
-      stopApp();
-    } else {
-      setShowStartConfirm(true); // Open confirmation modal
-    }
+  const handleRunSkill = () => {
+    setShowRunConfirm(true);
   };
 
-  const handleConfirmStart = () => {
-    setShowStartConfirm(false);
-    startApp();
+  const handleConfirmRun = () => {
+    setShowRunConfirm(false);
+    runDeploySkill();
   };
 
   return (
@@ -55,30 +47,20 @@ export function AppRunner({ sandbox }: AppRunnerProps) {
 
         {/* Run App Button */}
         <button
-          onClick={handleToggleApp}
-          disabled={isStartingApp || isStoppingApp || !sandbox}
+          onClick={handleRunSkill}
+          disabled={isRunningSkill || !sandbox}
           className={cn(
             'px-2 py-1 text-xs rounded transition-colors flex items-center gap-1 disabled:cursor-not-allowed',
-            isAppRunning
-              ? 'text-green-400 hover:text-red-400 hover:bg-red-400/10 bg-green-400/10'
-              : 'text-foreground font-semibold hover:text-white hover:bg-zinc-800 disabled:opacity-50'
+            'text-foreground font-semibold hover:text-white hover:bg-zinc-800 disabled:opacity-50'
           )}
-          title={
-            isAppRunning
-              ? 'Click to stop. Your app will no longer be accessible.'
-              : 'Build and run your app in production mode. It will keep running even if you close this terminal.'
-          }
+          title="Generate deployment files and push changes via the /fulling-deploy skill."
         >
-          {isStartingApp || isStoppingApp ? (
+          {isRunningSkill ? (
             <MdRefresh className="h-3 w-3 animate-spin" />
-          ) : isAppRunning ? (
-            <MdStop className="h-3 w-3" />
           ) : (
-            <MdPlayArrow className="h-3 w-3 text-green-500" />
+            <MdRocketLaunch className="h-3 w-3 text-blue-500" />
           )}
-          <span>
-            {isStartingApp ? 'Starting...' : isStoppingApp ? 'Stopping...' : isAppRunning ? 'Running' : 'Run App'}
-          </span>
+          <span>{isRunningSkill ? 'Starting...' : 'Prepare Deploy'}</span>
         </button>
       </div>
 
@@ -87,10 +69,9 @@ export function AppRunner({ sandbox }: AppRunnerProps) {
 
       {/* Confirmation Alert Dialog */}
       <AppRunnerDialog
-        open={showStartConfirm}
-        onOpenChange={setShowStartConfirm}
-        onConfirm={handleConfirmStart}
-        sandboxUrl={sandbox?.publicUrl}
+        open={showRunConfirm}
+        onOpenChange={setShowRunConfirm}
+        onConfirm={handleConfirmRun}
       />
     </>
   );
