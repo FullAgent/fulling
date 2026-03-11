@@ -1,4 +1,4 @@
-import { ProjectStatus } from '@prisma/client'
+import type { ProjectDisplayStatus } from '@/lib/util/project-display-status'
 
 export interface StatusConfigItem {
   color: string
@@ -7,7 +7,7 @@ export interface StatusConfigItem {
   animate?: string
 }
 
-export const statusConfig: Record<ProjectStatus, StatusConfigItem> = {
+export const statusConfig: Record<ProjectDisplayStatus, StatusConfigItem> = {
   // Stable states
   RUNNING: {
     color: 'text-emerald-500',
@@ -20,16 +20,17 @@ export const statusConfig: Record<ProjectStatus, StatusConfigItem> = {
     bg: 'bg-gray-500',
     label: 'Stopped',
   },
-  TERMINATED: {
-    color: 'text-gray-600',
-    bg: 'bg-gray-600',
-    label: 'Terminated',
-  },
   // Transition states
   CREATING: {
     color: 'text-yellow-500',
     bg: 'bg-yellow-500',
     label: 'Creating',
+    animate: 'animate-pulse',
+  },
+  IMPORTING: {
+    color: 'text-sky-400',
+    bg: 'bg-sky-400',
+    label: 'Importing',
     animate: 'animate-pulse',
   },
   UPDATING: {
@@ -62,9 +63,9 @@ export const statusConfig: Record<ProjectStatus, StatusConfigItem> = {
     bg: 'bg-red-500',
     label: 'Error',
   },
-  PARTIAL: {
-    color: 'text-purple-500',
-    bg: 'bg-purple-500',
-    label: 'Partial',
+  NEEDS_ATTENTION: {
+    color: 'text-amber-400',
+    bg: 'bg-amber-400',
+    label: 'Needs Attention',
   },
 }

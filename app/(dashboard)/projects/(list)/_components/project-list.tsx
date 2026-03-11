@@ -1,14 +1,16 @@
-import { ProjectStatus } from '@prisma/client'
-
 import type { ProjectWithRelations } from '@/lib/data/project'
 import { formatRelativeTime } from '@/lib/util/format-time'
+import {
+  getProjectDisplayStatus,
+  type ProjectDisplayStatus,
+} from '@/lib/util/project-display-status'
 
 import { CreateProjectCard } from './create-project-card'
 import { ProjectCard } from './project-card'
 
 interface ProjectListProps {
   projects: ProjectWithRelations<{ sandboxes: true }>[]
-  activeFilter: 'ALL' | ProjectStatus
+  activeFilter: 'ALL' | ProjectDisplayStatus
 }
 
 export function ProjectList({ projects, activeFilter }: ProjectListProps) {
@@ -18,6 +20,7 @@ export function ProjectList({ projects, activeFilter }: ProjectListProps) {
     name: p.name,
     description: p.description || 'No description',
     status: p.status,
+    displayStatus: getProjectDisplayStatus(p),
     updatedAt: formatRelativeTime(p.updatedAt),
     publicUrl: p.sandboxes?.[0]?.publicUrl,
   }))
@@ -25,7 +28,7 @@ export function ProjectList({ projects, activeFilter }: ProjectListProps) {
   const filteredProjects =
     activeFilter === 'ALL'
       ? mappedProjects
-      : mappedProjects.filter((p) => p.status === activeFilter)
+      : mappedProjects.filter((p) => p.displayStatus === activeFilter)
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
