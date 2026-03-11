@@ -20,11 +20,6 @@ export const statusConfig: Record<ProjectDisplayStatus, StatusConfigItem> = {
     bg: 'bg-gray-500',
     label: 'Stopped',
   },
-  TERMINATED: {
-    color: 'text-gray-600',
-    bg: 'bg-gray-600',
-    label: 'Terminated',
-  },
   // Transition states
   CREATING: {
     color: 'text-yellow-500',
