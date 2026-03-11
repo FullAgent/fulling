@@ -15,9 +15,9 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  identities         UserIdentity[] // One-to-many: User has multiple authentication identities
-  projects           Project[] // One-to-many: User owns multiple projects
-  configs            UserConfig[] // One-to-many: User global configurations
+  identities          UserIdentity[] // One-to-many: User has multiple authentication identities
+  projects            Project[] // One-to-many: User owns multiple projects
+  configs             UserConfig[] // One-to-many: User global configurations
   githubInstallations GitHubAppInstallation[] // One-to-many: User's GitHub App installations
 }
 
@@ -68,19 +68,19 @@ model UserConfig {
 // GitHubAppInstallation: Tracks GitHub App installations
 // Required for obtaining installation access tokens
 model GitHubAppInstallation {
-  id             String                   @id @default(cuid())
-  installationId Int                      @unique // GitHub's numeric installation ID
+  id             String @id @default(cuid())
+  installationId Int    @unique // GitHub's numeric installation ID
   userId         String
 
-  accountId      Int // GitHub account numeric ID
-  accountLogin   String // GitHub username or organization name
-  accountType    String // "User" or "Organization"
+  accountId        Int // GitHub account numeric ID
+  accountLogin     String // GitHub username or organization name
+  accountType      String // "User" or "Organization"
   accountAvatarUrl String?
 
   repositorySelection String // "all" or "selected"
 
-  permissions Json     @default("{}") // App permissions
-  events      Json     @default("[]") // Subscribed events
+  permissions Json @default("{}") // App permissions
+  events      Json @default("[]") // Subscribed events
 
   status      GitHubInstallationStatus @default(ACTIVE)
   suspendedAt DateTime?
@@ -113,11 +113,6 @@ model Project {
   githubRepoFullName      String? // "owner/repo-name", for display
   githubRepoDefaultBranch String? // Repository default branch for import workflow
 
-  // GitHub import lifecycle
-  importStatus     ProjectImportStatus @default(READY)
-  importError      String?
-  importLockedUntil DateTime? // Lock for import reconcile job
-
   // Aggregated status based on child resources
   status ProjectStatus @default(CREATING)
 
@@ -125,10 +120,11 @@ model Project {
   updatedAt DateTime @updatedAt
 
   // Relations: Project is a collection of resources
-  user                User                   @relation(fields: [userId], references: [id], onDelete: Cascade) // Many-to-one: Project belongs to a User
-  environments        Environment[] // One-to-many: Configuration variables
-  databases           Database[] // One-to-many: Multiple database clusters
-  sandboxes           Sandbox[] // One-to-many: Multiple runtime containers
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade) // Many-to-one: Project belongs to a User
+  environments          Environment[] // One-to-many: Configuration variables
+  databases             Database[] // One-to-many: Multiple database clusters
+  sandboxes             Sandbox[] // One-to-many: Multiple runtime containers
+  tasks                 ProjectTask[] // One-to-many: Project-level asynchronous tasks
   githubAppInstallation GitHubAppInstallation? @relation(fields: [githubAppInstallationId], references: [id], onDelete: SetNull)
 
   @@index([githubAppInstallationId])
@@ -231,12 +227,39 @@ model Sandbox {
   updatedAt DateTime @updatedAt
 
   // Relation: Many-to-one to Project (foreign key: projectId)
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   ProjectTask[]
 
   @@unique([projectId, name]) // Unique sandbox name per project
   @@unique([k8sNamespace, sandboxName]) // Unique sandbox name per namespace
   @@index([projectId])
   @@index([sandboxName])
+}
+
+model ProjectTask {
+  id            String                   @id @default(cuid())
+  projectId     String
+  sandboxId     String?
+  type          ProjectTaskType
+  status        ProjectTaskStatus        @default(PENDING)
+  triggerSource ProjectTaskTriggerSource
+  payload       Json?
+  result        Json?
+  error         String?
+  attemptCount  Int                      @default(0)
+  maxAttempts   Int                      @default(3)
+  lockedUntil   DateTime?
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+
+  project Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sandbox Sandbox? @relation(fields: [sandboxId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, status])
+  @@index([status, lockedUntil])
+  @@index([type, status])
 }
 
 // Project aggregated status based on child resources
@@ -269,12 +292,26 @@ enum ProjectStatus {
   PARTIAL // Inconsistent mixed states - manual intervention needed
 }
 
-// GitHub repository import lifecycle for a project
-enum ProjectImportStatus {
-  PENDING  // Waiting for sandbox to become RUNNING
-  CLONING  // Repository clone in progress
-  READY    // Import finished or not an imported project
-  FAILED   // Import failed; project remains usable as empty project
+enum ProjectTaskType {
+  CLONE_REPOSITORY
+  INSTALL_SKILL
+  UNINSTALL_SKILL
+  DEPLOY_PROJECT
+}
+
+enum ProjectTaskStatus {
+  PENDING
+  WAITING_FOR_PREREQUISITES
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum ProjectTaskTriggerSource {
+  USER_ACTION
+  SYSTEM_EVENT
+  POLICY_ROLLOUT
 }
 
 // Individual resource status (Database and Sandbox)

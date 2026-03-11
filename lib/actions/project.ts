@@ -7,7 +7,7 @@
  * instead of API Routes directly.
  */
 
-import type { Project, ProjectImportStatus } from '@prisma/client'
+import type { Project } from '@prisma/client'
 
 import { auth } from '@/lib/auth'
 import { EnvironmentCategory } from '@/lib/const'
@@ -17,6 +17,7 @@ import { KubernetesUtils } from '@/lib/k8s/kubernetes-utils'
 import { VERSIONS } from '@/lib/k8s/versions'
 import { logger as baseLogger } from '@/lib/logger'
 import { getInstallationByGitHubId } from '@/lib/repo/github'
+import { createProjectTask } from '@/lib/repo/project-task'
 import { listInstallationRepos } from '@/lib/services/github-app'
 import { generateRandomString } from '@/lib/util/common'
 
@@ -61,8 +62,8 @@ type CreateProjectWithSandboxOptions = {
   name: string
   description?: string
   importData?: {
-    importStatus: ProjectImportStatus
     githubAppInstallationId: string
+    installationId: number
     githubRepoId: number
     githubRepoFullName: string
     githubRepoDefaultBranch?: string
@@ -112,13 +113,10 @@ async function createProjectWithSandbox({
           description,
           userId,
           status: 'CREATING',
-          importStatus: importData?.importStatus ?? 'READY',
           githubAppInstallationId: importData?.githubAppInstallationId,
           githubRepoId: importData?.githubRepoId,
           githubRepoFullName: importData?.githubRepoFullName,
           githubRepoDefaultBranch: importData?.githubRepoDefaultBranch,
-          importError: null,
-          importLockedUntil: null,
         },
       })
 
@@ -167,6 +165,23 @@ async function createProjectWithSandbox({
           isSecret: true,
         },
       })
+
+      if (importData?.githubRepoDefaultBranch) {
+        await createProjectTask(tx, {
+          projectId: project.id,
+          sandboxId: sandbox.id,
+          type: 'CLONE_REPOSITORY',
+          status: 'WAITING_FOR_PREREQUISITES',
+          triggerSource: 'USER_ACTION',
+          payload: {
+            installationId: importData.installationId,
+            repoId: importData.githubRepoId,
+            repoFullName: importData.githubRepoFullName,
+            defaultBranch: importData.githubRepoDefaultBranch,
+          },
+          maxAttempts: 3,
+        })
+      }
 
       return { project, sandbox }
     },
@@ -263,8 +278,8 @@ export async function importProjectFromGitHub(
     name: payload.repoName,
     description: payload.description,
     importData: {
-      importStatus: 'PENDING',
       githubAppInstallationId: installation.id,
+      installationId: installation.installationId,
       githubRepoId: payload.repoId,
       githubRepoFullName: payload.repoFullName,
       githubRepoDefaultBranch: payload.defaultBranch,

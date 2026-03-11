@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { FaGithub } from 'react-icons/fa'
 import { MdRefresh } from 'react-icons/md'
-import type { ProjectImportStatus } from '@prisma/client'
+import type { ProjectTaskStatus, ProjectTaskType } from '@prisma/client'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
@@ -97,11 +97,12 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
 
     const pollImportStatus = async () => {
       try {
-        const project = await GET<{ importStatus: ProjectImportStatus }>(
+        const project = await GET<{ tasks: Array<{ type: ProjectTaskType; status: ProjectTaskStatus }> }>(
           `/api/projects/${importProjectId}`
         )
 
-        if (project.importStatus === 'READY') {
+        const cloneTask = project.tasks.find((task) => task.type === 'CLONE_REPOSITORY')
+        if (!cloneTask || cloneTask.status === 'SUCCEEDED') {
           toast.success('Repository imported successfully')
           onOpenChange(false)
           setImportProjectId(null)
@@ -109,7 +110,7 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
           return
         }
 
-        if (project.importStatus === 'FAILED') {
+        if (cloneTask.status === 'FAILED' || cloneTask.status === 'CANCELLED') {
           toast.error('Repository import failed. An empty project was created instead.')
           onOpenChange(false)
           setImportProjectId(null)

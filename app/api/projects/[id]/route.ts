@@ -9,6 +9,7 @@ type ProjectWithFullRelations = Prisma.ProjectGetPayload<{
     sandboxes: true
     databases: true
     environments: true
+    tasks: true
   }
 }>
 
@@ -38,6 +39,9 @@ export const GET = withAuth<GetProjectResponse>(async (_req, context, session) =
         },
         environments: {
           orderBy: { createdAt: 'asc' },
+        },
+        tasks: {
+          orderBy: { createdAt: 'desc' },
         },
       },
     })

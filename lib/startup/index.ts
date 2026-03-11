@@ -77,17 +77,17 @@ async function startBackgroundJobs() {
     const sandboxJob = startSandboxReconcileJob()
     logger.info('✅ Sandbox reconcile job started')
 
-    // Start project import reconciliation job
-    // Runs every 3 seconds to process GitHub imports when sandboxes become RUNNING
-    const { startProjectImportReconcileJob } = await import('@/lib/jobs/project-import')
-    const projectImportJob = startProjectImportReconcileJob()
-    logger.info('✅ Project import reconcile job started')
+    // Start project task reconciliation job
+    // Runs every 10 seconds to process project-level async tasks when prerequisites are met
+    const { startProjectTaskReconcileJob } = await import('@/lib/jobs/project-task')
+    const projectTaskJob = startProjectTaskReconcileJob()
+    logger.info('✅ Project task reconcile job started')
 
     // Store job references for potential cleanup (optional)
     // In most cases, these jobs will run for the lifetime of the server
     globalThis.__databaseReconcileJob = databaseJob
     globalThis.__sandboxReconcileJob = sandboxJob
-    globalThis.__projectImportReconcileJob = projectImportJob
+    globalThis.__projectTaskReconcileJob = projectTaskJob
 
     logger.info('All background jobs started successfully')
   } catch (error) {
@@ -123,11 +123,11 @@ export function cleanup() {
       logger.info('✅ Sandbox reconcile job stopped')
     }
 
-    // Stop project import reconcile job if it exists
-    if (globalThis.__projectImportReconcileJob) {
-      globalThis.__projectImportReconcileJob.stop()
-      globalThis.__projectImportReconcileJob = undefined
-      logger.info('✅ Project import reconcile job stopped')
+    // Stop project task reconcile job if it exists
+    if (globalThis.__projectTaskReconcileJob) {
+      globalThis.__projectTaskReconcileJob.stop()
+      globalThis.__projectTaskReconcileJob = undefined
+      logger.info('✅ Project task reconcile job stopped')
     }
 
     logger.info('✅ Cleanup completed')
@@ -142,5 +142,5 @@ declare global {
 
   var __sandboxReconcileJob: Cron | undefined
 
-  var __projectImportReconcileJob: Cron | undefined
+  var __projectTaskReconcileJob: Cron | undefined
 }

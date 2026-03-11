@@ -15,7 +15,7 @@ import { ProjectList } from './project-list'
 const REFRESH_INTERVAL_MS = 3000
 
 interface HomePageContentProps {
-  projects: ProjectWithRelations<{ sandboxes: true }>[]
+  projects: ProjectWithRelations<{ sandboxes: true; tasks: true }>[]
 }
 
 export function HomePageContent({ projects }: HomePageContentProps) {
