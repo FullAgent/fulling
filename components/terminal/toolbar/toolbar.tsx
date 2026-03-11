@@ -14,18 +14,9 @@ import { AppRunner } from './app-runner';
 import { NetworkDialog } from './network-dialog';
 import { type Tab,TerminalTabs } from './terminal-tabs';
 
-type Project = Prisma.ProjectGetPayload<{
-  include: {
-    sandboxes: true;
-    databases: true;
-  };
-}>;
-
 type Sandbox = Prisma.SandboxGetPayload<object>;
 
 export interface TerminalToolbarProps {
-  /** Project data */
-  project: Project;
   /** Sandbox data */
   sandbox: Sandbox | undefined;
   /** Terminal tabs */
