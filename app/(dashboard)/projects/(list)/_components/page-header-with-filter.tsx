@@ -1,11 +1,10 @@
 'use client'
 
-import { ProjectStatus } from '@prisma/client'
-
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import type { ProjectDisplayStatus } from '@/lib/util/project-display-status'
 import { cn } from '@/lib/utils'
 
-type FilterStatus = 'ALL' | ProjectStatus
+type FilterStatus = 'ALL' | ProjectDisplayStatus
 
 interface PageHeaderWithFilterProps {
   activeFilter: FilterStatus
@@ -15,7 +14,9 @@ interface PageHeaderWithFilterProps {
 const filters: { label: string; value: FilterStatus }[] = [
   { label: 'All', value: 'ALL' },
   { label: 'Running', value: 'RUNNING' },
+  { label: 'Importing', value: 'IMPORTING' },
   { label: 'Stopped', value: 'STOPPED' },
+  { label: 'Needs Attention', value: 'NEEDS_ATTENTION' },
 ]
 
 export function PageHeaderWithFilter({ activeFilter, onFilterChange }: PageHeaderWithFilterProps) {

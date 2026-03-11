@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ProjectStatus } from '@prisma/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 
 import { getInstallations } from '@/lib/actions/github'
 import type { ProjectWithRelations } from '@/lib/data/project'
 import { env } from '@/lib/env'
+import type { ProjectDisplayStatus } from '@/lib/util/project-display-status'
 
 import { PageHeaderWithFilter } from './page-header-with-filter'
 import { ProjectList } from './project-list'
@@ -21,7 +21,7 @@ interface HomePageContentProps {
 export function HomePageContent({ projects }: HomePageContentProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [activeFilter, setActiveFilter] = useState<'ALL' | ProjectStatus>('ALL')
+  const [activeFilter, setActiveFilter] = useState<'ALL' | ProjectDisplayStatus>('ALL')
   const [hasTriggeredInstall, setHasTriggeredInstall] = useState(false)
 
   useEffect(() => {

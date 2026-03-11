@@ -4,6 +4,7 @@ import Link from 'next/link'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import type { ProjectDisplayStatus } from '@/lib/util/project-display-status'
 import { cn } from '@/lib/utils'
 
 import { ProjectActionsMenu } from './project-actions-menu'
@@ -14,6 +15,7 @@ interface ProjectCardProps {
   name: string
   description: string
   status: ProjectStatus
+  displayStatus: ProjectDisplayStatus
   updatedAt: string
   publicUrl?: string | null
 }
@@ -24,10 +26,11 @@ export function ProjectCard({
   name,
   description,
   status,
+  displayStatus,
   updatedAt,
   publicUrl,
 }: ProjectCardProps) {
-  const config = statusConfig[status]
+  const config = statusConfig[displayStatus]
   const initial = name.charAt(0).toUpperCase()
 
   // Handle open project button - open sandbox publicUrl in new tab
@@ -95,7 +98,7 @@ export function ProjectCard({
         <div className="flex items-center gap-2">
           {/* Status indicator */}
           <div className="relative flex h-2.5 w-2.5">
-            {status === 'RUNNING' && (
+            {displayStatus === 'RUNNING' && (
               <span
                 className={cn(
                   'animate-ping absolute inline-flex h-full w-full rounded-full opacity-75',
