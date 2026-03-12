@@ -42,18 +42,7 @@ export function LandingHeader({ isAuthenticated, isSealos, onSignIn, starCount, 
         </Link>
 
         {/* Navigation */}
-        <nav className="flex items-center gap-6" aria-label="Main navigation">
-          <Link
-            href="https://github.com/FullAgent/fulling#readme"
-            target="_blank"
-            rel="noopener"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Documentation
-          </Link>
-
-          <div className="h-4 w-px bg-border" aria-hidden="true" />
-
+        <nav className="flex items-center gap-5" aria-label="Main navigation">
           {/* GitHub Star Count */}
           <Link
             href="https://github.com/FullAgent/fulling"
@@ -84,4 +73,3 @@ export function LandingHeader({ isAuthenticated, isSealos, onSignIn, starCount, 
     </header>
   );
 }
-

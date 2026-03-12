@@ -32,8 +32,8 @@ export function TerminalDemo() {
             </div>
             <div className="text-foreground">
               <span className="text-muted-foreground text-xs block mb-1">~/projects</span>
-              <span className="text-brand-claude font-bold">claude</span> &quot;Build a personal blog
-              with Next.js 16 and Payload CMS&quot;
+              <span className="text-brand-claude font-bold">fulling</span> &quot;Import this repo and add
+              a PostgreSQL database&quot;
             </div>
           </div>
 
@@ -41,13 +41,13 @@ export function TerminalDemo() {
           <div className="pl-8 mb-6 relative border-l border-border/50 ml-2.5">
             <div className="text-muted-foreground/60 text-xs ml-5 mb-4 space-y-1 font-mono">
               <div className="flex items-center gap-2 text-foreground/40">
-                <span className="text-primary">→</span> Initializing project structure...
+                <span className="text-primary">→</span> Cloning repository into sandbox...
               </div>
               <div className="flex items-center gap-2 text-foreground/40">
-                <span className="text-primary">→</span> Creating payload.config.ts...
+                <span className="text-primary">→</span> Provisioning PostgreSQL cluster...
               </div>
               <div className="flex items-center gap-2 text-foreground/40">
-                <span className="text-primary">→</span> Setting up Next.js 16 App Router...
+                <span className="text-primary">→</span> Wiring runtime and deployment...
               </div>
             </div>
           </div>
@@ -55,26 +55,25 @@ export function TerminalDemo() {
           {/* File Tree */}
           <div className="pl-8 mb-6">
             <div className="bg-card rounded-md border border-border/50 p-4 text-[11px] font-mono leading-tight mb-4 shadow-inner">
-              <div className="text-muted-foreground/30 mb-2"># Generated file tree</div>
+              <div className="text-muted-foreground/30 mb-2"># Workspace updates</div>
               <div className="grid grid-cols-2 gap-x-8 gap-y-1">
-                <FileEntry name="payload.config.ts" />
-                <FileEntry name="src/app/page.tsx" />
-                <FileEntry name="src/payload/blocks/*" />
-                <FileEntry name="src/components/Post.tsx" />
-                <FileEntry name="src/app/(payload)/admin" />
-                <FileEntry name="src/collections/Users.ts" />
+                <FileEntry name="repo cloned" />
+                <FileEntry name=".env linked" />
+                <FileEntry name="database created" />
+                <FileEntry name="service exposed" />
+                <FileEntry name="deploy started" />
+                <FileEntry name="logs streaming" />
               </div>
               <div className="mt-3 pt-3 border-t border-border/50 text-xs text-muted-foreground/50">
-                ... and 14 other files created.
+                Reconciliation continues in the background.
               </div>
             </div>
 
             {/* Check Items */}
             <div className="space-y-1.5 mb-6">
-              <CheckItem text="Next.js 16 environment configured" />
-              <CheckItem text="Payload CMS admin panel ready" />
-              <CheckItem text="Database connection established (PostgreSQL)" />
-              <CheckItem text="Deployment pipeline triggered" />
+              <CheckItem text="Workspace ready" />
+              <CheckItem text="Database provisioned" />
+              <CheckItem text="Deployment live" />
             </div>
 
             {/* Success Card */}
@@ -83,10 +82,10 @@ export function TerminalDemo() {
                 <div className="mt-1.5 w-2 h-2 rounded-full bg-green-400 shadow-[0_0_12px_rgba(74,222,128,1)] animate-pulse" />
                 <div className="flex-1">
                   <div className="text-green-400 font-bold text-sm mb-1 drop-shadow-[0_0_8px_rgba(74,222,128,0.5)] tracking-wide">
-                    Success! Your Blog is live
+                    Success! Project is running
                   </div>
                   <span className="text-green-400 text-xs flex items-center gap-1 font-medium">
-                    Live at your-blog-on.sealos.app
+                    Live at repo-preview-on.sealos.app
                     <MdArrowOutward className="text-[14px]" />
                   </span>
                 </div>
@@ -100,7 +99,7 @@ export function TerminalDemo() {
               <MdAutoAwesome className="text-brand-claude text-[18px]" />
             </div>
             <div className="text-foreground flex items-center">
-              <span className="mr-2">Add a dark mode toggle to the navbar</span>
+              <span className="mr-2">Now add an admin dashboard and seed the database</span>
               <span className="w-2.5 h-5 bg-brand-claude cursor-blink" />
             </div>
           </div>
@@ -127,4 +126,3 @@ function CheckItem({ text }: { text: string }) {
     </div>
   );
 }
-

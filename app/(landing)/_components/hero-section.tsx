@@ -1,6 +1,6 @@
 'use client';
 
-import { MdCheckCircle,MdDns, MdRocketLaunch } from 'react-icons/md';
+import { MdCheckCircle, MdOpenInNew, MdRocketLaunch } from 'react-icons/md';
 
 import { Button } from '@/components/ui/button';
 
@@ -31,25 +31,21 @@ export function HeroSection({
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
           </span>
-          v2.0 is now live
+          New in Fulling v2
         </div>
 
         {/* Main Heading */}
         <h1 className="text-5xl lg:text-7xl font-[family-name:var(--font-heading)] font-bold text-foreground tracking-tight mb-6 leading-[1.1]">
-          Ship at the <br />
+          Describe the app. <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/60">
-            Speed of Thought
+            Fulling handles the rest.
           </span>
         </h1>
 
         {/* Subtitle */}
-        <h2 className="text-xl font-[family-name:var(--font-heading)] font-medium text-muted-foreground mb-8">
-          Agentic Full-Stack Development Platform
-        </h2>
-
-        {/* Description */}
-        <p className="text-lg text-muted-foreground/80 leading-relaxed mb-10 max-w-lg">
-          Powered by Agents in isolated sandbox environments
+        <p className="text-xl font-[family-name:var(--font-heading)] font-medium text-muted-foreground leading-relaxed mb-10 max-w-xl">
+          Import an existing repo or start from scratch. Agents set up the workspace, runtime,
+          database, and deployment in the background.
         </p>
 
         {/* Error message */}
@@ -83,12 +79,12 @@ export function HeroSection({
             asChild
           >
             <a
-              href="https://github.com/FullAgent/fulling#self-hosting"
+              href="https://github.com/FullAgent/fulling"
               target="_blank"
               rel="noopener"
             >
-              <MdDns className="text-[20px] -ml-1" />
-              <span>Self-host</span>
+              <MdOpenInNew className="text-[20px] -ml-1" />
+              <span>See on GitHub</span>
             </a>
           </Button>
         </div>
@@ -102,15 +98,18 @@ export function HeroSection({
 
 // Static JSX hoisted outside component to avoid recreation on every render
 const FEATURES_JSX = (
-  <div className="mt-12 flex items-center gap-4 text-sm text-muted-foreground opacity-60">
-    <div className="flex items-center gap-1">
+  <div className="mt-12 grid gap-3 text-sm text-muted-foreground max-w-xl">
+    <div className="flex items-center gap-2">
       <MdCheckCircle className="text-[16px]" />
-      <span>No config required</span>
+      <span>Start from a prompt or import from GitHub</span>
     </div>
-    <div className="w-1 h-1 rounded-full bg-border" aria-hidden="true" />
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-2">
       <MdCheckCircle className="text-[16px]" />
-      <span>Production ready</span>
+      <span>Add PostgreSQL only when you need it</span>
+    </div>
+    <div className="flex items-center gap-2">
+      <MdCheckCircle className="text-[16px]" />
+      <span>Agents handle deploy, runtime, and infra automatically</span>
     </div>
   </div>
 );
