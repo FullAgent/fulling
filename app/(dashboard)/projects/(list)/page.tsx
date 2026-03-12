@@ -17,7 +17,7 @@ export default async function HomePage() {
     redirect('/login')
   }
 
-  const projects = await getProjects(session.user.id, { sandboxes: true })
+  const projects = await getProjects(session.user.id, { sandboxes: true, tasks: true })
 
   return (
     <main className="flex-1 overflow-y-auto p-6 scroll-smooth">

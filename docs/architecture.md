@@ -1,353 +1,453 @@
-# Architecture Design Document
+# Architecture
 
-This document describes the architecture of FullstackAgent, an AI-powered cloud development platform.
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Reconciliation Pattern](#reconciliation-pattern)
-- [System Layers](#system-layers)
-- [Event System](#event-system)
-- [State Management](#state-management)
-- [Resource Lifecycle](#resource-lifecycle)
-- [Key Design Decisions](#key-design-decisions)
+This document describes the current runtime architecture of Fulling and the roles of the major subsystems in the repository.
 
 ## Overview
 
-FullstackAgent creates isolated Kubernetes sandbox environments for full-stack development. Each project gets:
+Fulling is a database-driven control plane for project sandboxes.
 
-- **Sandbox Container**: Next.js + Claude Code CLI + ttyd terminal + FileBrowser
-- **PostgreSQL Database**: Dedicated KubeBlocks cluster
-- **Live Domains**: HTTPS subdomains for app, terminal, and file browser
+The system is organized around three ideas:
 
-### Core Principle: Asynchronous Reconciliation
+1. User-facing code records intent in PostgreSQL.
+2. Background reconcile jobs read persisted state and advance it asynchronously.
+3. External effects happen through two execution layers:
+   - Kubernetes resource control for sandboxes and databases
+   - Project task execution inside ready sandboxes
 
-The platform uses an **asynchronous reconciliation pattern** where:
+This is not a request/response system that blocks on infrastructure. It is an asynchronous state-convergence system.
 
-1. API endpoints return immediately (non-blocking)
-2. Background jobs sync desired state (database) with actual state (Kubernetes)
-3. Event listeners execute K8s operations
-4. Status updates happen asynchronously
+## High-Level Model
 
-```
-User Request → API updates DB (status=CREATING) → Returns immediately (< 50ms)
-                     ↓
-         Reconciliation Job (every 3s)
-                     ↓
-         Emit Events → Listeners execute K8s ops
-                     ↓
-         Update status: CREATING → STARTING → RUNNING
-                     ↓
-         Frontend polls for updates
-```
+There are three major domains:
 
-## Reconciliation Pattern
+- Control plane
+  - Next.js pages, Server Actions, and API routes
+  - Authentication and authorization
+  - Prisma models as the source of truth
+- Resource plane
+  - `Sandbox` and `Database` lifecycle management
+  - Kubernetes operations through user-scoped services
+- Task plane
+  - `ProjectTask` records for project-level asynchronous work
+  - Current use case: clone a GitHub repository into a sandbox
+  - Future use cases: install skill, uninstall skill, deploy project
 
-### Why Reconciliation?
+At a high level:
 
-Traditional approach (blocking API):
-- API waits for K8s operations (30+ seconds)
-- User sees loading spinner
-- Timeout errors common
-- Hard to recover from failures
-
-Reconciliation approach (non-blocking):
-- API returns immediately (< 50ms)
-- Background jobs handle K8s operations
-- Automatic retry on failures
-- Easy to monitor and debug
-
-### Flow Example
-
-```
-1. User clicks "Create Project"
-   POST /api/projects { name: "my-blog" }
-
-2. API creates database records immediately
-   Project: status=CREATING
-   Sandbox: status=CREATING
-   Database: status=CREATING
-
-3. Reconciliation job runs (every 3s)
-   - Query: SELECT * FROM Sandbox WHERE status='CREATING' AND lockedUntil IS NULL
-   - Locks sandbox (optimistic locking)
-   - Emits CreateSandbox event
-
-4. Event listener executes
-   - Gets user-specific K8s service
-   - Creates StatefulSet, Service, Ingresses
-   - Updates status: CREATING → STARTING
-
-5. Next cycle checks K8s status
-   - If RUNNING: Update status to RUNNING
-   - Aggregate project status from child resources
+```text
+User action
+-> App code validates and writes desired state to DB
+-> Reconcile jobs scan DB for records in transitional states
+-> Event listeners / task executors perform external work
+-> Resource/task state is updated in DB
+-> UI polls and reflects the latest state
 ```
 
-### Optimistic Locking
+## Repository Structure
 
-Prevents concurrent updates to the same resource:
+```text
+app/
+  UI routes, API routes, and route-local components
 
-```typescript
-// Repository layer automatically handles locking
-const lockedSandboxes = await acquireAndLockSandboxes(10)
-// Only returns sandboxes where lockedUntil IS NULL OR < NOW()
-// Sets lockedUntil = NOW() + 30 seconds atomically
+components/
+  Shared UI components
+
+lib/actions/
+  Server Actions called from client components
+
+lib/data/
+  Server-side data access for React Server Components
+
+lib/repo/
+  Persistence helpers, locking, and state transitions
+
+lib/jobs/
+  Background reconcile loops
+
+lib/events/
+  Resource event buses and listeners
+
+lib/k8s/
+  User-scoped Kubernetes service and managers
+
+lib/services/
+  Cross-cutting services and task dispatch helpers
+
+lib/util/
+  Aggregation, ttyd execution, formatting, and helpers
+
+prisma/
+  Prisma schema and migrations
 ```
 
-Lock duration: 30 seconds (configurable)
+## Core Runtime Layers
 
-## System Layers
+### 1. User Interaction Layer
 
-### Layer 1: Control Plane (Main App)
+Primary locations:
 
-- **Framework**: Next.js 16 (App Router) + React 19
-- **Authentication**: NextAuth v5 (GitHub, Password, Sealos OAuth)
-- **Database**: Prisma ORM → PostgreSQL
-- **Responsibilities**:
-  - Manages projects, users, environment variables
-  - Does NOT directly execute K8s operations
-  - Only updates database
+- `app/`
+- `lib/actions/`
+- `lib/data/`
 
-### Layer 2: Reconciliation System
+Responsibilities:
 
-- **Background Jobs**: `lib/jobs/sandbox/`, `lib/jobs/database/`
-- **Event System**: `lib/events/sandbox/`, `lib/events/database/`
-- **Repository Layer**: `lib/repo/` with optimistic locking
-- **Status Aggregation**: `lib/util/projectStatus.ts`
+- Authenticate the user
+- Validate inputs
+- Decide whether an operation is allowed
+- Write the resulting state to the database
+- Return immediately without waiting on Kubernetes or long-running sandbox work
 
-### Layer 3: Kubernetes Managers
+Examples:
 
-- **SandboxManager**: `lib/k8s/sandbox-manager.ts` - StatefulSet operations
-- **DatabaseManager**: `lib/k8s/database-manager.ts` - KubeBlocks operations
-- **K8sServiceHelper**: `lib/k8s/k8s-service-helper.ts` - User-specific service factory
-- **All operations are idempotent and non-blocking**
+- Create new project
+  - create `Project`
+  - create `Sandbox`
+  - create built-in environment variables
+- Import from GitHub
+  - create `Project`
+  - create `Sandbox`
+  - create a `ProjectTask` of type `CLONE_REPOSITORY`
+- Add database
+  - create `Database` with status `CREATING`
+- Update environment variables
+  - persist environment changes
+  - mark running sandboxes as `UPDATING`
 
-### Layer 4: Kubernetes Orchestration
+### 2. State Persistence Layer
 
-- **Platform**: Sealos (usw.sealos.io)
-- **Namespaces**: Each user operates in their own namespace
-- **Resources per project**:
-  - 1 StatefulSet (sandbox)
-  - 1 Service
-  - 3 Ingresses (app, terminal, filebrowser)
-  - 1 PostgreSQL cluster (KubeBlocks)
+Primary locations:
 
-### Layer 5: Runtime Containers
+- `prisma/schema.prisma`
+- `lib/repo/`
 
-- **Image**: `limbo2342/fullstack-web-runtime:sha-ca2470e`
-- **Base**: Ubuntu 24.04 + Node.js 22.x
-- **Includes**:
-  - Claude Code CLI
-  - ttyd (web terminal with HTTP Basic Auth)
-  - FileBrowser (web file manager)
-  - Next.js, Prisma, PostgreSQL client
-  - Buildah (rootless container builds)
+The database is the durable control plane.
 
-## Event System
+The key models are:
 
-### Event Bus
+- `Project`
+  - project metadata
+  - aggregated project status
+  - optional GitHub repository metadata
+- `Sandbox`
+  - sandbox lifecycle state
+  - URLs and runtime resource configuration
+- `Database`
+  - PostgreSQL lifecycle state
+  - connection credentials once ready
+- `Environment`
+  - project-scoped environment variables
+- `ProjectTask`
+  - project-level asynchronous work
+  - payload, result, retries, and locks
+- `GitHubAppInstallation`
+  - GitHub App installation ownership and permissions
 
-Each resource type has its own event bus:
+The repository layer is where row locking and state transitions are centralized.
 
-```typescript
-// lib/events/sandbox/bus.ts
-export const enum Events {
-  CreateSandbox = 'CreateSandbox',
-  StartSandbox = 'StartSandbox',
-  StopSandbox = 'StopSandbox',
-  DeleteSandbox = 'DeleteSandbox',
-  UpdateSandbox = 'UpdateSandbox',
-}
+## Resource Plane
 
-export const sandboxEventBus = new EventEmitter()
-```
-
-### Event Listeners
-
-Listeners are registered at application startup:
-
-```typescript
-// lib/events/sandbox/sandboxListener.ts
-export function registerSandboxListeners(): void {
-  on(Events.CreateSandbox, handleCreateSandbox)
-  on(Events.StartSandbox, handleStartSandbox)
-  on(Events.StopSandbox, handleStopSandbox)
-  on(Events.DeleteSandbox, handleDeleteSandbox)
-  on(Events.UpdateSandbox, handleUpdateSandbox)
-}
-
-// Auto-register when module is imported
-registerSandboxListeners()
-```
-
-### Event Handler Pattern
-
-```typescript
-async function handleCreateSandbox(payload: SandboxEventPayload): Promise<void> {
-  const { user, project, sandbox } = payload
-
-  if (sandbox.status !== 'CREATING') return
-
-  try {
-    const k8sService = await getK8sServiceForUser(user.id)
-    await k8sService.getSandboxManager().createSandbox({...})
-    await updateSandboxStatus(sandbox.id, 'STARTING')
-    await projectStatusReconcile(project.id)
-  } catch (error) {
-    await updateSandboxStatus(sandbox.id, 'ERROR')
-  }
-}
-```
-
-## State Management
-
-### Resource Status
-
-Individual resources (Sandbox, Database) have these states:
-
-| Status | Description |
-|--------|-------------|
-| `CREATING` | K8s resource being initially created |
-| `STARTING` | Transitioning from STOPPED to RUNNING |
-| `RUNNING` | Active and operational |
-| `STOPPING` | Transitioning from RUNNING to STOPPED |
-| `STOPPED` | Paused (replicas=0) |
-| `UPDATING` | Environment variables being updated |
-| `TERMINATING` | Being deleted from K8s |
-| `TERMINATED` | Deleted from K8s (soft delete in DB) |
-| `ERROR` | Encountered an error |
-
-### Project Status Aggregation
-
-Project status is **aggregated** from child resources:
-
-**Priority order**:
-1. **ERROR** - At least one resource has ERROR
-2. **CREATING** - At least one resource has CREATING
-3. **UPDATING** - At least one resource has UPDATING
-4. **Pure states** - All same status → use that status
-5. **Transition states**:
-   - STARTING: All ∈ {RUNNING, STARTING}
-   - STOPPING: All ∈ {STOPPED, STOPPING}
-   - TERMINATING: All ∈ {TERMINATED, TERMINATING}
-6. **PARTIAL** - Inconsistent mixed states (manual intervention needed)
-
-```typescript
-// lib/util/projectStatus.ts
-export function aggregateProjectStatus(
-  sandboxes: Sandbox[],
-  databases: Database[]
-): ProjectStatus {
-  // Implementation follows priority rules above
-}
-```
-
-## Resource Lifecycle
+The resource plane manages infrastructure resources that exist independently in Kubernetes.
 
 ### Sandbox Lifecycle
 
-```
-CREATING → STARTING → RUNNING ⇄ STOPPING → STOPPED
-    ↓          ↓         ↓         ↓
-    └──────────┴─────────┴─────────→ ERROR
-                                              ↓
-                                    TERMINATING → TERMINATED
+Primary files:
+
+- `lib/jobs/sandbox/sandboxReconcile.ts`
+- `lib/events/sandbox/sandboxListener.ts`
+- `lib/repo/sandbox.ts`
+- `lib/k8s/sandbox-manager.ts`
+
+States:
+
+- `CREATING`
+- `STARTING`
+- `RUNNING`
+- `UPDATING`
+- `STOPPING`
+- `STOPPED`
+- `TERMINATING`
+- `TERMINATED`
+- `ERROR`
+
+Flow:
+
+```text
+Sandbox.status = CREATING
+-> sandbox reconcile job locks the row
+-> emits CreateSandbox
+-> listener creates K8s resources and writes ingress URLs
+-> Sandbox.status = STARTING
+-> later reconcile checks K8s status
+-> Sandbox.status = RUNNING
 ```
 
-**Transitions**:
-- `CREATING → STARTING`: K8s resources created
-- `STARTING → RUNNING`: Pod ready
-- `RUNNING → STOPPING`: Stop requested
-- `STOPPING → STOPPED`: Pod terminated
-- `STOPPED → STARTING`: Start requested
-- `Any → ERROR`: Operation failed
-- `Any → TERMINATING`: Delete requested
-- `TERMINATING → TERMINATED`: K8s resources deleted
+Environment updates reuse the same mechanism:
+
+```text
+Environment changed
+-> running sandboxes marked UPDATING
+-> update sandbox env vars in Kubernetes
+-> pod restarts if needed
+-> sandbox returns to STARTING or RUNNING
+```
 
 ### Database Lifecycle
 
-Same as Sandbox, but for KubeBlocks PostgreSQL clusters.
+Primary files:
 
-### Environment Variable Updates
+- `lib/jobs/database/databaseReconcile.ts`
+- `lib/events/database/databaseListener.ts`
+- `lib/repo/database.ts`
+- `lib/k8s/database-manager.ts`
 
-When environment variables change:
+States:
 
+- `CREATING`
+- `STARTING`
+- `RUNNING`
+- `STOPPING`
+- `STOPPED`
+- `TERMINATING`
+- `TERMINATED`
+- `ERROR`
+
+Flow:
+
+```text
+Database.status = CREATING
+-> database reconcile job locks the row
+-> emits CreateDatabase
+-> listener creates KubeBlocks cluster
+-> Database.status = STARTING
+-> later reconcile checks cluster status
+-> credentials are fetched
+-> Database.status = RUNNING
 ```
-RUNNING → UPDATING → STARTING → RUNNING
+
+### Project Status Aggregation
+
+Primary file:
+
+- `lib/util/projectStatus.ts`
+
+`Project.status` is derived from child resource states. It is not the main driver of work.
+
+Priority order:
+
+1. `ERROR`
+2. `CREATING`
+3. `UPDATING`
+4. all resources equal the same stable state
+5. consistent mixed transitions:
+   - `{RUNNING, STARTING}` -> `STARTING`
+   - `{STOPPED, STOPPING}` -> `STOPPING`
+   - `{TERMINATED, TERMINATING}` -> `TERMINATING`
+6. otherwise `PARTIAL`
+
+When a project has no remaining resources, the project and its environments are deleted.
+
+## Task Plane
+
+The task plane manages project-level work that happens after a sandbox is ready.
+
+Primary files:
+
+- `lib/jobs/project-task/projectTaskReconcile.ts`
+- `lib/jobs/project-task/executors/`
+- `lib/repo/project-task.ts`
+- `lib/services/project-task-dispatcher.ts`
+
+### Current Task Types
+
+- `CLONE_REPOSITORY`
+- `INSTALL_SKILL`
+- `UNINSTALL_SKILL`
+- `DEPLOY_PROJECT`
+
+Only `CLONE_REPOSITORY` is implemented today.
+
+### Task States
+
+- `PENDING`
+- `WAITING_FOR_PREREQUISITES`
+- `RUNNING`
+- `SUCCEEDED`
+- `FAILED`
+- `CANCELLED`
+
+### Task Flow
+
+```text
+User imports a GitHub repository
+-> app creates Project + Sandbox
+-> app creates ProjectTask(type=CLONE_REPOSITORY, status=WAITING_FOR_PREREQUISITES)
+-> sandbox reaches RUNNING
+-> task reconcile sees prerequisites are now satisfied
+-> task executor runs git clone inside the sandbox through ttyd
+-> task becomes SUCCEEDED or FAILED
 ```
 
-1. Status changes to UPDATING
-2. StatefulSet spec updated (triggers pod restart)
-3. Status changes to STARTING
-4. Pod restarts with new env vars
-5. Status changes to RUNNING
+Task execution data lives in:
 
-## Key Design Decisions
+- `payload`
+  - executor input, such as repo metadata or skill id
+- `result`
+  - executor output, such as imported path
+- `error`
+  - terminal error message for failed tasks
 
-### Why StatefulSet instead of Deployment?
+## Polling and Triggering
 
-**StatefulSet benefits**:
-- **Persistent storage**: Each pod gets its own PVC
-- **Stable network identities**: Predictable pod names
-- **Ordered deployment**: Graceful startup/shutdown
-- **Stateful apps**: Better for databases, caches
+The system uses both polling and direct wake-up triggers.
 
-**Trade-offs**:
-- Slightly slower scaling
-- More complex updates
+### Polling
 
-### Why Reconciliation Pattern?
+Background jobs continuously scan the database:
 
-**Benefits**:
-- Non-blocking API responses
-- Automatic recovery from failures
-- Consistent state management
-- Easy to monitor and debug
-- Idempotent operations
+- sandbox reconcile job
+- database reconcile job
+- project task reconcile job
 
-**Trade-offs**:
-- Eventual consistency (up to 3s delay)
-- More complex architecture
+This is the correctness mechanism.
 
-### Why HTTP Basic Auth for ttyd?
+### Direct wake-up triggers
 
-**Previous approach**: Custom authentication script
-- Required maintaining shell script
-- Complex session management
-- Login popup in browser
+Some transitions accelerate work without replacing polling.
 
-**Current approach**: HTTP Basic Auth (ttyd native)
-- No custom scripts needed
-- URL-based authentication: `?authorization=base64(user:password)`
-- Seamless browser integration
-- No login popup
+Example:
 
-### Why FileBrowser Integration?
+- when a sandbox becomes `RUNNING`, sandbox listeners call `triggerRunnableTasksForProject(projectId)`
 
-**Benefits**:
-- Web-based file management
-- Drag & drop file upload
-- TUS protocol for large files
-- Session tracking for cwd detection
-- No additional authentication (uses own credentials)
+This reduces latency, but correctness still depends on periodic reconcile loops.
 
-### Why User-Specific Namespaces?
+## Locking Model
 
-**Benefits**:
-- Multi-tenancy isolation
-- Resource quotas per user
-- Separate kubeconfig per user
-- No cross-user access
+The system uses database-based optimistic coordination, not an external queue.
 
-**Implementation**:
-- Kubeconfig stored in `UserConfig` table
-- Loaded via `getK8sServiceForUser(userId)`
-- Each user operates in their own namespace
+Patterns:
 
-## Related Documentation
+- resource rows (`Sandbox`, `Database`) have `lockedUntil`
+- task rows (`ProjectTask`) also have `lockedUntil`
+- reconcile queries atomically select and lock eligible rows
+- row-level transitions are updated in repo helpers
 
-- [API Reference](./api.md) - API endpoints and request/response formats
-- [Database Schema](./database.md) - Prisma models and relationships
-- [Development Guide](./development.md) - Local development and code patterns
-- [Operations Manual](./operations.md) - Deployment and K8s operations
-- [Troubleshooting](./troubleshooting.md) - Common issues and debugging
+This avoids duplicate processing across concurrent app instances.
+
+## Kubernetes Integration
+
+Primary file:
+
+- `lib/k8s/k8s-service-helper.ts`
+
+Rule:
+
+- always obtain Kubernetes access through `getK8sServiceForUser(userId)`
+
+Why:
+
+- each user has a user-scoped kubeconfig
+- each user operates in a separate namespace
+- the app should never perform cluster operations without user scoping
+
+Kubernetes resources currently managed per project:
+
+- one sandbox StatefulSet
+- one sandbox Service
+- three sandbox Ingresses
+- optional PostgreSQL cluster through KubeBlocks
+
+## GitHub Integration
+
+Primary files:
+
+- `lib/actions/github.ts`
+- `lib/services/github-app.ts`
+- `app/api/github/app/callback/route.ts`
+
+The system uses GitHub App installations, not anonymous repository access.
+
+Import flow:
+
+1. user installs GitHub App
+2. installation is recorded in `GitHubAppInstallation`
+3. user chooses a repository in the import dialog
+4. import action verifies repository access against the installation
+5. project creation creates a clone task
+6. task executor clones the repo into the sandbox using an installation token
+
+## Design Rules
+
+### Non-blocking control plane
+
+User-facing endpoints should write desired state and return. They should not block on Kubernetes creation or long sandbox operations.
+
+### State machines over ad hoc branching
+
+If the system needs to resume work later, represent that as persisted state instead of in-memory flags.
+
+### Resource plane and task plane stay separate
+
+Use resource states for infrastructure lifecycle.
+Use project tasks for asynchronous work that runs on top of ready infrastructure.
+
+### Polling is the source of truth
+
+Event-triggered wake-ups are an optimization. Reconcile jobs remain the primary correctness mechanism.
+
+## Current End-to-End Flows
+
+### New project
+
+```text
+Create project
+-> Project.status = CREATING
+-> Sandbox.status = CREATING
+-> sandbox reconcile creates and starts sandbox
+-> Sandbox.status = RUNNING
+-> Project.status aggregates to RUNNING
+```
+
+### Import from GitHub
+
+```text
+Import from GitHub
+-> Project + Sandbox created
+-> ProjectTask(CLONE_REPOSITORY) created
+-> sandbox reconcile drives sandbox to RUNNING
+-> project task reconcile runs clone executor
+-> task becomes SUCCEEDED or FAILED
+-> project remains usable regardless of task outcome
+```
+
+### Add database
+
+```text
+Create database
+-> Database.status = CREATING
+-> database reconcile creates cluster
+-> Database.status = STARTING
+-> credentials become available
+-> Database.status = RUNNING
+```
+
+### Deploy project
+
+Planned path:
+
+```text
+User requests deploy
+-> create ProjectTask(type=DEPLOY_PROJECT)
+-> task reconcile waits for prerequisites
+-> deploy executor performs deployment work
+```
+
+## When To Update This Document
+
+Update this document whenever one of the following changes:
+
+- a new persisted state machine is introduced
+- resource lifecycle semantics change
+- a new task type is added
+- ownership of a subsystem moves to a different directory
+- project-level work stops being sandbox-based

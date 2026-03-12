@@ -1,4 +1,4 @@
-import { triggerProjectImportForProject } from '@/lib/jobs/project-import'
+import { triggerRunnableTasksForProject } from '@/lib/jobs/project-task'
 import { getK8sServiceForUser } from '@/lib/k8s/k8s-service-helper'
 import { logger as baseLogger } from '@/lib/logger'
 import { getProjectEnvironments } from '@/lib/repo/environment'
@@ -355,8 +355,8 @@ registerSandboxListeners()
 
 async function triggerImportOnSandboxRunning(projectId: string): Promise<void> {
   try {
-    await triggerProjectImportForProject(projectId)
+    await triggerRunnableTasksForProject(projectId)
   } catch (error) {
-    logger.error(`Failed to trigger project import for ${projectId}: ${error}`)
+    logger.error(`Failed to trigger project tasks for ${projectId}: ${error}`)
   }
 }

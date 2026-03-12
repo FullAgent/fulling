@@ -9,7 +9,7 @@ import { CreateProjectCard } from './create-project-card'
 import { ProjectCard } from './project-card'
 
 interface ProjectListProps {
-  projects: ProjectWithRelations<{ sandboxes: true }>[]
+  projects: ProjectWithRelations<{ sandboxes: true; tasks: true }>[]
   activeFilter: 'ALL' | ProjectDisplayStatus
 }
 

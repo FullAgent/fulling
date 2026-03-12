@@ -11,6 +11,7 @@ export type ProjectInclude = {
   sandboxes?: boolean;
   databases?: boolean;
   environments?: boolean;
+  tasks?: boolean;
 };
 
 /**
@@ -33,6 +34,7 @@ export const getProject = cache(async function getProject(
     sandboxes: false,
     databases: false,
     environments: false,
+    tasks: false,
     ...include,
   };
 
@@ -68,6 +70,7 @@ export const getProjects = cache(async function getProjects(
     sandboxes: false,
     databases: false,
     environments: false,
+    tasks: false,
     ...include,
   };
 
