@@ -18,7 +18,7 @@ const logger = baseLogger.child({ module: 'lib/jobs/project-task/projectTaskReco
 
 const MAX_TASKS_PER_CYCLE = parseInt(process.env.MAX_PROJECT_TASKS_PER_RECONCILE || '10', 10)
 const RECONCILE_INTERVAL_SECONDS = parseInt(
-  process.env.PROJECT_TASK_RECONCILE_INTERVAL_SECONDS || '10',
+  process.env.PROJECT_TASK_RECONCILE_INTERVAL_SECONDS || '13',
   10
 )
 const EXECUTION_LOCK_DURATION_SECONDS = parseInt(

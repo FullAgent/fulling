@@ -9,7 +9,7 @@ const logger = baseLogger.child({ module: 'lib/jobs/database/databaseReconcile' 
 // Maximum number of databases to process per reconcile cycle
 const MAX_DATABASES_PER_CYCLE = parseInt(process.env.MAX_DATABASES_PER_RECONCILE || '10', 10)
 const RECONCILE_INTERVAL_SECONDS = parseInt(
-  process.env.DATABASE_RECONCILE_INTERVAL_SECONDS || '10',
+  process.env.DATABASE_RECONCILE_INTERVAL_SECONDS || '11',
   10
 )
 

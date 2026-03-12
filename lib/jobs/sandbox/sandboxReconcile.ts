@@ -9,7 +9,7 @@ const logger = baseLogger.child({ module: 'lib/jobs/sandbox/sandboxReconcile' })
 // Maximum number of sandboxes to process per reconcile cycle
 const MAX_SANDBOXES_PER_CYCLE = parseInt(process.env.MAX_SANDBOXES_PER_RECONCILE || '10', 10)
 const RECONCILE_INTERVAL_SECONDS = parseInt(
-  process.env.SANDBOX_RECONCILE_INTERVAL_SECONDS || '10',
+  process.env.SANDBOX_RECONCILE_INTERVAL_SECONDS || '7',
   10
 )
 

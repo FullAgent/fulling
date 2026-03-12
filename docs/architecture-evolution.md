@@ -189,7 +189,7 @@ Typical examples:
 - task prerequisite rules
 - lifecycle transition rules
 
-### `lib/control/`
+### `lib/platform/control/`
 
 Should contain:
 
