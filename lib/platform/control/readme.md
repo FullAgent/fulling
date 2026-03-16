@@ -1,7 +1,5 @@
-## lib/platform/control
+# Control
 
-This directory contains control-plane use cases.
+`lib/platform/control/` contains command and query entrypoints that translate user intent into durable control-plane state.
 
-- `commands/`: state-changing application use cases
-
-Modules here translate user intent into persistent state changes. They decide what records to create or update, but they do not execute long-running external effects directly.
+This layer decides what should happen. It should not own long-running orchestration or provider-specific protocol details.

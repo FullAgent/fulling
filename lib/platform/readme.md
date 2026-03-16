@@ -1,12 +1,14 @@
-## lib/platform
+# Platform
 
-This directory contains the platform core of Fulling.
+`lib/platform/` is the main container for Fulling's control-plane code.
 
-Code here should model the system's main flow:
+The full system still includes the interaction layer in `app/`, but the platform
+area itself is organized into these internal layers:
 
-- intent
-- state
-- reconcile
-- effect
+1. Control State Layer: `lib/platform/control/`
+2. Persistence Layer: `lib/platform/persistence/`
+3. Orchestration Layer: `lib/platform/orchestrators/`
+4. Execution Layer: `lib/platform/executors/`
+5. Integration Layer: `lib/platform/integrations/`
 
-Framework adapters such as Next.js pages, route handlers, Server Actions, and Server Component loaders should stay outside this directory and call into it.
+The interaction layer remains outside `lib/platform/` because it is framework-facing.

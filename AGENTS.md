@@ -44,6 +44,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 - Use TypeScript strict mode
 - Always follow best practices
 - Write self-documenting code: for complex functions, describe purpose, expected inputs, and expected outputs above the function
+- In `lib/platform/`, prefer one primary action per file. Use noun directories and verb file names, and add a short boundary comment above the main exported function covering purpose, expected inputs/preconditions, expected outputs/guarantees, and what is out of scope.
 - Use functional components with hooks
 
 ### Naming Conventions
@@ -52,6 +53,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 - Database tables: PascalCase (Prisma models)
 - API routes: kebab-case
 - Files: kebab-case
+- In `lib/platform/`, file names should usually be action-oriented verbs such as `create-project-with-sandbox`, `find-installation-repository`, or `get-user-default-namespace`, rather than vague names like `shared` or `helpers`.
 
 ### Component Organization
 - **Route-specific components**: Place in `_components/` directory under the route folder

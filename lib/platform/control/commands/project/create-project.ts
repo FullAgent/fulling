@@ -1,11 +1,23 @@
 import type { Project } from '@prisma/client'
 
 import { CommandResult } from '@/lib/platform/control/types'
+import { getUserDefaultNamespace } from '@/lib/platform/integrations/k8s/get-user-default-namespace'
+import { createProjectWithSandbox } from '@/lib/platform/persistence/project/create-project-with-sandbox'
 
-import { createProjectWithSandbox, validateProjectName } from './shared'
+import { validateProjectName } from './shared'
 
 /**
- * Creates a blank project and persists the initial sandbox state for later reconciliation.
+ * Initializes a blank project after validating the requested project name.
+ *
+ * Expected inputs:
+ * - A Fulling user ID and a valid project name.
+ *
+ * Expected outputs:
+ * - Creates the initial project and sandbox state, then returns the project record.
+ *
+ * Out of scope:
+ * - Does not create project tasks.
+ * - Does not perform external Kubernetes effects.
  */
 export async function createProjectCommand(input: {
   userId: string
@@ -17,9 +29,32 @@ export async function createProjectCommand(input: {
     return { success: false, error: nameValidation.error || 'Invalid project name format' }
   }
 
-  return createProjectWithSandbox({
+  let namespace: string
+  try {
+    namespace = await getUserDefaultNamespace(input.userId)
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('does not have KUBECONFIG configured')) {
+      return {
+        success: false,
+        error: 'Please configure your kubeconfig before creating a project',
+      }
+    }
+    throw error
+  }
+
+  const result = await createProjectWithSandbox({
     userId: input.userId,
+    namespace,
     name: input.name,
     description: input.description,
   })
+
+  if (!result.success) {
+    return result
+  }
+
+  return {
+    success: true,
+    data: result.data.project,
+  }
 }

@@ -129,7 +129,8 @@ This layer should be the only place that knows provider-specific protocol detail
 
 ## Ideal Repository Shape
 
-The repository should gradually move toward something like this:
+The repository should gradually move toward a platform-shaped layout, with
+`lib/platform/` acting as the main container for control-plane code:
 
 ```text
 app/
@@ -137,22 +138,23 @@ app/
 
 lib/
   domain/
-  control/
-    commands/
-    queries/
-  persistence/
-  orchestrators/
-    resources/
-    tasks/
-  executors/
-    k8s/
-    sandbox/
-    deploy/
-  integrations/
-    github/
-    ttyd/
-    k8s/
-    aiproxy/
+  platform/
+    control/
+      commands/
+      queries/
+    persistence/
+    orchestrators/
+      resources/
+      tasks/
+    executors/
+      k8s/
+      sandbox/
+      deploy/
+    integrations/
+      github/
+      ttyd/
+      k8s/
+      aiproxy/
   policies/
   shared/
 ```
@@ -206,7 +208,7 @@ Typical examples:
 
 This is the layer that turns interaction into durable state changes.
 
-### `lib/persistence/`
+### `lib/platform/persistence/`
 
 Should contain:
 
@@ -215,9 +217,11 @@ Should contain:
 - lock management
 - state transition persistence
 
-This corresponds closely to what `lib/repo/` does today, but with a name that better reflects its role in a control-plane system.
+This corresponds closely to what `lib/repo/` does today, but relocated under
+`platform/` so the control plane and its persistence boundaries live in one
+coherent top-level area.
 
-### `lib/orchestrators/`
+### `lib/platform/orchestrators/`
 
 Should contain:
 
@@ -230,7 +234,7 @@ This layer is currently spread across `jobs/` and `events/`.
 
 Long term, the code should make it easy to inspect one workflow in one place, instead of hopping across multiple implementation-mechanism directories.
 
-### `lib/executors/`
+### `lib/platform/executors/`
 
 Should contain:
 
@@ -247,7 +251,7 @@ The key separation is:
 - orchestrators decide whether to run
 - executors perform the work
 
-### `lib/integrations/`
+### `lib/platform/integrations/`
 
 Should contain:
 
@@ -306,6 +310,46 @@ It is to make the codebase reflect the platform's actual conceptual boundaries:
 - orchestration
 - execution
 - external integration
+
+### Rule 6: Prefer one primary platform action per file
+
+Within `lib/platform/`, prefer files that exist to express one primary platform action.
+
+Examples:
+
+- `create-project-from-github.ts`
+- `create-clone-repository-task.ts`
+- `find-installation-repository.ts`
+- `get-user-default-namespace.ts`
+
+This improves scanability. A reader should be able to infer the main responsibility
+of a file from its name before opening it.
+
+### Rule 7: Use noun directories and verb file names
+
+Within `lib/platform/`:
+
+- directories should describe the boundary or subsystem
+- files should describe the primary action they perform
+
+Examples:
+
+- good directory names: `control`, `persistence`, `integrations`, `project-task`
+- good file names: `create-project-with-sandbox`, `create-clone-repository-task`, `find-github-installation-by-id`
+- weaker file names: `shared`, `github`, `repository-access`, `user-namespace`
+
+### Rule 8: Primary platform functions must carry boundary comments
+
+If a file in `lib/platform/` exists to perform one primary action, its main exported
+function should have a short comment that explains:
+
+- purpose
+- expected inputs or preconditions
+- expected outputs or guarantees
+- what is explicitly out of scope
+
+The goal is not comment volume. The goal is to make the file's architectural role
+obvious without reading the full implementation.
 
 ## Suggested Migration Strategy
 
