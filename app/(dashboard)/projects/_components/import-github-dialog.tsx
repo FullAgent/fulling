@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { FaGithub } from 'react-icons/fa'
 import { MdRefresh } from 'react-icons/md'
-import type { ProjectTaskStatus, ProjectTaskType } from '@prisma/client'
+import type { ProjectStatus, ProjectTask, ResourceStatus } from '@prisma/client'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
@@ -19,12 +19,19 @@ import {
 import { importProjectFromGitHub } from '@/lib/actions/project'
 import { env } from '@/lib/env'
 import { GET } from '@/lib/fetch-client'
+import { getProjectImportStatus } from '@/lib/util/project-import-status'
 
 type Step = 'loading' | 'check-github-app' | 'select-repo'
 
 interface ImportGitHubDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+}
+
+type ImportStatusPollResponse = {
+  status: ProjectStatus
+  sandboxes: Array<{ status: ResourceStatus }>
+  tasks: Array<Pick<ProjectTask, 'type' | 'status' | 'createdAt'>>
 }
 
 export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogProps) {
@@ -97,12 +104,21 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
 
     const pollImportStatus = async () => {
       try {
-        const project = await GET<{ tasks: Array<{ type: ProjectTaskType; status: ProjectTaskStatus }> }>(
+        const project = await GET<ImportStatusPollResponse>(
           `/api/projects/${importProjectId}`
         )
 
-        const cloneTask = project.tasks.find((task) => task.type === 'CLONE_REPOSITORY')
-        if (!cloneTask || cloneTask.status === 'SUCCEEDED') {
+        if (project.status === 'ERROR' || project.sandboxes.some((sandbox) => sandbox.status === 'ERROR')) {
+          toast.error('Project creation failed because the sandbox could not start.')
+          onOpenChange(false)
+          setImportProjectId(null)
+          router.refresh()
+          return
+        }
+
+        const importStatus = getProjectImportStatus({ tasks: project.tasks })
+
+        if (importStatus === 'IMPORTED') {
           toast.success('Repository imported successfully')
           onOpenChange(false)
           setImportProjectId(null)
@@ -110,7 +126,7 @@ export function ImportGitHubDialog({ open, onOpenChange }: ImportGitHubDialogPro
           return
         }
 
-        if (cloneTask.status === 'FAILED' || cloneTask.status === 'CANCELLED') {
+        if (importStatus === 'IMPORT_FAILED') {
           toast.error('Repository import failed. An empty project was created instead.')
           onOpenChange(false)
           setImportProjectId(null)
