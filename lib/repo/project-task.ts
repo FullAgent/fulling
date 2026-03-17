@@ -33,6 +33,8 @@ type ProjectTaskWithRelations = Prisma.ProjectTaskGetPayload<{
 type CreateProjectTaskInput = {
   projectId: string
   sandboxId?: string | null
+  userSkillId?: string | null
+  skillId?: string | null
   type: ProjectTaskType
   status?: ProjectTaskStatus
   triggerSource: ProjectTaskTriggerSource
@@ -58,6 +60,8 @@ export async function createProjectTask(
     data: {
       projectId: input.projectId,
       sandboxId: input.sandboxId ?? null,
+      userSkillId: input.userSkillId ?? null,
+      skillId: input.skillId ?? null,
       type: input.type,
       status: input.status ?? 'PENDING',
       triggerSource: input.triggerSource,
@@ -122,6 +126,32 @@ export async function getProjectTaskById(taskId: string): Promise<ProjectTaskWit
   })
 }
 
+export async function getLatestProjectTask(input: {
+  projectId: string
+  type: ProjectTaskType
+  skillId?: string
+}) {
+  return prisma.projectTask.findFirst({
+    where: {
+      projectId: input.projectId,
+      type: input.type,
+      ...(input.skillId ? { skillId: input.skillId } : {}),
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
+export async function getLatestSuccessfulCloneTask(projectId: string) {
+  return prisma.projectTask.findFirst({
+    where: {
+      projectId,
+      type: 'CLONE_REPOSITORY',
+      status: 'SUCCEEDED',
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
 export async function getRunnableTasksForProject(
   projectId: string,
   taskType?: ProjectTaskType
@@ -164,6 +194,22 @@ export async function tryClaimProjectTaskExecutionLock(
   })
 
   return result.count > 0
+}
+
+export async function markProjectTaskRunning(taskId: string, lockSeconds: number): Promise<void> {
+  const now = new Date()
+  const lockUntil = new Date(now.getTime() + lockSeconds * 1000)
+
+  await prisma.projectTask.update({
+    where: { id: taskId },
+    data: {
+      status: 'RUNNING',
+      error: null,
+      lockedUntil: lockUntil,
+      startedAt: now,
+      updatedAt: now,
+    },
+  })
 }
 
 export async function setProjectTaskState(

@@ -18,6 +18,7 @@ model User {
   identities          UserIdentity[] // One-to-many: User has multiple authentication identities
   projects            Project[] // One-to-many: User owns multiple projects
   configs             UserConfig[] // One-to-many: User global configurations
+  skills              UserSkill[] // One-to-many: User has multiple globally enabled skills
   githubInstallations GitHubAppInstallation[] // One-to-many: User's GitHub App installations
 }
 
@@ -236,10 +237,28 @@ model Sandbox {
   @@index([sandboxName])
 }
 
+model UserSkill {
+  id             String   @id @default(cuid())
+  userId         String
+  skillId        String
+  installCommand String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks ProjectTask[]
+
+  @@unique([userId, skillId])
+  @@index([userId])
+  @@index([skillId])
+}
+
 model ProjectTask {
   id            String                   @id @default(cuid())
   projectId     String
   sandboxId     String?
+  userSkillId   String?
+  skillId       String?
   type          ProjectTaskType
   status        ProjectTaskStatus        @default(PENDING)
   triggerSource ProjectTaskTriggerSource
@@ -254,12 +273,15 @@ model ProjectTask {
   createdAt     DateTime                 @default(now())
   updatedAt     DateTime                 @updatedAt
 
-  project Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  sandbox Sandbox? @relation(fields: [sandboxId], references: [id], onDelete: SetNull)
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sandbox   Sandbox?  @relation(fields: [sandboxId], references: [id], onDelete: SetNull)
+  userSkill UserSkill? @relation(fields: [userSkillId], references: [id], onDelete: SetNull)
 
   @@index([projectId, status])
   @@index([status, lockedUntil])
   @@index([type, status])
+  @@index([projectId, skillId, type, status])
+  @@index([userSkillId])
 }
 
 // Project aggregated status based on child resources

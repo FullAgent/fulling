@@ -59,3 +59,5 @@ Each PRD should usually include:
 ## Current PRDs
 
 - [Import Project Control Flow](./import-project-control-flow.md)
+- [Global Skill Enablement Control Flow](./global-skill-enablement-control-flow.md)
+- [Uninstall Skill Control Flow](./uninstall-skill-control-flow.md)

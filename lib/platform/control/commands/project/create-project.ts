@@ -3,6 +3,7 @@ import type { Project } from '@prisma/client'
 import { CommandResult } from '@/lib/platform/control/types'
 import { getUserDefaultNamespace } from '@/lib/platform/integrations/k8s/get-user-default-namespace'
 import { createProjectWithSandbox } from '@/lib/platform/persistence/project/create-project-with-sandbox'
+import { listUserSkills } from '@/lib/repo/user-skill'
 
 import { validateProjectName } from './shared'
 
@@ -16,7 +17,6 @@ import { validateProjectName } from './shared'
  * - Creates the initial project and sandbox state, then returns the project record.
  *
  * Out of scope:
- * - Does not create project tasks.
  * - Does not perform external Kubernetes effects.
  */
 export async function createProjectCommand(input: {
@@ -42,11 +42,18 @@ export async function createProjectCommand(input: {
     throw error
   }
 
+  const userSkills = await listUserSkills(input.userId)
+
   const result = await createProjectWithSandbox({
     userId: input.userId,
     namespace,
     name: input.name,
     description: input.description,
+    initialInstallSkills: userSkills.map((skill) => ({
+      userSkillId: skill.id,
+      skillId: skill.skillId,
+      installCommand: skill.installCommand,
+    })),
   })
 
   if (!result.success) {

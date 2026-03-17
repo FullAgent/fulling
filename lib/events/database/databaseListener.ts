@@ -277,6 +277,11 @@ async function handleDeleteDatabase(payload: DatabaseEventPayload): Promise<void
  * Call this function once during application startup
  */
 export function registerDatabaseListeners(): void {
+  if (globalThis.__databaseListenersRegistered) {
+    logger.info('Database event listeners already registered, skipping')
+    return
+  }
+
   logger.info('Registering database event listeners')
 
   on(Events.CreateDatabase, handleCreateDatabase)
@@ -284,8 +289,13 @@ export function registerDatabaseListeners(): void {
   on(Events.StopDatabase, handleStopDatabase)
   on(Events.DeleteDatabase, handleDeleteDatabase)
 
+  globalThis.__databaseListenersRegistered = true
   logger.info('Database event listeners registered')
 }
 
 // Auto-register listeners when module is imported
 registerDatabaseListeners()
+
+declare global {
+  var __databaseListenersRegistered: boolean | undefined
+}
