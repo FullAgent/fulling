@@ -1,3 +1,5 @@
+'use client'
+
 import { FaGithub } from 'react-icons/fa6'
 import {
   MdDashboardCustomize,
@@ -10,6 +12,7 @@ import {
 } from 'react-icons/md'
 import Image from 'next/image'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -61,6 +64,8 @@ function LogoSection() {
 }
 
 function NavMenu() {
+  const pathname = usePathname()
+
   return (
     <nav className="flex flex-col gap-1 flex-1">
       {menuItems.map((item, index) => {
@@ -68,7 +73,7 @@ function NavMenu() {
           return <Separator key={`divider-${index}`} className="my-2" />
         }
 
-        const isActive = item.active
+        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
 
         return (
           <Link

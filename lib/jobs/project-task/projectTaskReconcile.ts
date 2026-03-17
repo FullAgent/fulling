@@ -3,10 +3,12 @@ import { Cron } from 'croner'
 import { logger as baseLogger } from '@/lib/logger'
 import {
   acquireAndLockProjectTasks,
+  getLatestProjectTask,
   getProjectTaskById,
   getRunnableTasksForProject,
   incrementProjectTaskAttemptCount,
   LOCK_DURATION_SECONDS,
+  markProjectTaskRunning,
   type ProjectTaskWithRelations,
   setProjectTaskState,
   tryClaimProjectTaskExecutionLock,
@@ -56,7 +58,7 @@ async function reconcileProjectTasks() {
 
   for (const task of tasks) {
     try {
-      await handleProjectTask(task)
+      await handleProjectTask(task, { executionAlreadyLocked: true })
     } catch (error) {
       logger.error(`Failed to process project task ${task.id}: ${error}`)
     }
@@ -77,9 +79,22 @@ export async function triggerRunnableTasksForProject(projectId: string): Promise
   }
 }
 
-async function handleProjectTask(task: ProjectTaskWithRelations): Promise<void> {
-  const prerequisites = evaluateTaskPrerequisites(task)
+async function handleProjectTask(
+  task: ProjectTaskWithRelations,
+  options: { executionAlreadyLocked?: boolean } = {}
+): Promise<void> {
+  const prerequisites = await evaluateTaskPrerequisites(task)
   if (!prerequisites.ready) {
+    if (prerequisites.terminalFailure) {
+      await setProjectTaskState(task.id, {
+        status: 'FAILED',
+        error: prerequisites.reason ?? 'Task prerequisites can no longer be satisfied',
+        lockedUntil: null,
+        finishedAt: new Date(),
+      })
+      return
+    }
+
     await setProjectTaskState(task.id, {
       status: 'WAITING_FOR_PREREQUISITES',
       error: prerequisites.reason ?? null,
@@ -90,9 +105,13 @@ async function handleProjectTask(task: ProjectTaskWithRelations): Promise<void> 
     return
   }
 
-  const claimed = await tryClaimProjectTaskExecutionLock(task.id, EXECUTION_LOCK_DURATION_SECONDS)
-  if (!claimed) {
-    return
+  if (options.executionAlreadyLocked) {
+    await markProjectTaskRunning(task.id, EXECUTION_LOCK_DURATION_SECONDS)
+  } else {
+    const claimed = await tryClaimProjectTaskExecutionLock(task.id, EXECUTION_LOCK_DURATION_SECONDS)
+    if (!claimed) {
+      return
+    }
   }
 
   const executingTask = await getProjectTaskById(task.id)
@@ -135,12 +154,11 @@ async function handleProjectTask(task: ProjectTaskWithRelations): Promise<void> 
   })
 }
 
-function evaluateTaskPrerequisites(
-  task: Pick<ProjectTaskWithRelations, 'type' | 'sandbox'>
-): { ready: boolean; reason?: string } {
+async function evaluateTaskPrerequisites(
+  task: Pick<ProjectTaskWithRelations, 'id' | 'projectId' | 'type' | 'sandbox' | 'project'>
+): Promise<{ ready: boolean; reason?: string; terminalFailure?: boolean }> {
   switch (task.type) {
     case 'CLONE_REPOSITORY':
-    case 'INSTALL_SKILL':
     case 'UNINSTALL_SKILL':
     case 'DEPLOY_PROJECT':
       if (!task.sandbox) {
@@ -153,6 +171,48 @@ function evaluateTaskPrerequisites(
         }
       }
       return { ready: true }
+    case 'INSTALL_SKILL':
+      if (!task.sandbox) {
+        return { ready: false, reason: 'Sandbox not found' }
+      }
+      if (task.sandbox.status !== 'RUNNING') {
+        return {
+          ready: false,
+          reason: `Waiting for sandbox to become RUNNING (current: ${task.sandbox.status})`,
+        }
+      }
+      if (!task.project.githubRepoFullName) {
+        return { ready: true }
+      }
+
+      const latestCloneTask = await getLatestProjectTask({
+        projectId: task.projectId,
+        type: 'CLONE_REPOSITORY',
+      })
+
+      if (!latestCloneTask) {
+        return {
+          ready: false,
+          reason: 'Waiting for repository clone task to be created',
+        }
+      }
+
+      if (latestCloneTask.status === 'SUCCEEDED') {
+        return { ready: true }
+      }
+
+      if (latestCloneTask.status === 'FAILED' || latestCloneTask.status === 'CANCELLED') {
+        return {
+          ready: false,
+          reason: 'Repository import failed, so skill installation cannot proceed',
+          terminalFailure: true,
+        }
+      }
+
+      return {
+        ready: false,
+        reason: `Waiting for repository clone to finish (current: ${latestCloneTask.status})`,
+      }
     default:
       return { ready: false, reason: `Unknown task type ${task.type}` }
   }

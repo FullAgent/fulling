@@ -16,6 +16,11 @@ const logger = baseLogger.child({ module: 'lib/startup' })
  * Registers event listeners and starts background jobs
  */
 export async function initializeApp() {
+  if (globalThis.__appInitialized) {
+    logger.info('Application already initialized, skipping startup')
+    return
+  }
+
   logger.info('Initializing application...')
 
   // Step 1: Register event listeners
@@ -27,6 +32,7 @@ export async function initializeApp() {
   // Jobs run on cron schedules to reconcile resources
   await startBackgroundJobs()
 
+  globalThis.__appInitialized = true
   logger.info('Application initialized successfully')
 }
 
@@ -65,29 +71,29 @@ async function startBackgroundJobs() {
   logger.info('Starting background jobs...')
 
   try {
-    // Start database reconciliation job
-    // Runs every 3 seconds to find databases in CREATING/STARTING/STOPPING/TERMINATING states
-    const { startDatabaseReconcileJob } = await import('@/lib/jobs/database')
-    const databaseJob = startDatabaseReconcileJob()
-    logger.info('✅ Database reconcile job started')
+    if (globalThis.__databaseReconcileJob) {
+      logger.info('Database reconcile job already running, skipping start')
+    } else {
+      const { startDatabaseReconcileJob } = await import('@/lib/jobs/database')
+      globalThis.__databaseReconcileJob = startDatabaseReconcileJob()
+      logger.info('✅ Database reconcile job started')
+    }
 
-    // Start sandbox reconciliation job
-    // Runs every 3 seconds to find sandboxes in CREATING/STARTING/STOPPING/TERMINATING states
-    const { startSandboxReconcileJob } = await import('@/lib/jobs/sandbox')
-    const sandboxJob = startSandboxReconcileJob()
-    logger.info('✅ Sandbox reconcile job started')
+    if (globalThis.__sandboxReconcileJob) {
+      logger.info('Sandbox reconcile job already running, skipping start')
+    } else {
+      const { startSandboxReconcileJob } = await import('@/lib/jobs/sandbox')
+      globalThis.__sandboxReconcileJob = startSandboxReconcileJob()
+      logger.info('✅ Sandbox reconcile job started')
+    }
 
-    // Start project task reconciliation job
-    // Runs every 10 seconds to process project-level async tasks when prerequisites are met
-    const { startProjectTaskReconcileJob } = await import('@/lib/jobs/project-task')
-    const projectTaskJob = startProjectTaskReconcileJob()
-    logger.info('✅ Project task reconcile job started')
-
-    // Store job references for potential cleanup (optional)
-    // In most cases, these jobs will run for the lifetime of the server
-    globalThis.__databaseReconcileJob = databaseJob
-    globalThis.__sandboxReconcileJob = sandboxJob
-    globalThis.__projectTaskReconcileJob = projectTaskJob
+    if (globalThis.__projectTaskReconcileJob) {
+      logger.info('Project task reconcile job already running, skipping start')
+    } else {
+      const { startProjectTaskReconcileJob } = await import('@/lib/jobs/project-task')
+      globalThis.__projectTaskReconcileJob = startProjectTaskReconcileJob()
+      logger.info('✅ Project task reconcile job started')
+    }
 
     logger.info('All background jobs started successfully')
   } catch (error) {
@@ -130,6 +136,7 @@ export function cleanup() {
       logger.info('✅ Project task reconcile job stopped')
     }
 
+    globalThis.__appInitialized = false
     logger.info('✅ Cleanup completed')
   } catch (error) {
     logger.error(`❌ Cleanup failed: ${error}`)
@@ -138,6 +145,8 @@ export function cleanup() {
 
 // Add type definitions for global job references
 declare global {
+  var __appInitialized: boolean | undefined
+
   var __databaseReconcileJob: Cron | undefined
 
   var __sandboxReconcileJob: Cron | undefined

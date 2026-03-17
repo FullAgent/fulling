@@ -7,6 +7,7 @@ import { getUserDefaultNamespace } from '@/lib/platform/integrations/k8s/get-use
 import { findGitHubInstallationById } from '@/lib/platform/persistence/github/find-github-installation-by-id'
 import { createProjectWithSandbox } from '@/lib/platform/persistence/project/create-project-with-sandbox'
 import { createCloneRepositoryTask } from '@/lib/platform/persistence/project-task/create-clone-repository-task'
+import { listUserSkills } from '@/lib/repo/user-skill'
 
 import { validateProjectName } from './shared'
 
@@ -83,6 +84,8 @@ export async function createProjectFromGitHubCommand(
     throw error
   }
 
+  const userSkills = await listUserSkills(input.userId)
+
   const result = await createProjectWithSandbox({
     userId: input.userId,
     namespace,
@@ -94,6 +97,11 @@ export async function createProjectFromGitHubCommand(
       githubRepoFullName: input.repoFullName,
       githubRepoDefaultBranch: input.defaultBranch,
     },
+    initialInstallSkills: userSkills.map((skill) => ({
+      userSkillId: skill.id,
+      skillId: skill.skillId,
+      installCommand: skill.installCommand,
+    })),
   })
 
   if (!result.success) {

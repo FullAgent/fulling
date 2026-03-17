@@ -340,6 +340,11 @@ async function handleUpdateSandbox(payload: SandboxEventPayload): Promise<void> 
  * Call this function once during application startup
  */
 export function registerSandboxListeners(): void {
+  if (globalThis.__sandboxListenersRegistered) {
+    logger.info('Sandbox event listeners already registered, skipping')
+    return
+  }
+
   logger.info('Registering sandbox event listeners')
   on(Events.UpdateSandbox, handleUpdateSandbox)
   on(Events.CreateSandbox, handleCreateSandbox)
@@ -347,6 +352,7 @@ export function registerSandboxListeners(): void {
   on(Events.StopSandbox, handleStopSandbox)
   on(Events.DeleteSandbox, handleDeleteSandbox)
 
+  globalThis.__sandboxListenersRegistered = true
   logger.info('✅ Sandbox event listeners registered')
 }
 
@@ -359,4 +365,8 @@ async function triggerImportOnSandboxRunning(projectId: string): Promise<void> {
   } catch (error) {
     logger.error(`Failed to trigger project tasks for ${projectId}: ${error}`)
   }
+}
+
+declare global {
+  var __sandboxListenersRegistered: boolean | undefined
 }
