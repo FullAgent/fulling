@@ -1,4 +1,6 @@
-import type { ProjectStatus, ProjectTask, ProjectTaskStatus, ProjectTaskType } from '@prisma/client'
+import type { ProjectStatus, ProjectTask } from '@prisma/client'
+
+import { getProjectImportStatus } from '@/lib/util/project-import-status'
 
 export type ProjectDisplayStatus =
   | 'CREATING'
@@ -30,9 +32,9 @@ export function getProjectDisplayStatus(
   project: ProjectDisplayStatusInput
 ): ProjectDisplayStatus {
   const importProject = isImportProject(project)
-  const cloneTask = getLatestTask(project.tasks, 'CLONE_REPOSITORY')
+  const importStatus = getProjectImportStatus({ tasks: project.tasks })
 
-  if (cloneTask?.status === 'FAILED') {
+  if (importStatus === 'IMPORT_FAILED') {
     return 'NEEDS_ATTENTION'
   }
 
@@ -56,7 +58,7 @@ export function getProjectDisplayStatus(
     return 'UPDATING'
   }
 
-  if (importProject && cloneTask && isActiveTaskStatus(cloneTask.status)) {
+  if (importProject && importStatus === 'IMPORTING') {
     return 'IMPORTING'
   }
 
@@ -73,17 +75,4 @@ export function getProjectDisplayStatus(
   }
 
   return 'NEEDS_ATTENTION'
-}
-
-function getLatestTask(
-  tasks: ProjectDisplayStatusInput['tasks'],
-  type: ProjectTaskType
-) {
-  return tasks
-    ?.filter((task) => task.type === type)
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
-}
-
-function isActiveTaskStatus(status: ProjectTaskStatus): boolean {
-  return ['PENDING', 'WAITING_FOR_PREREQUISITES', 'RUNNING'].includes(status)
 }

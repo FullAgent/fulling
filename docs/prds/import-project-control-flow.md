@@ -9,6 +9,7 @@ repository as a Fulling project.
 
 This PRD exists to clarify what "success" means for:
 
+- request acceptance
 - project creation
 - sandbox creation
 - repository cloning
@@ -22,6 +23,7 @@ This document covers the current import flow for:
 - creating the initial sandbox for that project
 - cloning the selected repository into the sandbox
 - representing clone failure without rolling back the project
+- deriving import status from the clone task lifecycle
 
 This document does not define future repository analysis, skill installation, or
 deploy automation after import.
@@ -38,6 +40,18 @@ product success condition.
 
 ## Success Semantics
 
+### Request acceptance success
+
+The import request is considered accepted when the control plane successfully:
+
+- verifies the selected GitHub installation and repository access
+- creates the project record
+- creates the initial sandbox record
+- creates the initial clone-repository task
+
+At this point, the API may return success immediately even though the sandbox is
+not yet runnable and the repository has not yet been cloned.
+
 ### Project creation success
 
 A project is considered successfully created when its sandbox is successfully created
@@ -53,11 +67,23 @@ This means:
 The import transaction is considered successful only when the repository is cloned
 successfully into the sandbox.
 
+This is independent from request acceptance and independent from project creation
+success once the sandbox is already runnable.
+
 ## Failure Semantics
 
 ### Sandbox creation failure
 
-If the sandbox fails to reach a runnable state, project creation is considered failed.
+If the sandbox enters `ERROR`, project creation is considered failed.
+
+Current implementation note:
+
+- explicit sandbox create/start failures transition the sandbox to `ERROR`
+- there is currently no startup timeout that converts a sandbox stuck in `STARTING`
+  into `ERROR`
+
+So today, "failed to reach runnable state" is fully represented only for explicit
+failures, not for indefinite startup stalls.
 
 ### Repository clone failure
 
@@ -84,6 +110,7 @@ For the current stage of the product:
 - the user should still land in a usable project with an empty sandbox
 - no dedicated import-failure modal is required yet
 - the system should preserve existing code paths as much as possible
+- the UI should not wait forever on clone task state if the sandbox has already failed
 
 ## Status Requirements
 
@@ -92,20 +119,48 @@ The system should represent two layers of status:
 1. Project resource status
 2. Import transaction status
 
-For the current product behavior:
+### Project resource status
+
+Project resource status is represented by `Project.status` and continues to mean
+resource lifecycle state only.
+
+Examples:
+
+- `CREATING`
+- `STARTING`
+- `RUNNING`
+- `ERROR`
+
+### Import transaction status
+
+Import transaction status is not a separate persisted `ProjectStatus` enum.
+It is derived from the latest `CLONE_REPOSITORY` task for the project.
+
+Derived meaning:
+
+- `WAITING_FOR_PREREQUISITES`, `PENDING`, or `RUNNING` => `IMPORTING`
+- `SUCCEEDED` => `IMPORTED`
+- `FAILED` or `CANCELLED` => `IMPORT_FAILED`
+
+For the current product contract:
 
 - project status may become `RUNNING`
-- import may independently become `IMPORT_FAILED`
+- import may independently derive to `IMPORT_FAILED`
 
 The intended current UI meaning is:
 
-- `RUNNING + IMPORT FAILED`
+- `RUNNING + IMPORT_FAILED`
 
 This combination means:
 
 - the sandbox is available
 - the project exists and is usable
 - the requested repository import did not complete successfully
+
+Current implementation note:
+
+- UI may choose to render this as `Needs Attention`
+- `Needs Attention` is a presentation label, not the underlying persisted import status
 
 ## Retry Behavior
 
@@ -132,6 +187,12 @@ If clone fails, the database must still clearly reflect:
 - project creation succeeded
 - import did not succeed
 
+This currently means:
+
+- `Project` persists the imported GitHub metadata
+- `ProjectTask` persists clone attempts, final success or failure, and error text
+- import status is inferred from task state rather than stored as a dedicated project column
+
 ## GitHub Metadata Requirements
 
 If the repository later becomes unavailable or permissions change, the project should
@@ -150,15 +211,19 @@ This PRD does not define:
 
 - a new import intent model
 - a dedicated import failure modal
+- a new `ProjectStatus` enum value for import outcomes
 - post-import repository analysis
 - skill installation after import
 - deployment after import
 - new manual retry workflows
+- sandbox startup timeout policy
 
 ## Implementation Notes
 
 Current implementation should preserve this product contract:
 
-- project creation success is anchored to sandbox success
+- request acceptance is synchronous and returns after control-plane state is created
+- project creation success is asynchronous and is anchored to sandbox success
 - clone failure is visible as an import failure, not as project creation failure
 - import logic may fail independently after the project already exists
+- import status should be derived from clone task state, not folded into `Project.status`
