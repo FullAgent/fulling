@@ -1,6 +1,6 @@
 # Global Skill Enablement Control Flow
 
-Status: Draft
+Status: Implemented
 
 ## Goal
 
@@ -35,6 +35,12 @@ This document does not define:
 - skill version pinning or upgrade policy
 - auto-starting stopped projects only to install skills
 - detailed project-level skill UI beyond required status semantics
+
+Current phase note:
+
+- the skill directory is a static local catalog
+- users do not create custom skills from the UI in this phase
+- the catalog is not yet backed by a remote marketplace or external source
 
 ## User Intent
 
@@ -94,6 +100,10 @@ control plane has persisted installation work for that project.
 
 For a currently running project, this normally means an `INSTALL_SKILL` task can
 proceed immediately.
+
+For the current implementation, the control plane should also proactively trigger
+task evaluation for projects that are already `RUNNING`, rather than waiting only
+for the next periodic reconcile cycle.
 
 For a stopped or otherwise non-runnable project, this means an `INSTALL_SKILL`
 task may remain pending until prerequisites are satisfied.
@@ -221,6 +231,7 @@ This allows valid combinations such as:
 For the current phase of the product:
 
 - the global Skills tab should reflect user-level enablement state
+- the global Skills tab is backed by a static local catalog in this phase
 - enabling a skill should return quickly after durable state is created
 - the UI should not wait for all projects to finish installation before showing the skill as enabled
 - stopped projects should not be presented as immediate installation failures
@@ -291,6 +302,8 @@ For the current phase of the product:
 - project install tasks should receive `installCommand` in their payload
 - install execution should consume the command from task payload rather than
   inferring installation behavior dynamically at runtime
+- `installCommand` must be non-interactive so sandbox execution can complete
+  without user input
 - the current phase does not define editing an existing enabled skill's
   `installCommand`
 
@@ -311,15 +324,22 @@ This PRD does not define:
 Current implementation should preserve this product contract:
 
 - the user action enables a skill at the global user scope, not the single-project scope
+- the current Skills page reads from a static local catalog, not a user-authored
+  or remote marketplace-backed catalog
 - `UserSkill` is the durable source of truth for the enabled skill and its `installCommand`
 - project installation is asynchronous and should run through `ProjectTask`
 - each `INSTALL_SKILL` task should contain an execution snapshot of the `installCommand`
 - install execution should happen only when a project's sandbox is `RUNNING`
+- `installCommand` should be written in non-interactive form
 - sandbox lifecycle state remains separate from skill installation state
 - future project creation should consult globally enabled skills and create install work automatically
+- already-`RUNNING` projects should be triggered immediately after enablement so
+  installation does not rely only on cron pickup
 
 Current codebase note:
 
-- `ProjectTaskType` already reserves `INSTALL_SKILL` and `UNINSTALL_SKILL`
-- task prerequisite evaluation already matches the desired sandbox `RUNNING` gate
-- the install-skill executor and global enabled-skill persistence model are not yet implemented
+- `UserSkill` persistence and `INSTALL_SKILL` fan-out are implemented
+- task prerequisite evaluation matches the desired sandbox `RUNNING` gate
+- import projects additionally wait for successful repository clone before skill installation
+- the current catalog entry uses a non-interactive command form:
+  `npx -y skills add https://github.com/anthropics/skills --skill frontend-design -y`

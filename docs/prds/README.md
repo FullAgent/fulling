@@ -41,6 +41,7 @@ Recommended split:
 - One PRD per feature or workflow
 - Use stable kebab-case file names
 - Prefer names like `import-project-control-flow.md`
+- Related PRDs may be grouped under a feature directory such as `skills/`
 
 ## Suggested PRD structure
 
@@ -59,5 +60,5 @@ Each PRD should usually include:
 ## Current PRDs
 
 - [Import Project Control Flow](./import-project-control-flow.md)
-- [Global Skill Enablement Control Flow](./global-skill-enablement-control-flow.md)
-- [Uninstall Skill Control Flow](./uninstall-skill-control-flow.md)
+- [Skills / Global Skill Enablement Control Flow](./skills/global-skill-enablement-control-flow.md)
+- [Skills / Uninstall Skill Control Flow](./skills/uninstall-skill-control-flow.md)

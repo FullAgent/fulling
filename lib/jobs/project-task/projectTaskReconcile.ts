@@ -3,6 +3,7 @@ import { Cron } from 'croner'
 import { logger as baseLogger } from '@/lib/logger'
 import {
   acquireAndLockProjectTasks,
+  findRunningInstallSkillTaskCreatedBefore,
   getLatestProjectTask,
   getProjectTaskById,
   getRunnableTasksForProject,
@@ -85,9 +86,9 @@ async function handleProjectTask(
 ): Promise<void> {
   const prerequisites = await evaluateTaskPrerequisites(task)
   if (!prerequisites.ready) {
-    if (prerequisites.terminalFailure) {
+    if (prerequisites.terminalStatus) {
       await setProjectTaskState(task.id, {
-        status: 'FAILED',
+        status: prerequisites.terminalStatus,
         error: prerequisites.reason ?? 'Task prerequisites can no longer be satisfied',
         lockedUntil: null,
         finishedAt: new Date(),
@@ -122,6 +123,22 @@ async function handleProjectTask(
   const attemptCount = await incrementProjectTaskAttemptCount(task.id)
   const result = await runProjectTaskExecutor(executingTask)
 
+  const latestTask = await getProjectTaskById(task.id)
+  if (!latestTask) {
+    return
+  }
+
+  if (latestTask.type === 'INSTALL_SKILL' && !latestTask.userSkillId) {
+    await setProjectTaskState(task.id, {
+      status: 'CANCELLED',
+      error: 'Superseded by global uninstall',
+      lockedUntil: null,
+      finishedAt: new Date(),
+      attemptCount,
+    })
+    return
+  }
+
   if (result.success) {
     await setProjectTaskState(task.id, {
       status: 'SUCCEEDED',
@@ -155,11 +172,13 @@ async function handleProjectTask(
 }
 
 async function evaluateTaskPrerequisites(
-  task: Pick<ProjectTaskWithRelations, 'id' | 'projectId' | 'type' | 'sandbox' | 'project'>
-): Promise<{ ready: boolean; reason?: string; terminalFailure?: boolean }> {
+  task: Pick<
+    ProjectTaskWithRelations,
+    'id' | 'projectId' | 'type' | 'sandbox' | 'project' | 'skillId' | 'createdAt' | 'userSkillId'
+  >
+): Promise<{ ready: boolean; reason?: string; terminalStatus?: 'FAILED' | 'CANCELLED' }> {
   switch (task.type) {
     case 'CLONE_REPOSITORY':
-    case 'UNINSTALL_SKILL':
     case 'DEPLOY_PROJECT':
       if (!task.sandbox) {
         return { ready: false, reason: 'Sandbox not found' }
@@ -171,7 +190,46 @@ async function evaluateTaskPrerequisites(
         }
       }
       return { ready: true }
+    case 'UNINSTALL_SKILL':
+      if (!task.sandbox) {
+        return { ready: false, reason: 'Sandbox not found' }
+      }
+      if (task.sandbox.status !== 'RUNNING') {
+        return {
+          ready: false,
+          reason: `Waiting for sandbox to become RUNNING (current: ${task.sandbox.status})`,
+        }
+      }
+      if (!task.skillId) {
+        return {
+          ready: false,
+          reason: 'Missing skill identity for uninstall task',
+          terminalStatus: 'FAILED',
+        }
+      }
+
+      const blockingInstallTask = await findRunningInstallSkillTaskCreatedBefore({
+        projectId: task.projectId,
+        skillId: task.skillId,
+        createdBefore: task.createdAt,
+      })
+
+      if (blockingInstallTask) {
+        return {
+          ready: false,
+          reason: 'Waiting for older install task to settle before uninstalling',
+        }
+      }
+
+      return { ready: true }
     case 'INSTALL_SKILL':
+      if (!task.userSkillId) {
+        return {
+          ready: false,
+          reason: 'Superseded by global uninstall',
+          terminalStatus: 'CANCELLED',
+        }
+      }
       if (!task.sandbox) {
         return { ready: false, reason: 'Sandbox not found' }
       }
@@ -205,7 +263,7 @@ async function evaluateTaskPrerequisites(
         return {
           ready: false,
           reason: 'Repository import failed, so skill installation cannot proceed',
-          terminalFailure: true,
+          terminalStatus: 'FAILED',
         }
       }
 

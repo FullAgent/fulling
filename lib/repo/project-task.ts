@@ -152,6 +152,25 @@ export async function getLatestSuccessfulCloneTask(projectId: string) {
   })
 }
 
+export async function findRunningInstallSkillTaskCreatedBefore(input: {
+  projectId: string
+  skillId: string
+  createdBefore: Date
+}) {
+  return prisma.projectTask.findFirst({
+    where: {
+      projectId: input.projectId,
+      skillId: input.skillId,
+      type: 'INSTALL_SKILL',
+      status: 'RUNNING',
+      createdAt: {
+        lt: input.createdBefore,
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
 export async function getRunnableTasksForProject(
   projectId: string,
   taskType?: ProjectTaskType

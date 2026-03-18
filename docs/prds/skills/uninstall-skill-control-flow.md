@@ -1,6 +1,6 @@
 # Uninstall Skill Control Flow
 
-Status: Draft
+Status: Implemented
 
 ## Goal
 
@@ -38,6 +38,12 @@ This document does not define:
 - skill version rollback policy
 - auto-starting stopped projects only to uninstall skills
 - bulk operator tooling for failed uninstalls
+
+Current phase note:
+
+- the skill directory is a static local catalog
+- users do not create custom skills from the UI in this phase
+- the catalog is not yet backed by a remote marketplace or external source
 
 ## User Intent
 
@@ -100,6 +106,10 @@ skill indefinitely.
 
 For a currently running project, this normally means an `UNINSTALL_SKILL` task
 can proceed immediately.
+
+For the current implementation, the control plane should also proactively trigger
+task evaluation for projects that are already `RUNNING`, rather than waiting only
+for the next periodic reconcile cycle.
 
 For a stopped or otherwise non-runnable project, this means uninstall work may
 remain pending until prerequisites are satisfied.
@@ -253,6 +263,7 @@ For the current phase of the product:
 
 - the global Skills tab should stop showing the skill as enabled once durable
   uninstall state is created
+- the global Skills tab is backed by a static local catalog in this phase
 - the UI should not wait for all projects to finish uninstall before reflecting
   the global uninstall
 - stopped projects should not be presented as immediate uninstall failures
@@ -296,6 +307,7 @@ This currently implies the need for:
   - `userSkillId`
   - `skillId`
   - `installCommand`
+  - `uninstallCommand`
 - task result or error data that records project-level uninstall outcome
 
 If uninstall fails for one project, the database must still clearly reflect:
@@ -321,9 +333,11 @@ For the current phase of the product:
 
 - each globally enabled skill is represented by a `UserSkill` record that includes
   `installCommand`
+- the static catalog also defines the `uninstallCommand` used for removal
 - uninstall removes that global `UserSkill` desired state
 - historical uninstall and install tasks may still retain `installCommand` in their
   payload as execution snapshots
+- uninstall tasks should receive `uninstallCommand` in their payload as an execution snapshot
 - uninstall execution should rely on task payload and task semantics rather than
   attempting to rebuild prior install intent from mutable runtime state
 
@@ -344,6 +358,8 @@ This PRD does not define:
 Current implementation should preserve this product contract:
 
 - the user action removes a skill at the global user scope, not the single-project scope
+- the current Skills page reads from a static local catalog, not a user-authored
+  or remote marketplace-backed catalog
 - the removed global skill record is the `UserSkill` source of truth that previously
   held the skill's `installCommand`
 - project uninstall is asynchronous and should run through `ProjectTask`
@@ -358,6 +374,10 @@ Current implementation should preserve this product contract:
 Current codebase note:
 
 - `ProjectTaskType` already reserves `INSTALL_SKILL` and `UNINSTALL_SKILL`
+- enable-side `UserSkill` persistence and `INSTALL_SKILL` fan-out are implemented
 - task prerequisite evaluation already matches the desired sandbox `RUNNING` gate
-- uninstall executor, task supersession rules, and global enabled-skill persistence
-  model are not yet implemented
+- global uninstall removes the `UserSkill` desired state and fans out uninstall work
+- pending and waiting install tasks for the same skill are cancelled when uninstall is accepted
+- stale install work is prevented from winning over newer uninstall intent during task reconcile
+- projects that are already `RUNNING` are triggered immediately after uninstall fan-out
+- uninstall executor, uninstall UI entry, and global uninstall control flow are implemented

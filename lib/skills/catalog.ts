@@ -4,6 +4,7 @@ export type SkillCatalogEntry = {
   description: string
   sourceUrl: string
   installCommand: string
+  uninstallCommand: string
 }
 
 const skillCatalog: SkillCatalogEntry[] = [
@@ -15,6 +16,7 @@ const skillCatalog: SkillCatalogEntry[] = [
     sourceUrl: 'https://github.com/anthropics/skills',
     installCommand:
       'npx -y skills add https://github.com/anthropics/skills --skill frontend-design -y',
+    uninstallCommand: 'npx -y skills remove frontend-design -y',
   },
 ]
 

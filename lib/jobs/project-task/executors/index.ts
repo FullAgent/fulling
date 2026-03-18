@@ -4,6 +4,7 @@ import type { ProjectTaskWithRelations } from '@/lib/repo/project-task'
 
 import { type ProjectTaskExecutorResult, runCloneRepositoryTask } from './clone-repository'
 import { runInstallSkillTask } from './install-skill'
+import { runUninstallSkillTask } from './uninstall-skill'
 
 export async function runProjectTaskExecutor(
   task: ProjectTaskWithRelations
@@ -13,6 +14,8 @@ export async function runProjectTaskExecutor(
       return runCloneRepositoryTask(task)
     case 'INSTALL_SKILL':
       return runInstallSkillTask(task)
+    case 'UNINSTALL_SKILL':
+      return runUninstallSkillTask(task)
     default:
       return {
         success: false,

@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { enableGlobalSkill } from '@/lib/actions/skill'
+import { enableGlobalSkill, uninstallGlobalSkill } from '@/lib/actions/skill'
 import { getSkillCatalog } from '@/lib/skills/catalog'
 
 type SkillsLibraryProps = {
@@ -24,25 +24,45 @@ type SkillsLibraryProps = {
 
 export function SkillsLibrary({ enabledSkillIds }: SkillsLibraryProps) {
   const router = useRouter()
-  const [pendingSkillId, setPendingSkillId] = useState<string | null>(null)
+  const [pendingOperation, setPendingOperation] = useState<{
+    skillId: string
+    type: 'enable' | 'uninstall'
+  } | null>(null)
   const [isPending, startTransition] = useTransition()
   const catalog = getSkillCatalog()
   const enabledSkillSet = new Set(enabledSkillIds)
 
   const handleEnable = (skillId: string) => {
     startTransition(async () => {
-      setPendingSkillId(skillId)
+      setPendingOperation({ skillId, type: 'enable' })
 
       const result = await enableGlobalSkill(skillId)
       if (!result.success) {
         toast.error(result.error)
-        setPendingSkillId(null)
+        setPendingOperation(null)
         return
       }
 
       toast.success('Global skill enabled. Install tasks will fan out across your projects.')
       router.refresh()
-      setPendingSkillId(null)
+      setPendingOperation(null)
+    })
+  }
+
+  const handleUninstall = (skillId: string) => {
+    startTransition(async () => {
+      setPendingOperation({ skillId, type: 'uninstall' })
+
+      const result = await uninstallGlobalSkill(skillId)
+      if (!result.success) {
+        toast.error(result.error)
+        setPendingOperation(null)
+        return
+      }
+
+      toast.success('Global skill removed. Uninstall tasks will converge existing projects.')
+      router.refresh()
+      setPendingOperation(null)
     })
   }
 
@@ -55,9 +75,10 @@ export function SkillsLibrary({ enabledSkillIds }: SkillsLibraryProps) {
         <div className="space-y-2">
           <h1 className="text-3xl font-display font-bold text-white">Skills</h1>
           <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-            Enabling a skill here creates global desired state for the user. Existing projects get
-            `INSTALL_SKILL` tasks immediately, and new projects inherit the same skill when they
-            are created.
+            Skills here define global desired state for the user. Enabling fans out
+            `INSTALL_SKILL` tasks to existing projects and future projects inherit the skill.
+            Uninstalling removes the global desired state and fans out `UNINSTALL_SKILL` work
+            without auto-starting stopped sandboxes.
           </p>
         </div>
       </div>
@@ -65,7 +86,8 @@ export function SkillsLibrary({ enabledSkillIds }: SkillsLibraryProps) {
       <div className="grid gap-4 md:grid-cols-2">
         {catalog.map((skill) => {
           const isEnabled = enabledSkillSet.has(skill.skillId)
-          const isLoading = isPending && pendingSkillId === skill.skillId
+          const isLoading = isPending && pendingOperation?.skillId === skill.skillId
+          const isUninstalling = isLoading && pendingOperation?.type === 'uninstall'
 
           return (
             <Card key={skill.skillId} className="border-border/80 bg-card/70">
@@ -108,10 +130,19 @@ export function SkillsLibrary({ enabledSkillIds }: SkillsLibraryProps) {
                 </Button>
 
                 <Button
-                  onClick={() => handleEnable(skill.skillId)}
-                  disabled={isEnabled || isLoading}
+                  variant={isEnabled ? 'destructive' : 'default'}
+                  onClick={() =>
+                    isEnabled ? handleUninstall(skill.skillId) : handleEnable(skill.skillId)
+                  }
+                  disabled={isLoading}
                 >
-                  {isEnabled ? 'Enabled' : isLoading ? 'Enabling...' : 'Enable Skill'}
+                  {isEnabled
+                    ? isUninstalling
+                      ? 'Uninstalling...'
+                      : 'Uninstall Skill'
+                    : isLoading
+                      ? 'Enabling...'
+                      : 'Enable Skill'}
                 </Button>
               </CardFooter>
             </Card>

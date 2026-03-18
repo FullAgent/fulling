@@ -7,7 +7,7 @@ import { SkillsLibrary } from './_components/skills-library'
 
 export const metadata = {
   title: 'Skills | Fulling',
-  description: 'Enable global skills that will be installed across your projects.',
+  description: 'Manage global skills that install into or uninstall from your projects.',
 }
 
 export default async function SkillsPage() {
