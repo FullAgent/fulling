@@ -30,7 +30,7 @@ import { useSealos } from '@/provider/sealos';
 interface SettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  defaultTab?: 'system-prompt' | 'kubeconfig' | 'anthropic' | 'github';
+  defaultTab?: 'system-prompt' | 'kubeconfig' | 'anthropic' | 'minimax' | 'github';
 }
 
 const DEFAULT_SYSTEM_PROMPT = `You are an AI full-stack developer working in a Next.js environment.
@@ -61,7 +61,7 @@ const DEFAULT_SYSTEM_PROMPT = `You are an AI full-stack developer working in a N
 - Optimize for performance and SEO
 - Follow modern React patterns and best practices`;
 
-type TabType = 'system-prompt' | 'kubeconfig' | 'anthropic' | 'github';
+type TabType = 'system-prompt' | 'kubeconfig' | 'anthropic' | 'minimax' | 'github';
 
 export default function SettingsDialog({
   open,
@@ -90,6 +90,13 @@ export default function SettingsDialog({
   const [isAnthropicLoading, setIsAnthropicLoading] = useState(false);
   const [isAnthropicInitialLoading, setIsAnthropicInitialLoading] = useState(true);
 
+  // MiniMax state
+  const [minimaxApiKey, setMinimaxApiKey] = useState('');
+  const [minimaxApiBaseUrl, setMinimaxApiBaseUrl] = useState('');
+  const [minimaxModel, setMinimaxModel] = useState('');
+  const [isMinimaxLoading, setIsMinimaxLoading] = useState(false);
+  const [isMinimaxInitialLoading, setIsMinimaxInitialLoading] = useState(true);
+
   // GitHub state
   const [githubInstallation, setGithubInstallation] = useState<GitHubInstallation | null>(null);
   const [isGithubLoading, setIsGithubLoading] = useState(false);
@@ -99,6 +106,7 @@ export default function SettingsDialog({
   const [showSystemPromptConfirm, setShowSystemPromptConfirm] = useState(false);
   const [showSystemPromptResetConfirm, setShowSystemPromptResetConfirm] = useState(false);
   const [showAnthropicConfirm, setShowAnthropicConfirm] = useState(false);
+  const [showMinimaxConfirm, setShowMinimaxConfirm] = useState(false);
 
   // Load data when dialog opens
   useEffect(() => {
@@ -108,6 +116,7 @@ export default function SettingsDialog({
         loadKubeconfig();
       }
       loadAnthropicConfig();
+      loadMinimaxConfig();
       loadGithubStatus();
     }
   }, [open, isSealos]);
@@ -167,6 +176,23 @@ export default function SettingsDialog({
       console.error('Failed to load Anthropic config:', error);
     } finally {
       setIsAnthropicInitialLoading(false);
+    }
+  };
+
+  const loadMinimaxConfig = async () => {
+    try {
+      const data = await fetchClient.GET<{
+        apiKey: string | null;
+        apiBaseUrl: string | null;
+        model: string | null;
+      }>('/api/user/config/minimax');
+      setMinimaxApiKey(data.apiKey || '');
+      setMinimaxApiBaseUrl(data.apiBaseUrl || '');
+      setMinimaxModel(data.model || '');
+    } catch (error) {
+      console.error('Failed to load MiniMax config:', error);
+    } finally {
+      setIsMinimaxInitialLoading(false);
     }
   };
 
@@ -269,6 +295,35 @@ export default function SettingsDialog({
     }
   };
 
+  const handleSaveMinimaxConfig = () => {
+    if (!minimaxApiKey.trim() || !minimaxApiBaseUrl.trim()) {
+      toast.error('Both API key and base URL are required');
+      return;
+    }
+    setShowMinimaxConfirm(true);
+  };
+
+  const handleConfirmSaveMinimaxConfig = async () => {
+    setShowMinimaxConfirm(false);
+    setIsMinimaxLoading(true);
+    try {
+      await fetchClient.POST('/api/user/config/minimax', {
+        apiKey: minimaxApiKey,
+        apiBaseUrl: minimaxApiBaseUrl,
+        model: minimaxModel.trim() || undefined,
+      });
+      toast.success('MiniMax configuration saved successfully');
+      onOpenChange(false);
+    } catch (error: unknown) {
+      console.error('Failed to save MiniMax config:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to save MiniMax configuration'
+      );
+    } finally {
+      setIsMinimaxLoading(false);
+    }
+  };
+
   const handleResetSystemPrompt = () => {
     setShowSystemPromptResetConfirm(true);
   };
@@ -355,7 +410,7 @@ export default function SettingsDialog({
             className="h-full flex flex-col"
           >
             <TabsList
-              className={`shrink-0 grid w-full ${isSealos ? 'grid-cols-3' : 'grid-cols-4'} bg-secondary border-border rounded-lg`}
+              className={`shrink-0 grid w-full ${isSealos ? 'grid-cols-4' : 'grid-cols-5'} bg-secondary border-border rounded-lg`}
             >
               <TabsTrigger
                 value="system-prompt"
@@ -379,6 +434,13 @@ export default function SettingsDialog({
               >
                 <MdTerminal className="mr-2 h-4 w-4" />
                 Anthropic
+              </TabsTrigger>
+              <TabsTrigger
+                value="minimax"
+                className="data-[state=active]:bg-primary data-[state=active]:text-foreground text-muted-foreground hover:text-foreground"
+              >
+                <MdTerminal className="mr-2 h-4 w-4" />
+                MiniMax
               </TabsTrigger>
               <TabsTrigger
                 value="github"
@@ -596,6 +658,93 @@ export default function SettingsDialog({
                 </div>
               </TabsContent>
 
+              {/* MiniMax Tab */}
+              <TabsContent value="minimax" className="mt-0 h-full overflow-y-auto">
+                <div className="space-y-4 pb-4">
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="minimax-api-base-url-dialog"
+                      className="text-foreground text-sm font-medium"
+                    >
+                      API Base URL
+                    </Label>
+                    <Input
+                      id="minimax-api-base-url-dialog"
+                      type="url"
+                      value={minimaxApiBaseUrl}
+                      onChange={(e) => setMinimaxApiBaseUrl(e.target.value)}
+                      disabled={isMinimaxInitialLoading}
+                      className="bg-input border-border text-foreground placeholder:text-muted-foreground disabled:opacity-50 rounded-md focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="https://api.minimax.io/v1"
+                    />
+                    <p className="text-xs text-muted-foreground mt-0">
+                      The base URL for MiniMax API (default: https://api.minimax.io/v1). MiniMax
+                      provides an OpenAI-compatible API.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="minimax-api-key-dialog"
+                      className="text-foreground text-sm font-medium"
+                    >
+                      API Key
+                    </Label>
+                    <Input
+                      id="minimax-api-key-dialog"
+                      type="password"
+                      value={minimaxApiKey}
+                      onChange={(e) => setMinimaxApiKey(e.target.value)}
+                      disabled={isMinimaxInitialLoading}
+                      className="bg-input border-border text-foreground placeholder:text-muted-foreground font-mono disabled:opacity-50 rounded-md focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="eyJh..."
+                    />
+                    <p className="text-xs text-muted-foreground mt-0">
+                      Your MiniMax API key. This will be stored securely and injected as
+                      MINIMAX_API_KEY in sandboxes.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="minimax-model-dialog"
+                      className="text-foreground text-sm font-medium"
+                    >
+                      Default Model (Optional)
+                    </Label>
+                    <Input
+                      id="minimax-model-dialog"
+                      type="text"
+                      value={minimaxModel}
+                      onChange={(e) => setMinimaxModel(e.target.value)}
+                      disabled={isMinimaxInitialLoading}
+                      className="bg-input border-border text-foreground placeholder:text-muted-foreground font-mono disabled:opacity-50 rounded-md focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="MiniMax-M2.7"
+                    />
+                    <p className="text-xs text-muted-foreground mt-0">
+                      Default model to use (e.g., MiniMax-M2.7, MiniMax-M2.5-highspeed). This will
+                      be injected as MINIMAX_MODEL in sandboxes.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      onClick={handleSaveMinimaxConfig}
+                      disabled={
+                        isMinimaxLoading ||
+                        isMinimaxInitialLoading ||
+                        !minimaxApiKey.trim() ||
+                        !minimaxApiBaseUrl.trim()
+                      }
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                    >
+                      <MdSave className="mr-2 h-4 w-4" />
+                      {isMinimaxLoading ? 'Saving...' : 'Save Configuration'}
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+
               {/* GitHub Tab */}
               <TabsContent value="github" className="mt-0 h-full overflow-y-auto">
                 <div className="space-y-4 pb-4">
@@ -718,6 +867,32 @@ export default function SettingsDialog({
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 Reset to Default
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* MiniMax Config Confirmation Dialog */}
+        <AlertDialog open={showMinimaxConfirm} onOpenChange={setShowMinimaxConfirm}>
+          <AlertDialogContent className="bg-card border-border text-foreground">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-foreground">
+                Confirm Save MiniMax Configuration
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-muted-foreground">
+                These changes won&apos;t take effect until you manually restart the application.
+                Save now?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="border-border text-muted-foreground hover:text-foreground hover:bg-accent">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmSaveMinimaxConfig}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                Save Configuration
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

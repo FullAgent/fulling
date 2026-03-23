@@ -208,6 +208,7 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
 ## Acknowledgments
 
 - [Anthropic](https://www.anthropic.com/) for Claude Code
+- [MiniMax](https://www.minimax.io/) for MiniMax AI models (M2.7, M2.5-highspeed)
 - [Sealos](https://sealos.io/) for Kubernetes platform
 - [ttyd](https://github.com/tsl0922/ttyd) for web terminal
 - [FileBrowser](https://github.com/filebrowser/filebrowser) for file management
@@ -225,5 +226,5 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 <div align="center">
 <strong>100% AI-generated code.</strong> Prompted by [@fanux](https://github.com/fanux).
-<br>Powered by Claude Code, with models from Anthropic (Sonnet, Opus), Google (Gemini), Zhipu AI (GLM), and Moonshot (Kimi).
+<br>Powered by Claude Code, with models from Anthropic (Sonnet, Opus), Google (Gemini), MiniMax (M2.7), Zhipu AI (GLM), and Moonshot (Kimi).
 </div>
