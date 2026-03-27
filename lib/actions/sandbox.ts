@@ -40,9 +40,13 @@ export async function runCommand(
     const { ttyd } = await getSandboxTtydContext(sandboxId, session.user.id)
     const { baseUrl, accessToken, authorization } = ttyd
 
-    const output = await execCommand(baseUrl, accessToken, command, timeoutMs, authorization)
+    const result = await execCommand(baseUrl, accessToken, command, timeoutMs, authorization)
 
-    return { success: true, output }
+    if (result.exitCode !== 0) {
+      return { success: false, error: `Command failed with exit code ${result.exitCode}`, output: result.output }
+    }
+
+    return { success: true, output: result.output }
   } catch (error) {
     console.error('Failed to execute command in sandbox:', error)
     const errorMessage = error instanceof TtydExecError ? error.message : 'Unknown error'
