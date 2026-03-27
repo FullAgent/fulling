@@ -357,15 +357,17 @@ export function XtermTerminal({
           return null;
         }
 
+        // Remove credentials from URL — they are sent in the WebSocket init message instead
+        url.searchParams.delete('authorization');
+
         // Add session ID as arg parameter for ttyd-auth.sh
-        // URL format: ?authorization=base64(user:pass)&arg=SESSION_ID
         url.searchParams.append('arg', terminalSessionId.current);
 
         const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsPath = url.pathname.replace(/\/$/, '') + '/ws';
         const wsFullUrl = `${wsProtocol}//${url.host}${wsPath}${url.search}`;
 
-        console.log('[XtermTerminal] Connecting to:', wsFullUrl.replace(authorization, '***'));
+        console.log('[XtermTerminal] Connecting to:', wsFullUrl);
         return { wsFullUrl, authorization };
       } catch (error) {
         console.error('[XtermTerminal] Failed to parse URL:', error);
