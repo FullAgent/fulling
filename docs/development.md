@@ -14,7 +14,7 @@ This document provides guidance for local development and code patterns.
 
 ## Prerequisites
 
-- **Node.js**: 22.9.0 or higher
+- **Node.js**: 22.12.0 or higher
 - **pnpm**: 9.x or higher
 - **PostgreSQL**: 14.x or higher
 - **Kubernetes cluster**: For full integration testing (optional)
