@@ -69,7 +69,7 @@ For technical details, see [Architecture Documentation](./docs/architecture.md).
 
 ### Prerequisites
 
-- Node.js 22.9.0 or higher
+- Node.js 22.12.0 or higher
 - PostgreSQL database
 - Kubernetes cluster with KubeBlocks installed
 - GitHub OAuth application credentials
