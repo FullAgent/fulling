@@ -1,0 +1,232 @@
+{
+  "generated_at": "2026-04-02T02:16:55Z",
+  "wiki_root": "docs/wiki",
+  "router_mode": "app",
+  "pages": [
+    {
+      "path": "docs/wiki/index.md",
+      "sources": [
+        "package.json",
+        "app",
+        "lib/platform/readme.md",
+        "prisma/schema.prisma"
+      ]
+    },
+    {
+      "path": "docs/wiki/architecture.md",
+      "sources": [
+        "app/layout.tsx",
+        "instrumentation.ts",
+        "lib/startup/index.ts",
+        "lib/platform/readme.md",
+        "lib/platform/control/readme.md",
+        "lib/platform/control/commands/readme.md",
+        "lib/actions",
+        "lib/repo",
+        "lib/jobs",
+        "lib/events"
+      ]
+    },
+    {
+      "path": "docs/wiki/routing.md",
+      "sources": [
+        "app",
+        "components/sidebar.tsx",
+        "components/sidebars/project-sidebar.tsx",
+        "components/layout/project-content-wrapper.tsx",
+        "app/(dashboard)/settings/_components/settings-sidebar.tsx"
+      ]
+    },
+    {
+      "path": "docs/wiki/rendering-and-data-flow.md",
+      "sources": [
+        "app/layout.tsx",
+        "app/(landing)/page.tsx",
+        "provider/providers.tsx",
+        "hooks/use-project.ts",
+        "hooks/use-environment-variables.ts",
+        "components/layout/project-content-wrapper.tsx",
+        "lib/fetch-client.ts",
+        "lib/data/project.ts"
+      ]
+    },
+    {
+      "path": "docs/wiki/auth-and-state.md",
+      "sources": [
+        "lib/auth.ts",
+        "lib/api-auth.ts",
+        "provider/sealos.tsx",
+        "lib/actions/sealos-auth.ts",
+        "app/(auth)/login/page.tsx"
+      ]
+    },
+    {
+      "path": "docs/wiki/config-and-env.md",
+      "sources": [
+        "next.config.ts",
+        "package.json",
+        "lib/env.ts",
+        "instrumentation.ts",
+        "lib/startup/index.ts",
+        "lib/const.ts"
+      ]
+    },
+    {
+      "path": "docs/wiki/data-models.md",
+      "sources": [
+        "prisma/schema.prisma",
+        "lib/repo/project.ts"
+      ]
+    },
+    {
+      "path": "docs/wiki/integrations.md",
+      "sources": [
+        "lib/k8s/k8s-service-helper.ts",
+        "lib/services/github-app.ts",
+        "lib/services/aiproxy.ts",
+        "lib/util/ttyd-context.ts",
+        "provider/sealos.tsx",
+        "lib/platform/integrations/README.md"
+      ]
+    },
+    {
+      "path": "docs/wiki/background-jobs.md",
+      "sources": [
+        "instrumentation.ts",
+        "lib/startup/index.ts",
+        "lib/jobs/sandbox/sandboxReconcile.ts",
+        "lib/jobs/database/databaseReconcile.ts",
+        "lib/jobs/project-task/projectTaskReconcile.ts",
+        "lib/events/sandbox/sandboxListener.ts",
+        "lib/events/database/databaseListener.ts"
+      ]
+    },
+    {
+      "path": "docs/wiki/todo.md",
+      "sources": [
+        "components/sidebar.tsx",
+        "app/(dashboard)/settings/_components/settings-sidebar.tsx",
+        "app/(dashboard)/projects/(list)/_components/project-actions-menu.tsx",
+        "app/(dashboard)/projects/[id]/exec-test/page.tsx",
+        "lib/actions/sandbox.ts",
+        "lib/platform/readme.md",
+        "app/api"
+      ]
+    },
+    {
+      "path": "docs/wiki/api/index.md",
+      "sources": [
+        "app/api",
+        "lib/api-auth.ts"
+      ]
+    },
+    {
+      "path": "docs/wiki/api/auth-and-github.md",
+      "sources": [
+        "app/api/auth/[...nextauth]/route.ts",
+        "app/api/github/app/callback/route.ts",
+        "app/api/github/app/webhook/route.ts",
+        "lib/auth.ts",
+        "lib/services/github-app.ts",
+        "app/github/app/callback/page.tsx"
+      ]
+    },
+    {
+      "path": "docs/wiki/api/projects-and-runtime.md",
+      "sources": [
+        "app/api/projects/[id]/route.ts",
+        "app/api/projects/[id]/start/route.ts",
+        "app/api/projects/[id]/stop/route.ts",
+        "app/api/projects/[id]/delete/route.ts",
+        "app/api/projects/[id]/environment/route.ts",
+        "app/api/projects/[id]/environment/[envId]/route.ts",
+        "app/api/sandbox/[id]/cwd/route.ts",
+        "app/api/sandbox/[id]/exec/route.ts",
+        "app/api/sandbox/[id]/app-status/route.ts",
+        "hooks/use-project.ts",
+        "hooks/use-project-operations.ts",
+        "hooks/use-environment-variables.ts",
+        "hooks/use-app-runner.ts",
+        "components/terminal/xterm-terminal.tsx"
+      ]
+    },
+    {
+      "path": "docs/wiki/api/user-config.md",
+      "sources": [
+        "app/api/user/config/route.ts",
+        "app/api/user/config/anthropic/route.ts",
+        "app/api/user/config/kc/route.ts",
+        "app/api/user/config/system-prompt/route.ts",
+        "components/dialog/settings-dialog.tsx",
+        "lib/k8s/k8s-service-helper.ts"
+      ]
+    },
+    {
+      "path": "docs/wiki/features/auth-and-identity.md",
+      "sources": [
+        "app/(auth)/login/page.tsx",
+        "app/(auth)/auth-error/page.tsx",
+        "app/github/app/callback/page.tsx",
+        "lib/auth.ts",
+        "provider/sealos.tsx",
+        "lib/actions/sealos-auth.ts"
+      ]
+    },
+    {
+      "path": "docs/wiki/features/project-workspace.md",
+      "sources": [
+        "app/(dashboard)/projects/(list)/page.tsx",
+        "app/(dashboard)/projects/[id]/layout.tsx",
+        "app/(dashboard)/projects/[id]/database/page.tsx",
+        "app/(dashboard)/projects/[id]/environment/page.tsx",
+        "app/(dashboard)/projects/[id]/secrets/page.tsx",
+        "app/(dashboard)/projects/[id]/auth/page.tsx",
+        "app/(dashboard)/projects/[id]/payment/page.tsx",
+        "components/layout/project-content-wrapper.tsx",
+        "hooks/use-project.ts",
+        "hooks/use-project-operations.ts",
+        "hooks/use-environment-variables.ts",
+        "lib/actions/project.ts",
+        "lib/actions/database.ts"
+      ]
+    },
+    {
+      "path": "docs/wiki/features/github-and-import.md",
+      "sources": [
+        "app/(dashboard)/projects/_components/import-github-dialog.tsx",
+        "app/(dashboard)/projects/[id]/github/page.tsx",
+        "app/github/app/callback/page.tsx",
+        "lib/actions/github.ts",
+        "lib/actions/project.ts",
+        "lib/services/github-app.ts",
+        "lib/services/repoService.ts",
+        "lib/platform/control/commands/project/create-project-from-github.ts",
+        "lib/jobs/project-task/executors/clone-repository.ts"
+      ]
+    },
+    {
+      "path": "docs/wiki/features/user-settings.md",
+      "sources": [
+        "app/(dashboard)/settings/page.tsx",
+        "app/(dashboard)/settings/integrations/page.tsx",
+        "app/(dashboard)/settings/_components/github-status-card.tsx",
+        "app/(dashboard)/settings/_components/settings-sidebar.tsx",
+        "components/dialog/settings-dialog.tsx",
+        "provider/sealos.tsx"
+      ]
+    },
+    {
+      "path": "docs/wiki/features/global-skills.md",
+      "sources": [
+        "app/(dashboard)/skills/page.tsx",
+        "app/(dashboard)/skills/_components/skills-library.tsx",
+        "lib/actions/skill.ts",
+        "lib/skills/catalog.ts",
+        "lib/platform/control/commands/skill/enable-global-skill.ts",
+        "lib/platform/control/commands/skill/uninstall-global-skill.ts",
+        "lib/jobs/project-task/executors/install-skill.ts",
+        "lib/jobs/project-task/executors/uninstall-skill.ts"
+      ]
+    }
+  ]
+}
