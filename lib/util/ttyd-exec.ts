@@ -167,8 +167,7 @@ function stripAnsiCodes(str: string): string {
 function buildWsUrl(
   ttydUrl: string,
   accessToken: string,
-  sessionId?: string,
-  authorization?: string
+  sessionId?: string
 ): string {
   const url = new URL(ttydUrl)
   const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -180,10 +179,7 @@ function buildWsUrl(
   if (sessionId) {
     params.append('arg', sessionId)
   }
-  if (authorization) {
-    params.append('authorization', authorization)
-  }
-
+  // authorization is sent securely in the WebSocket init message — not added to URL
   return `${wsProtocol}//${url.host}${wsPath}?${params.toString()}`
 }
 
@@ -256,7 +252,7 @@ export async function executeTtydCommand(options: TtydExecOptions): Promise<Ttyd
   const endMarkerPattern = new RegExp(`${END_MARKER_PREFIX}${markerId}:(\\d+)___`)
 
   // Build WebSocket URL
-  const wsUrl = buildWsUrl(ttydUrl, accessToken, sessionId, authorization)
+  const wsUrl = buildWsUrl(ttydUrl, accessToken, sessionId)
 
   // Text encoder/decoder
   const textEncoder = new TextEncoder()
@@ -566,7 +562,7 @@ export async function execCommand(
   command: string,
   timeoutMs?: number,
   authorization?: string
-): Promise<string> {
+): Promise<{ output: string; exitCode: number }> {
   const result = await executeTtydCommand({
     ttydUrl,
     accessToken,
@@ -579,7 +575,7 @@ export async function execCommand(
     throw new TtydExecError('Command timed out', TtydExecErrorCode.TIMEOUT)
   }
 
-  return result.output
+  return { output: result.output, exitCode: result.exitCode }
 }
 
 /**

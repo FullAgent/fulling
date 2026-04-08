@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  turbopack: false as any,
   reactStrictMode: true,
   output: 'standalone',
   compress: true,
