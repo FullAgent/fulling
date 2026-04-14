@@ -18,6 +18,16 @@ const skillCatalog: SkillCatalogEntry[] = [
       'npx -y skills add https://github.com/anthropics/skills --skill frontend-design -y',
     uninstallCommand: 'npx -y skills remove frontend-design -y',
   },
+  {
+    skillId: 'mmx-cli',
+    name: 'MiniMax CLI',
+    description:
+      'Generate text, images, video, speech, and music via MiniMax AI platform.',
+    sourceUrl: 'https://github.com/MiniMax-AI/cli',
+    installCommand:
+      'npx -y skills add https://github.com/MiniMax-AI/cli --skill mmx-cli -y',
+    uninstallCommand: 'npx -y skills remove mmx-cli -y',
+  },
 ]
 
 export function getSkillCatalog(): SkillCatalogEntry[] {
