@@ -20,18 +20,14 @@ LABEL maintainer="FullstackAgent" \
 ENV DEBIAN_FRONTEND=noninteractive \
     NODE_VERSION=22.x \
     NEXT_VERSION=15.5.9 \
-    CLAUDE_CODE_VERSION=latest \
+    CODE_SERVER_VERSION=4.104.3 \
     PATH="/root/.local/bin:/home/fulling/.local/bin:$PATH" \
     TERM=xterm-256color \
     COLORTERM=truecolor \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
-    ANTHROPIC_BASE_URL="" \
-    ANTHROPIC_AUTH_TOKEN="" \
-    ANTHROPIC_MODEL="" \
-    ANTHROPIC_SMALL_FAST_MODEL="" \
-    GEMINI_API_KEY="" \
-    OPENAI_API_KEY="" \
+    CODEX_API_KEY="" \
+    CODEX_BASE_URL="" \
     DOCKER_HUB_NAME="" \
     DOCKER_HUB_PASSWD=""
 
@@ -81,12 +77,10 @@ RUN set -eux; \
 
 # -----------------------------------------------------------------------------
 # Install global npm packages in a single layer
-# Includes CLI tools for Next.js, package managers, deployment, and AI assistance
+# Includes CLI tools for Next.js, package managers, deployment, and Codex AI assistant
 # -----------------------------------------------------------------------------
 RUN npm install -g \
-        @anthropic-ai/claude-code \
-        @google/gemini-cli \
-        @openai/codex \
+        @openai/codex@latest \
         create-next-app@${NEXT_VERSION} \
         pnpm \
         prisma \
@@ -163,7 +157,9 @@ RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
         bat \
+        bubblewrap \
         dnsutils \
+        dtach \
         fd-find \
         gh \
         htop \
@@ -206,11 +202,20 @@ WORKDIR /home/fulling/next
 # Copy configuration files (placed before user switch for better caching)
 # entrypoint.sh: Container startup script
 # ttyd-startup.sh: Startup script for ttyd (session tracking, welcome message)
-# .bashrc: Shell configuration with custom prompt and Claude CLI auto-start
+# .bashrc: Shell configuration with custom prompt
 # -----------------------------------------------------------------------------
-COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
-COPY --chmod=755 ttyd-startup.sh /usr/local/bin/ttyd-startup.sh
-COPY --chmod=644 .bashrc /etc/skel/.bashrc
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY ttyd-auth.sh /usr/local/bin/ttyd-auth.sh
+COPY .bashrc /etc/skel/.bashrc
+COPY .tmux.conf /etc/skel/.tmux.conf
+RUN chmod 755 /usr/local/bin/entrypoint.sh /usr/local/bin/ttyd-auth.sh && chmod 644 /etc/skel/.bashrc /etc/skel/.tmux.conf
+
+# -----------------------------------------------------------------------------
+# Install code-server for the embedded editor
+# -----------------------------------------------------------------------------
+RUN set -eux; \
+    curl -fsSL https://code-server.dev/install.sh | sh -s -- --version "${CODE_SERVER_VERSION}"; \
+    code-server --version
 
 # =============================================================================
 # Stage 2: Next.js project template preparation
@@ -301,7 +306,7 @@ RUN set -eux; \
 # 5432: PostgreSQL client connections
 # 7681: ttyd web terminal
 # -----------------------------------------------------------------------------
-EXPOSE 3000 3001 5000 5173 8080 8000 5432 7681
+EXPOSE 3000 3001 3773 5000 5173 8080 8000 5432 7681
 
 # -----------------------------------------------------------------------------
 # Health check configuration
@@ -316,6 +321,6 @@ HEALTHCHECK --interval=2m --timeout=30s --start-period=1m --retries=3 \
 # -----------------------------------------------------------------------------
 # Container entrypoint
 # Starts ttyd web terminal which provides browser-based shell access
-# The .bashrc will auto-start Claude Code CLI on first connection
+# Codex configuration is written from environment variables at startup
 # -----------------------------------------------------------------------------
 CMD ["/usr/local/bin/entrypoint.sh"]

@@ -15,11 +15,9 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  identities          UserIdentity[] // One-to-many: User has multiple authentication identities
-  projects            Project[] // One-to-many: User owns multiple projects
-  configs             UserConfig[] // One-to-many: User global configurations
-  skills              UserSkill[] // One-to-many: User has multiple globally enabled skills
-  githubInstallations GitHubAppInstallation[] // One-to-many: User's GitHub App installations
+  identities UserIdentity[] // One-to-many: User has multiple authentication identities
+  projects   Project[] // One-to-many: User owns multiple projects
+  configs    UserConfig[] // One-to-many: User global configurations
 }
 
 model UserIdentity {
@@ -66,37 +64,6 @@ model UserConfig {
   @@index([userId, category])
 }
 
-// GitHubAppInstallation: Tracks GitHub App installations
-// Required for obtaining installation access tokens
-model GitHubAppInstallation {
-  id             String @id @default(cuid())
-  installationId Int    @unique // GitHub's numeric installation ID
-  userId         String
-
-  accountId        Int // GitHub account numeric ID
-  accountLogin     String // GitHub username or organization name
-  accountType      String // "User" or "Organization"
-  accountAvatarUrl String?
-
-  repositorySelection String // "all" or "selected"
-
-  permissions Json @default("{}") // App permissions
-  events      Json @default("[]") // Subscribed events
-
-  status      GitHubInstallationStatus @default(ACTIVE)
-  suspendedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  projects Project[] // Reverse relation: which projects use this installation
-
-  @@index([userId])
-  @@index([accountId])
-}
-
 // Project: Abstract resource collection
 // Status is derived from child resources (databases, sandboxes, environments)
 model Project {
@@ -104,15 +71,8 @@ model Project {
   name        String // Display name
   description String?
   userId      String
-
-  /// @deprecated Use githubAppInstallation + githubRepoId + githubRepoFullName instead
-  githubRepo String? // Optional GitHub repository (legacy)
-
-  // GitHub App integration (Phase 1: Expand)
-  githubAppInstallationId String? // FK → GitHubAppInstallation
-  githubRepoId            Int? // GitHub repo numeric ID (stable across renames)
-  githubRepoFullName      String? // "owner/repo-name", for display
-  githubRepoDefaultBranch String? // Repository default branch for import workflow
+  githubRepo   String? // Optional GitHub repository (full_name e.g. "owner/repo")
+  githubBranch String? // Optional branch to clone
 
   // Aggregated status based on child resources
   status ProjectStatus @default(CREATING)
@@ -121,14 +81,11 @@ model Project {
   updatedAt DateTime @updatedAt
 
   // Relations: Project is a collection of resources
-  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade) // Many-to-one: Project belongs to a User
-  environments          Environment[] // One-to-many: Configuration variables
-  databases             Database[] // One-to-many: Multiple database clusters
-  sandboxes             Sandbox[] // One-to-many: Multiple runtime containers
-  tasks                 ProjectTask[] // One-to-many: Project-level asynchronous tasks
-  githubAppInstallation GitHubAppInstallation? @relation(fields: [githubAppInstallationId], references: [id], onDelete: SetNull)
-
-  @@index([githubAppInstallationId])
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade) // Many-to-one: Project belongs to a User
+  environments Environment[] // One-to-many: Configuration variables
+  databases    Database[] // One-to-many: Multiple database clusters
+  sandboxes    Sandbox[] // One-to-many: Multiple runtime containers
+  brainSessions BrainSession[] // One-to-many: Brain UI sessions
 }
 
 // Environment: Configuration key-value pairs for the project
@@ -209,6 +166,8 @@ model Sandbox {
   publicUrl      String? // App ingress (port 3000)
   ttydUrl        String? // Terminal ingress (port 7681)
   fileBrowserUrl String? // File browser ingress (port 8080)
+  editorUrl      String? // Editor ingress (port 3773)
+  brainUrl       String? // t3 code AI assistant ingress (port 3773)
 
   // Resource status (managed independently)
   status ResourceStatus @default(CREATING)
@@ -216,6 +175,9 @@ model Sandbox {
   // Optimistic locking to prevent concurrent updates
   // Reconcile job uses this to lock the sandbox and prevent concurrent updates
   lockedUntil DateTime? // Locked until this timestamp, null means unlocked
+
+  // Custom exposed ports (array of {port: number, url: string})
+  exposedPorts Json @default("[]")
 
   // Runtime configuration
   runtimeImage  String? // Docker image tag
@@ -228,8 +190,8 @@ model Sandbox {
   updatedAt DateTime @updatedAt
 
   // Relation: Many-to-one to Project (foreign key: projectId)
-  project Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  tasks   ProjectTask[]
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  brainSessions BrainSession[] // One-to-many: Brain UI sessions bound to this sandbox
 
   @@unique([projectId, name]) // Unique sandbox name per project
   @@unique([k8sNamespace, sandboxName]) // Unique sandbox name per namespace
@@ -237,51 +199,28 @@ model Sandbox {
   @@index([sandboxName])
 }
 
-model UserSkill {
-  id             String   @id @default(cuid())
-  userId         String
-  skillId        String
-  installCommand String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tasks ProjectTask[]
-
-  @@unique([userId, skillId])
-  @@index([userId])
-  @@index([skillId])
-}
-
-model ProjectTask {
-  id            String                   @id @default(cuid())
+model BrainSession {
+  id           String @id @default(cuid())
   projectId     String
   sandboxId     String?
-  userSkillId   String?
-  skillId       String?
-  type          ProjectTaskType
-  status        ProjectTaskStatus        @default(PENDING)
-  triggerSource ProjectTaskTriggerSource
-  payload       Json?
-  result        Json?
-  error         String?
-  attemptCount  Int                      @default(0)
-  maxAttempts   Int                      @default(3)
-  lockedUntil   DateTime?
-  startedAt     DateTime?
-  finishedAt    DateTime?
-  createdAt     DateTime                 @default(now())
-  updatedAt     DateTime                 @updatedAt
+  title         String
+  workspaceRoot String
+  t3ProjectId   String?
+  t3ThreadId    String?
+  status        BrainSessionStatus @default(OPEN)
+  sortOrder     Int @default(0)
+  lastOpenedAt  DateTime? @default(now())
+  closedAt      DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  sandbox   Sandbox?  @relation(fields: [sandboxId], references: [id], onDelete: SetNull)
-  userSkill UserSkill? @relation(fields: [userSkillId], references: [id], onDelete: SetNull)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sandbox Sandbox? @relation(fields: [sandboxId], references: [id], onDelete: SetNull)
 
-  @@index([projectId, status])
-  @@index([status, lockedUntil])
-  @@index([type, status])
-  @@index([projectId, skillId, type, status])
-  @@index([userSkillId])
+  @@index([projectId, sortOrder])
+  @@index([projectId, workspaceRoot])
+  @@index([sandboxId])
+  @@index([status, closedAt])
 }
 
 // Project aggregated status based on child resources
@@ -314,28 +253,6 @@ enum ProjectStatus {
   PARTIAL // Inconsistent mixed states - manual intervention needed
 }
 
-enum ProjectTaskType {
-  CLONE_REPOSITORY
-  INSTALL_SKILL
-  UNINSTALL_SKILL
-  DEPLOY_PROJECT
-}
-
-enum ProjectTaskStatus {
-  PENDING
-  WAITING_FOR_PREREQUISITES
-  RUNNING
-  SUCCEEDED
-  FAILED
-  CANCELLED
-}
-
-enum ProjectTaskTriggerSource {
-  USER_ACTION
-  SYSTEM_EVENT
-  POLICY_ROLLOUT
-}
-
 // Individual resource status (Database and Sandbox)
 // Follows K8s resource lifecycle with transition states
 enum ResourceStatus {
@@ -350,15 +267,15 @@ enum ResourceStatus {
   UPDATING // Resource is being updated
 }
 
+enum BrainSessionStatus {
+  OPEN
+  CLOSED
+  ERROR
+}
+
 enum AuthProvider {
   PASSWORD // Email/password authentication
   GITHUB // GitHub OAuth
   GOOGLE // Google OAuth (future)
   SEALOS // Sealos OAuth
-}
-
-enum GitHubInstallationStatus {
-  ACTIVE // Installation is active and operational
-  SUSPENDED // Installation is suspended by GitHub
-  DELETED // Installation was deleted
 }
