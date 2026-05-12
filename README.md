@@ -1,203 +1,237 @@
-# Fulling - AI-Powered Full-Stack Development Platform
+# Fulling
 
 <div align="center">
-  <img src="https://img.shields.io/badge/v2.0.0-blue?style=for-the-badge" alt="Version 2.0.0"/>
+  <img src="https://img.shields.io/badge/v3.0-vision-7cc4a4?style=for-the-badge" alt="Version 3.0 vision"/>
+  <img src="https://img.shields.io/badge/v2.0.0-released-blue?style=for-the-badge" alt="Version 2.0.0 released"/>
   <img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js" alt="Next.js"/>
   <img src="https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript" alt="TypeScript"/>
-  <img src="https://img.shields.io/badge/PostgreSQL-14-blue?style=for-the-badge&logo=postgresql" alt="PostgreSQL"/>
   <img src="https://img.shields.io/badge/Kubernetes-1.28-326ce5?style=for-the-badge&logo=kubernetes" alt="Kubernetes"/>
   <img src="https://img.shields.io/badge/Claude_Code-AI-purple?style=for-the-badge" alt="Claude Code"/>
 </div>
 
-## What is Fulling?
+## What Is Fulling?
 
-**Fulling lets you focus on coding. AI handles everything else.**
+**Fulling turns AI from a conversation into a working environment.**
 
-Import your project from GitHub or start fresh. Claude Code is your AI pair programmer in a browser-based development environment with a terminal, file manager, live URLs, and optional PostgreSQL.
+Most AI products start and end with a prompt. Fulling is built around a more
+durable idea: an AI that has its own skills, files, memory, scripts, and
+runtime.
 
-**Configuration-aware development.** Add project environment variables, secrets, auth keys, or payment keys in the UI. Claude Code can read that project context and use it while implementing features.
+The v3.0 direction is to make these environments personal, persistent, and easy
+to give to someone else:
 
-## Overview
+> Give an AI a mission, the materials it needs, the tools it can use, and a
+> runtime where it can work. Then hand it to the person or project it was made
+> for.
 
-Fulling v2 provides a sandboxed development environment with Claude Code, GitHub import, optional PostgreSQL, and asynchronous background reconciliation for project resources.
+## Why This Matters
 
-Fulling automatically sets up the core workspace, ready in a minute:
-- AI pair programmer (Claude Code)
-- Full-stack development environment
-- Optional dedicated database (PostgreSQL)
-- Web terminal & file manager
-- Live HTTPS domains
+Most AI products package behavior as prompts. Prompts are easy to copy, but they
+are weak as durable work environments:
 
-![fulling-frame](https://github.com/user-attachments/assets/5b535c93-8bf0-4014-8984-ef835d548dbc)
+- They do not own files.
+- They do not naturally keep inspectable memory.
+- They do not have scripts for repeatable work.
+- They do not have a runtime where real tools can execute.
+- They are hard to hand to another person as a long-term assistant.
 
-![fulling-desktop](https://github.com/user-attachments/assets/91b40df8-79de-4922-8627-822b98768915)
+Fulling is built around a different object: **a dedicated AI workspace**.
 
-### Features
+That workspace should feel like giving someone a small, persistent AI operator
+that already understands its job, owns its materials, and can keep working after
+the initial setup session ends.
 
-- **AI Pair Programmer** - Claude Code is pre-installed and ready. Describe what you want, it writes the code.
+## The 3.0 Direction
 
-- **Zero Setup Workspace** - Full-stack environment with terminal, file manager, and live URLs. All pre-configured, ready in seconds.
+The internal bar for 3.0 is speed and clarity: creating one of these AI
+environments should feel casual enough to do for a friend, teammate, customer,
+or project.
 
-- **Web Terminal** - Full Linux terminal in your browser. Run commands, install packages, debug—everything you'd do locally.
+The intended shape:
 
-- **File Manager** - Drag & drop files, edit code in browser. Large file support built-in.
+1. Choose who this AI is for.
+2. Describe what this AI should help with.
+3. Add files, notes, examples, and domain knowledge.
+4. Select or generate skills and scripts.
+5. Start the runtime.
+6. Test the AI in its own workspace.
+7. Share it with the person it was made for.
 
-- **Live Domains** - Your app gets HTTPS URLs instantly. No port forwarding, no ngrok. Just run and share.
+The output is not just a chat configuration. The output is a living workspace
+with:
 
-- **Configuration-Aware** - Add environment variables, secrets, auth keys, and payment keys in settings. Claude Code can read your config and implement against it.
+- **Skills** - explicit capabilities the AI can use.
+- **Files** - documents, project assets, examples, and working material.
+- **Memory** - durable, inspectable context that can evolve over time.
+- **Scripts** - reliable repeatable actions, not just natural language intent.
+- **Runtime** - an isolated environment where code, tools, and automation can run.
 
-- **GitHub Integration** - Import repos, push changes, version control. Works like you'd expect.
+## What This Is Not
 
-- **Project Task Automation** - GitHub import and skill installation run through persisted background tasks after the sandbox is ready.
+Fulling 3.0 should not become a generic platform dashboard.
 
-## Built With
+It is not primarily:
 
-- **Frontend**: Next.js, React, TypeScript
-- **Backend**: Node.js, PostgreSQL
-- **Infrastructure**: Kubernetes
+- a prompt marketplace
+- a DevOps control panel
+- a generic chatbot builder
+- a Kubernetes UI
+- a menu of disconnected AI features
 
-For technical details, see [Architecture Documentation](./docs/architecture.md).
+Those capabilities may exist underneath, but the product experience should stay
+focused on one job: **create and deliver a long-lived dedicated AI workspace**.
 
-## Installation
+## Current Foundation
+
+The current codebase is the v2.0 foundation for this direction.
+
+Fulling v2.0.0 is already released and provides:
+
+- project creation from scratch
+- GitHub App based repository import
+- isolated Kubernetes sandboxes
+- browser terminal and file manager access
+- live HTTPS runtime URLs
+- optional PostgreSQL databases
+- persisted background reconciliation for resources and project tasks
+- global skill enablement and uninstall fan-out through `ProjectTask`
+
+These are the building blocks for 3.0. The next step is to reorganize the
+product around dedicated AI workspaces rather than exposing the underlying
+resource plane as the primary user experience.
+
+## Branch Strategy
+
+The repository now has clear long-lived lines:
+
+- `release/2.0` - v2 stabilization and patch work only
+- `v3.0` - the active 3.0 product and architecture branch
+- `main` - not the target branch for 3.0 work
+
+The v2 release is available at:
+
+- [Fulling v2.0.0 Release](https://github.com/FullAgent/fulling/releases/tag/v2.0.0)
+- [v2.0.0 Release Notes](./docs/releases/v2.0.0.md)
+
+The current project-state report is available at:
+
+- [Project Current State Report](./docs/reports/project-current-state.html)
+
+## Architecture Direction
+
+The underlying system is a database-driven asynchronous control plane:
+
+```text
+User intent
+-> persisted desired state
+-> reconciliation jobs
+-> external execution
+-> durable workspace state
+-> user-visible progress
+```
+
+The v2 implementation already separates several important concerns:
+
+- **Control plane** - user actions, authentication, database state
+- **Resource plane** - sandbox and database lifecycle
+- **Task plane** - async project-level work through `ProjectTask`
+- **Execution layer** - Kubernetes, ttyd, GitHub App, and sandbox-side commands
+
+For 3.0, these layers should move behind a simpler product model:
+
+```text
+Dedicated AI
+  -> profile
+  -> mission
+  -> knowledge
+  -> memory
+  -> skills
+  -> scripts
+  -> runtime
+```
+
+## Technology Stack
+
+### Frontend
+
+- Next.js 16 App Router
+- React 19
+- TypeScript
+- Tailwind CSS v4
+- Shadcn/UI
+
+### Backend
+
+- Node.js 22
+- Next.js API Routes and Server Actions
+- Prisma
+- NextAuth v5
+
+### Infrastructure
+
+- Kubernetes
+- PostgreSQL via KubeBlocks
+- ttyd web terminal
+- FileBrowser
+- GitHub App integration
+
+## Local Development
 
 ### Prerequisites
 
 - Node.js 22.12.0 or higher
+- pnpm 10.20.0
 - PostgreSQL database
 - Kubernetes cluster with KubeBlocks installed
 - GitHub App and OAuth application credentials
 
-### Environment Setup
+### Setup
 
-1. Clone the repository:
 ```bash
 git clone https://github.com/FullAgent/fulling.git
 cd fulling
-```
-
-2. Install dependencies:
-```bash
 pnpm install
-```
-
-3. Set up environment variables:
-
-Copy `.env.template` to `.env.local` and fill in your values:
-```bash
 cp .env.template .env.local
-```
-
-4. Initialize database:
-```bash
 npx prisma generate
 npx prisma db push
+pnpm dev
 ```
 
-5. Run the development server:
+Open [http://localhost:3000](http://localhost:3000).
+
+## Useful Commands
+
 ```bash
-pnpm run dev
+pnpm dev              # Start development server
+pnpm build            # Build for production
+pnpm lint             # Run ESLint
+pnpm test             # Run tests
+npx prisma generate   # Generate Prisma client
+npx prisma db push    # Push schema to database
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to access the application.
+## Key Documentation
 
-### Database Schema
+- [Architecture](./docs/architecture.md)
+- [Architecture Evolution](./docs/architecture-evolution.md)
+- [Development Guide](./docs/development.md)
+- [Operations Manual](./docs/operations.md)
+- [Troubleshooting](./docs/troubleshooting.md)
+- [v2.0.0 Release Notes](./docs/releases/v2.0.0.md)
+- [Project Current State Report](./docs/reports/project-current-state.html)
 
-See [Database Documentation](./docs/database.md) for schema details.
+## Security Model
 
-## Deployment
-
-### Kubernetes Resources
-
-The platform creates the following Kubernetes resources for each project:
-
-1. **Database Cluster** (KubeBlocks):
-   - PostgreSQL 14.8.0
-   - 3Gi storage
-   - Auto-generated credentials
-
-2. **Sandbox StatefulSet**:
-   - Custom fullstack-web-runtime image
-   - Claude Code CLI pre-installed
-   - ttyd web terminal (port 7681)
-   - FileBrowser (port 8080)
-   - Application port (3000)
-
-3. **Services & Ingresses**:
-   - Internal service for pod networking
-   - HTTPS ingresses with SSL termination
-   - WebSocket support for terminal
-
-### Resource Limits
-
-Default resource allocation per sandbox:
-- CPU: 20m request, 2000m limit
-- Memory: 25Mi request, 4096Mi limit
-- Storage: 10Gi for sandbox, 3Gi for database
-
-## Development
-
-### Project Structure
-
-```
-fulling/
-├── app/                    # Next.js App Router pages
-│   ├── api/               # API routes
-│   ├── projects/          # Project management pages
-│   └── layout.tsx         # Root layout
-├── components/            # React components
-│   ├── ui/               # Shadcn/UI components
-│   └── terminal/         # Terminal components
-├── lib/                   # Core libraries
-│   ├── k8s/              # Kubernetes managers
-│   ├── events/           # Event system
-│   ├── jobs/             # Background jobs
-│   ├── repo/             # Repository layer
-│   └── services/         # Business services
-├── prisma/               # Database schema
-├── runtime/              # Docker image for sandboxes
-└── docs/                 # Documentation
-```
-
-### Key Services
-
-- **SandboxManager** (`lib/k8s/sandbox-manager.ts`) - StatefulSet operations
-- **DatabaseManager** (`lib/k8s/database-manager.ts`) - KubeBlocks operations
-- **Authentication** (`lib/auth.ts`) - Multi-provider OAuth
-- **Event Listeners** (`lib/events/`) - Lifecycle handlers
-
-## Documentation
-
-- [Architecture](./docs/architecture.md) - Reconciliation pattern, event system
-- [Development Guide](./docs/development.md) - Local development
-- [Operations Manual](./docs/operations.md) - Deployment, monitoring
-- [Troubleshooting](./docs/troubleshooting.md) - Common issues
-- [v2.0.0 Release Notes](./docs/releases/v2.0.0.md) - Release scope and migration notes
-
-## Security
-
-- **Authentication**: Multi-provider OAuth (GitHub, Password, Sealos)
-- **Isolation**: Each sandbox runs in user-specific Kubernetes namespace
-- **Terminal Auth**: HTTP Basic Auth with URL token injection
-- **Secrets Management**: Sensitive data stored in Kubernetes secrets
-- **Resource Limits**: Prevents resource exhaustion
-
-## Contributing
-
-See [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-### Development Setup
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests: `pnpm test`
-5. Submit a pull request
+- Multi-provider authentication through NextAuth
+- User-specific Kubernetes access through scoped kubeconfig
+- User-specific namespaces for isolation
+- HTTP Basic Auth protection for ttyd
+- Secrets stored as project or user configuration
+- Resource limits for sandbox workloads
 
 ## License
 
 MIT License - see [LICENSE](LICENSE).
-
-See [v2.0.0 Release Notes](./docs/releases/v2.0.0.md) for the current release scope.
 
 ## Acknowledgments
 
@@ -210,14 +244,3 @@ See [v2.0.0 Release Notes](./docs/releases/v2.0.0.md) for the current release sc
 
 - GitHub: [@fanux](https://github.com/fanux)
 - Issues: [GitHub Issues](https://github.com/FullAgent/fulling/issues)
-
-## Star us for latest updates
-
-![star-demo](https://github.com/user-attachments/assets/bc497e0b-bd23-4ded-a231-1e382d56f92e)
-
----
-
-<div align="center">
-<strong>100% AI-generated code.</strong> Prompted by [@fanux](https://github.com/fanux).
-<br>Powered by Claude Code, with models from Anthropic (Sonnet, Opus), Google (Gemini), Zhipu AI (GLM), and Moonshot (Kimi).
-</div>
