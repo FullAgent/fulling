@@ -13,7 +13,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Prisma } from '@prisma/client';
 
 import { type Tab } from './toolbar/terminal-tabs';
@@ -50,13 +50,40 @@ export interface TerminalContainerProps {
 // Component
 // ============================================================================
 
+// Generate a stable tab ID that won't collide
+function generateTabId(): string {
+  return `tab-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// localStorage key for persisting tab state per project
+function getStorageKey(projectId: string): string {
+  return `terminal-tabs-${projectId}`;
+}
+
 export function TerminalContainer({ project, sandbox, isVisible = true }: TerminalContainerProps) {
   // =========================================================================
-  // Tab State Management
+  // Tab State Management (persisted in localStorage for refresh survival)
   // =========================================================================
 
-  const [tabs, setTabs] = useState<Tab[]>([{ id: '1', name: 'Terminal 1' }]);
-  const [activeTabId, setActiveTabId] = useState('1');
+  const [tabs, setTabs] = useState<Tab[]>(() => {
+    if (typeof window === 'undefined') return [{ id: generateTabId(), name: 'Terminal 1' }];
+    try {
+      const stored = localStorage.getItem(getStorageKey(project.id));
+      if (stored) {
+        const parsed = JSON.parse(stored) as Tab[];
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [{ id: generateTabId(), name: 'Terminal 1' }];
+  });
+  const [activeTabId, setActiveTabId] = useState(() => tabs[0]?.id ?? '');
+
+  // Persist tabs to localStorage on change
+  useEffect(() => {
+    try {
+      localStorage.setItem(getStorageKey(project.id), JSON.stringify(tabs));
+    } catch {}
+  }, [tabs, project.id]);
 
   // =========================================================================
   // Extract FileBrowser Credentials
@@ -74,6 +101,9 @@ export function TerminalContainer({ project, sandbox, isVisible = true }: Termin
     return undefined;
   })();
 
+  const editorPassword = project.environments?.find((env) => env.key === 'EDITOR_PASSWORD')
+    ?.value;
+
   // =========================================================================
   // Tab Operations
   // =========================================================================
@@ -82,13 +112,12 @@ export function TerminalContainer({ project, sandbox, isVisible = true }: Termin
    * Create and activate a new terminal tab
    */
   const handleTabAdd = () => {
-    const newId = Date.now().toString();
     const newTab: Tab = {
-      id: newId,
+      id: generateTabId(),
       name: `Terminal ${tabs.length + 1}`,
     };
     setTabs([...tabs, newTab]);
-    setActiveTabId(newId);
+    setActiveTabId(newTab.id);
   };
 
   /**
@@ -122,6 +151,7 @@ export function TerminalContainer({ project, sandbox, isVisible = true }: Termin
     <div className="flex flex-col flex-1 min-h-0 bg-background">
       {/* Toolbar with tabs and operations */}
       <TerminalToolbar
+        project={project}
         sandbox={sandbox}
         tabs={tabs}
         activeTabId={activeTabId}
@@ -129,6 +159,7 @@ export function TerminalContainer({ project, sandbox, isVisible = true }: Termin
         onTabClose={handleTabClose}
         onTabAdd={handleTabAdd}
         fileBrowserCredentials={fileBrowserCredentials}
+        editorPassword={editorPassword}
       />
 
       {/* Terminal display area with tab switching */}
@@ -154,6 +185,7 @@ export function TerminalContainer({ project, sandbox, isVisible = true }: Termin
               ttydUrl={sandbox?.ttydUrl}
               status={sandbox?.status ?? 'CREATING'}
               tabId={tab.id}
+              sessionId={tab.id}
               fileBrowserUrl={sandbox?.fileBrowserUrl}
               fileBrowserUsername={fileBrowserCredentials?.username}
               fileBrowserPassword={fileBrowserCredentials?.password}

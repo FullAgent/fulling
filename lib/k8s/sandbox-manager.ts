@@ -5,6 +5,7 @@ import { logger as baseLogger } from '@/lib/logger'
 
 import { isK8sNotFound } from './k8s-error-utils'
 import { KubernetesUtils } from './kubernetes-utils'
+import { buildSandboxUrls } from './sandbox-endpoints'
 import { VERSIONS } from './versions'
 
 const logger = baseLogger.child({ module: 'lib/k8s/sandbox-manager' })
@@ -23,6 +24,8 @@ export interface SandboxInfo {
   ttydUrl: string
   /** File browser access URL */
   fileBrowserUrl: string
+  /** Editor access URL */
+  editorUrl: string
 }
 
 /**
@@ -125,27 +128,19 @@ export class SandboxManager {
     await this.createIngresses(sandboxName, k8sProjectName, namespace, serviceName, ingressDomain)
     logger.info(`Ingresses created for: ${sandboxName}`)
 
-    // Build ttydUrl with HTTP Basic Auth (authorization URL parameter)
-    // ttyd supports ?authorization=base64(username:password) for seamless auth without browser popup
-    // Username is fixed as 'user', password is the TTYD_ACCESS_TOKEN
-    const baseTtydUrl = `https://${sandboxName}-ttyd.${ingressDomain}`
-    const ttydAccessToken = envVars['TTYD_ACCESS_TOKEN']
-    let ttydUrl = baseTtydUrl
-    if (ttydAccessToken) {
-      const credentials = `user:${ttydAccessToken}`
-      const authBase64 = Buffer.from(credentials).toString('base64')
-      ttydUrl = `${baseTtydUrl}?authorization=${authBase64}`
-    }
-
-    // Build fileBrowserUrl (no token in URL, uses standard login)
-    const fileBrowserUrl = `https://${sandboxName}-filebrowser.${ingressDomain}`
+    const urls = buildSandboxUrls({
+      sandboxName,
+      ingressDomain,
+      ttydAccessToken: envVars['TTYD_ACCESS_TOKEN'],
+    })
 
     return {
       statefulSetName: sandboxName,
       serviceName: serviceName,
-      publicUrl: `https://${sandboxName}-app.${ingressDomain}`,
-      ttydUrl: ttydUrl,
-      fileBrowserUrl: fileBrowserUrl,
+      publicUrl: urls.publicUrl,
+      ttydUrl: urls.ttydUrl,
+      fileBrowserUrl: urls.fileBrowserUrl,
+      editorUrl: urls.editorUrl,
     }
   }
 
@@ -534,6 +529,184 @@ export class SandboxManager {
     }
   }
 
+  /**
+   * Expose a custom port on the sandbox
+   *
+   * Adds a port to the Service and creates an Ingress for it.
+   * Returns the public URL for the exposed port.
+   *
+   * @param namespace - Kubernetes namespace
+   * @param sandboxName - Sandbox name
+   * @param k8sProjectName - K8s project name (for labels)
+   * @param port - Port number to expose
+   * @param ingressDomain - Ingress domain
+   * @returns Public URL for the exposed port
+   */
+  async exposePort(
+    namespace: string,
+    sandboxName: string,
+    k8sProjectName: string,
+    port: number,
+    ingressDomain: string
+  ): Promise<string> {
+    logger.info(`Exposing port ${port} for sandbox ${sandboxName}`)
+
+    const serviceName = this.getServiceName(sandboxName)
+
+    // Step 1: Patch Service to add the port (read-then-replace to get full ports array)
+    try {
+      const serviceResponse = await this.k8sApi.readNamespacedService({ name: serviceName, namespace })
+      const service = (serviceResponse as { body?: k8s.V1Service }).body || (serviceResponse as k8s.V1Service)
+      const existingPorts = service.spec?.ports || []
+
+      // Check if port already exists in service
+      const portExists = existingPorts.some((p) => p.port === port)
+      if (!portExists) {
+        const updatedPorts = [
+          ...existingPorts,
+          { port, targetPort: port, name: `port-${port}`, protocol: 'TCP' },
+        ]
+
+        // Use JSON Patch format (consistent with other patches in this codebase)
+        await this.k8sApi.patchNamespacedService({
+          name: serviceName,
+          namespace,
+          body: [
+            {
+              op: 'replace',
+              path: '/spec/ports',
+              value: updatedPorts,
+            },
+          ],
+        })
+        logger.info(`Added port ${port} to Service ${serviceName}`)
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logger.error(`Failed to patch Service for port ${port}: ${errorMessage}`)
+      throw error
+    }
+
+    // Step 2: Create Ingress for the port
+    const ingressName = `${sandboxName}-port${port}-ingress`
+    const host = `${sandboxName}-port${port}.${ingressDomain}`
+    const publicUrl = `https://${host}`
+
+    const ingress: k8s.V1Ingress = {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'Ingress',
+      metadata: {
+        name: ingressName,
+        namespace,
+        labels: {
+          'cloud.sealos.io/app-deploy-manager': sandboxName,
+          'cloud.sealos.io/app-deploy-manager-domain': `${sandboxName}-port${port}`,
+          'project.fullstackagent.io/name': k8sProjectName,
+          'fullstackagent.io/custom-port': 'true',
+        },
+        annotations: {
+          'kubernetes.io/ingress.class': 'nginx',
+          'nginx.ingress.kubernetes.io/proxy-body-size': '32m',
+          'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
+          'nginx.ingress.kubernetes.io/backend-protocol': 'HTTP',
+          'nginx.ingress.kubernetes.io/client-body-buffer-size': '64k',
+          'nginx.ingress.kubernetes.io/proxy-buffer-size': '64k',
+          'nginx.ingress.kubernetes.io/proxy-send-timeout': '300',
+          'nginx.ingress.kubernetes.io/proxy-read-timeout': '300',
+          'nginx.ingress.kubernetes.io/server-snippet':
+            'client_header_buffer_size 64k;\nlarge_client_header_buffers 4 128k;',
+        },
+      },
+      spec: {
+        rules: [
+          {
+            host,
+            http: {
+              paths: [
+                {
+                  pathType: 'Prefix',
+                  path: '/',
+                  backend: {
+                    service: {
+                      name: serviceName,
+                      port: { number: port },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+        tls: [
+          {
+            hosts: [host],
+            secretName: 'wildcard-cert',
+          },
+        ],
+      },
+    }
+
+    await this.createIngressIfNotExists(ingressName, namespace, ingress)
+    logger.info(`Ingress created for port ${port}: ${publicUrl}`)
+
+    return publicUrl
+  }
+
+  /**
+   * Unexpose a custom port on the sandbox
+   *
+   * Removes the Ingress and the port from the Service.
+   *
+   * @param namespace - Kubernetes namespace
+   * @param sandboxName - Sandbox name
+   * @param port - Port number to unexpose
+   */
+  async unexposePort(
+    namespace: string,
+    sandboxName: string,
+    port: number
+  ): Promise<void> {
+    logger.info(`Unexposing port ${port} for sandbox ${sandboxName}`)
+
+    // Step 1: Delete the Ingress
+    const ingressName = `${sandboxName}-port${port}-ingress`
+    await this.deleteIngress(ingressName, namespace)
+
+    // Step 2: Remove the port from the Service
+    const serviceName = this.getServiceName(sandboxName)
+    try {
+      const serviceResponse = await this.k8sApi.readNamespacedService({ name: serviceName, namespace })
+      const service = (serviceResponse as { body?: k8s.V1Service }).body || (serviceResponse as k8s.V1Service)
+      const existingPorts = service.spec?.ports || []
+
+      const updatedPorts = existingPorts.filter((p) => p.port !== port)
+
+      if (updatedPorts.length !== existingPorts.length) {
+        // Use JSON Patch format (consistent with other patches in this codebase)
+        await this.k8sApi.patchNamespacedService({
+          name: serviceName,
+          namespace,
+          body: [
+            {
+              op: 'replace',
+              path: '/spec/ports',
+              value: updatedPorts,
+            },
+          ],
+        })
+        logger.info(`Removed port ${port} from Service ${serviceName}`)
+      }
+    } catch (error) {
+      if (isK8sNotFound(error)) {
+        logger.warn(`Service not found when removing port ${port}: ${serviceName}`)
+      } else {
+        throw error
+      }
+    }
+
+    logger.info(`Port ${port} unexposed for sandbox ${sandboxName}`)
+  }
+
   // ==================== Private Methods ====================
 
   /**
@@ -562,6 +735,13 @@ export class SandboxManager {
    */
   private getFileBrowserIngressName(sandboxName: string): string {
     return `${sandboxName}-filebrowser-ingress`
+  }
+
+  /**
+   * Get Editor ingress name
+   */
+  private getEditorIngressName(sandboxName: string): string {
+    return `${sandboxName}-editor-ingress`
   }
 
   /**
@@ -703,6 +883,7 @@ export class SandboxManager {
                 ports: [
                   { containerPort: 3000, name: 'port-3000' },
                   { containerPort: 7681, name: 'port-7681' },
+                  { containerPort: 3773, name: 'port-3773' },
                 ],
                 imagePullPolicy: 'Always',
                 volumeMounts: [
@@ -1014,6 +1195,7 @@ echo "=== Init Container: Completed successfully ==="
           { port: 3000, targetPort: 3000, name: 'port-3000', protocol: 'TCP' },
           { port: 7681, targetPort: 7681, name: 'port-7681', protocol: 'TCP' },
           { port: 8080, targetPort: 8080, name: 'port-8080', protocol: 'TCP' },
+          { port: 3773, targetPort: 3773, name: 'port-3773', protocol: 'TCP' },
         ],
         selector: {
           app: sandboxName,
@@ -1037,6 +1219,7 @@ echo "=== Init Container: Completed successfully ==="
     const appIngressName = this.getAppIngressName(sandboxName)
     const ttydIngressName = this.getTtydIngressName(sandboxName)
     const fileBrowserIngressName = this.getFileBrowserIngressName(sandboxName)
+    const editorIngressName = this.getEditorIngressName(sandboxName)
 
     const appIngress = this.createAppIngress(
       sandboxName,
@@ -1059,11 +1242,19 @@ echo "=== Init Container: Completed successfully ==="
       serviceName,
       ingressDomain
     )
+    const editorIngress = this.createEditorIngress(
+      sandboxName,
+      k8sProjectName,
+      namespace,
+      serviceName,
+      ingressDomain
+    )
 
     await Promise.all([
       this.createIngressIfNotExists(appIngressName, namespace, appIngress),
       this.createIngressIfNotExists(ttydIngressName, namespace, ttydIngress),
       this.createIngressIfNotExists(fileBrowserIngressName, namespace, fileBrowserIngress),
+      this.createIngressIfNotExists(editorIngressName, namespace, editorIngress),
     ])
   }
 
@@ -1300,6 +1491,77 @@ echo "=== Init Container: Completed successfully ==="
   }
 
   /**
+   * Create Editor ingress for code-server.
+   */
+  private createEditorIngress(
+    sandboxName: string,
+    k8sProjectName: string,
+    namespace: string,
+    serviceName: string,
+    ingressDomain: string
+  ): k8s.V1Ingress {
+    const ingressName = this.getEditorIngressName(sandboxName)
+    const host = `${sandboxName}-editor.${ingressDomain}`
+
+    return {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'Ingress',
+      metadata: {
+        name: ingressName,
+        namespace,
+        labels: {
+          'cloud.sealos.io/app-deploy-manager': sandboxName,
+          'cloud.sealos.io/app-deploy-manager-domain': `${sandboxName}-editor`,
+          'project.fullstackagent.io/name': k8sProjectName,
+        },
+        annotations: {
+          'kubernetes.io/ingress.class': 'nginx',
+          'nginx.ingress.kubernetes.io/proxy-body-size': '32m',
+          'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
+          'nginx.ingress.kubernetes.io/backend-protocol': 'HTTP',
+          'nginx.ingress.kubernetes.io/client-body-buffer-size': '64k',
+          'nginx.ingress.kubernetes.io/proxy-buffer-size': '64k',
+          'nginx.ingress.kubernetes.io/proxy-send-timeout': '300',
+          'nginx.ingress.kubernetes.io/proxy-read-timeout': '300',
+          // WebSocket support for code-server connections
+          'nginx.ingress.kubernetes.io/proxy-http-version': '1.1',
+          'nginx.ingress.kubernetes.io/configuration-snippet':
+            'proxy_set_header Upgrade $http_upgrade;\nproxy_set_header Connection "upgrade";',
+          'nginx.ingress.kubernetes.io/server-snippet':
+            'client_header_buffer_size 64k;\nlarge_client_header_buffers 4 128k;',
+        },
+      },
+      spec: {
+        rules: [
+          {
+            host,
+            http: {
+              paths: [
+                {
+                  pathType: 'Prefix',
+                  path: '/',
+                  backend: {
+                    service: {
+                      name: serviceName,
+                      port: { number: 3773 },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+        tls: [
+          {
+            hosts: [host],
+            secretName: 'wildcard-cert',
+          },
+        ],
+      },
+    }
+  }
+
+  /**
    * Delete StatefulSet (exact deletion)
    */
   private async deleteStatefulSet(sandboxName: string, namespace: string): Promise<void> {
@@ -1343,18 +1605,41 @@ echo "=== Init Container: Completed successfully ==="
   }
 
   /**
-   * Delete Ingresses (exact deletion of App, Ttyd, and FileBrowser Ingress)
+   * Delete Ingresses (exact deletion of App, Ttyd, FileBrowser, and custom port Ingresses)
    */
   private async deleteIngresses(sandboxName: string, namespace: string): Promise<void> {
     const appIngressName = this.getAppIngressName(sandboxName)
     const ttydIngressName = this.getTtydIngressName(sandboxName)
     const fileBrowserIngressName = this.getFileBrowserIngressName(sandboxName)
+    const editorIngressName = this.getEditorIngressName(sandboxName)
 
-    await Promise.all([
+    // Delete built-in ingresses
+    const deletePromises: Promise<void>[] = [
       this.deleteIngress(appIngressName, namespace),
       this.deleteIngress(ttydIngressName, namespace),
       this.deleteIngress(fileBrowserIngressName, namespace),
-    ])
+      this.deleteIngress(editorIngressName, namespace),
+    ]
+
+    // Also delete any custom port ingresses via label selector
+    try {
+      const ingressList = await this.k8sNetworkingApi.listNamespacedIngress({
+        namespace,
+        labelSelector: `cloud.sealos.io/app-deploy-manager=${sandboxName},fullstackagent.io/custom-port=true`,
+      })
+      const items = (ingressList as { body?: { items: k8s.V1Ingress[] } }).body?.items
+        || (ingressList as { items: k8s.V1Ingress[] }).items
+        || []
+      for (const ingress of items) {
+        if (ingress.metadata?.name) {
+          deletePromises.push(this.deleteIngress(ingress.metadata.name, namespace))
+        }
+      }
+    } catch (error) {
+      logger.warn(`Failed to list custom port ingresses for ${sandboxName}: ${error}`)
+    }
+
+    await Promise.all(deletePromises)
   }
 
   /**

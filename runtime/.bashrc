@@ -51,12 +51,3 @@ PROMPT_COMMAND=_ps1_update
 #     cd "$HOME/next"
 # fi
 
-# Auto-start Claude Code CLI on first terminal connection only
-# Use a file flag that persists across ttyd reconnections
-CLAUDE_FLAG_FILE="/tmp/.claude_started"
-
-if [ ! -f "$CLAUDE_FLAG_FILE" ]; then
-    touch "$CLAUDE_FLAG_FILE"
-    echo "🤖 Starting Claude Code CLI..."
-    claude
-fi

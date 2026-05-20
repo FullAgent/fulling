@@ -1,4 +1,4 @@
-import { triggerRunnableTasksForProject } from '@/lib/jobs/project-task'
+import { prisma } from '@/lib/db'
 import { getK8sServiceForUser } from '@/lib/k8s/k8s-service-helper'
 import { logger as baseLogger } from '@/lib/logger'
 import { getProjectEnvironments } from '@/lib/repo/environment'
@@ -53,7 +53,7 @@ async function handleCreateSandbox(payload: SandboxEventPayload): Promise<void> 
     )
 
     logger.info(
-      `Sandbox ${sandbox.id} created in Kubernetes: ${sandboxInfo.publicUrl}, ${sandboxInfo.ttydUrl}, ${sandboxInfo.fileBrowserUrl}`
+      `Sandbox ${sandbox.id} created in Kubernetes: ${sandboxInfo.publicUrl}, ${sandboxInfo.ttydUrl}, ${sandboxInfo.fileBrowserUrl}, ${sandboxInfo.editorUrl}`
     )
 
     // Update sandbox with URLs
@@ -61,7 +61,8 @@ async function handleCreateSandbox(payload: SandboxEventPayload): Promise<void> 
       sandbox.id,
       sandboxInfo.publicUrl,
       sandboxInfo.ttydUrl,
-      sandboxInfo.fileBrowserUrl
+      sandboxInfo.fileBrowserUrl,
+      sandboxInfo.editorUrl
     )
 
     // Change status to STARTING
@@ -113,12 +114,18 @@ async function handleStartSandbox(payload: SandboxEventPayload): Promise<void> {
 
     logger.info(`Sandbox ${sandbox.id} K8s status: ${k8sStatus}`)
 
-    // If status is RUNNING, update database
+    // If status is RUNNING, update database and trigger repo clone if needed
     if (k8sStatus === 'RUNNING') {
       await updateSandboxStatus(sandbox.id, 'RUNNING')
       await projectStatusReconcile(project.id)
       logger.info(`Sandbox ${sandbox.id} is now RUNNING`)
-      void triggerImportOnSandboxRunning(project.id)
+
+      // Clone GitHub repo if configured (fire and forget - don't block status)
+      if (project.githubRepo) {
+        cloneGitHubRepo(user.id, sandbox, project).catch((err) => {
+          logger.error(`Background clone failed for sandbox ${sandbox.id}: ${err}`)
+        })
+      }
     } else {
       logger.info(`Sandbox ${sandbox.id} is still starting (K8s status: ${k8sStatus})`)
       // Keep status as STARTING, may need to poll again
@@ -308,7 +315,6 @@ async function handleUpdateSandbox(payload: SandboxEventPayload): Promise<void> 
       await updateSandboxStatus(sandbox.id, 'RUNNING')
       await projectStatusReconcile(project.id)
       logger.info(`Sandbox ${sandbox.id} is now RUNNING`)
-      void triggerImportOnSandboxRunning(project.id)
     } else if (k8sStatus === 'STARTING') {
       // Pod is restarting due to env var changes - change status to STARTING
       await updateSandboxStatus(sandbox.id, 'STARTING')
@@ -336,15 +342,70 @@ async function handleUpdateSandbox(payload: SandboxEventPayload): Promise<void> 
 }
 
 /**
+ * Clone a GitHub repository into the sandbox after it becomes RUNNING.
+ * Uses the user's stored OAuth token for authentication.
+ * Clones into ~/projectName (e.g. /home/fulling/mono for project "mono").
+ */
+async function cloneGitHubRepo(
+  userId: string,
+  sandbox: { id: string; k8sNamespace: string; sandboxName: string },
+  project: { id: string; name: string; githubRepo: string | null; githubBranch: string | null }
+): Promise<void> {
+  if (!project.githubRepo) return
+
+  logger.info(`Cloning GitHub repo ${project.githubRepo} into sandbox ${sandbox.id}`)
+
+  // Get user's GitHub OAuth token
+  const githubIdentity = await prisma.userIdentity.findFirst({
+    where: { userId, provider: 'GITHUB' },
+  })
+
+  if (!githubIdentity) {
+    logger.warn(`No GitHub identity found for user ${userId}, skipping clone`)
+    return
+  }
+
+  const metadata = githubIdentity.metadata as { token?: string }
+  if (!metadata.token) {
+    logger.warn(`No GitHub token found for user ${userId}, skipping clone`)
+    return
+  }
+
+  const branch = project.githubBranch || 'main'
+  const repoFullName = project.githubRepo
+  const authUrl = `https://x-access-token:${metadata.token}@github.com/${repoFullName}.git`
+
+  // Use the project name as the clone directory (sanitize for filesystem safety)
+  const cloneDir = project.name.replace(/[^a-zA-Z0-9._-]/g, '-')
+  const clonePath = `/home/fulling/${cloneDir}`
+
+  try {
+    const k8sService = await getK8sServiceForUser(userId)
+
+    const cloneCommand = [
+      'set -e',
+      `rm -rf '${clonePath}'`,
+      `GIT_TERMINAL_PROMPT=0 git clone --depth 1 --branch '${branch.replace(/'/g, "'\\''")}' '${authUrl.replace(/'/g, "'\\''")}' '${clonePath}'`,
+      `cd '${clonePath}' && git remote set-url origin "https://github.com/${repoFullName}.git"`,
+    ].join(' && ')
+
+    await k8sService.execCommandInBackground(
+      sandbox.k8sNamespace,
+      sandbox.sandboxName,
+      cloneCommand
+    )
+
+    logger.info(`Git clone initiated for sandbox ${sandbox.id} (repo: ${repoFullName}, branch: ${branch}, path: ${clonePath})`)
+  } catch (error) {
+    logger.error(`Failed to clone repo into sandbox ${sandbox.id}: ${error}`)
+  }
+}
+
+/**
  * Register all sandbox event listeners
  * Call this function once during application startup
  */
 export function registerSandboxListeners(): void {
-  if (globalThis.__sandboxListenersRegistered) {
-    logger.info('Sandbox event listeners already registered, skipping')
-    return
-  }
-
   logger.info('Registering sandbox event listeners')
   on(Events.UpdateSandbox, handleUpdateSandbox)
   on(Events.CreateSandbox, handleCreateSandbox)
@@ -352,21 +413,8 @@ export function registerSandboxListeners(): void {
   on(Events.StopSandbox, handleStopSandbox)
   on(Events.DeleteSandbox, handleDeleteSandbox)
 
-  globalThis.__sandboxListenersRegistered = true
   logger.info('✅ Sandbox event listeners registered')
 }
 
 // Auto-register listeners when module is imported
 registerSandboxListeners()
-
-async function triggerImportOnSandboxRunning(projectId: string): Promise<void> {
-  try {
-    await triggerRunnableTasksForProject(projectId)
-  } catch (error) {
-    logger.error(`Failed to trigger project tasks for ${projectId}: ${error}`)
-  }
-}
-
-declare global {
-  var __sandboxListenersRegistered: boolean | undefined
-}

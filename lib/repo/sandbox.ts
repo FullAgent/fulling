@@ -182,13 +182,15 @@ export async function updateSandboxStatus(
  * @param publicUrl - Public application URL
  * @param ttydUrl - Terminal URL
  * @param fileBrowserUrl - File browser URL
+ * @param editorUrl - editor URL
  * @returns Updated sandbox
  */
 export async function updateSandboxUrls(
   sandboxId: string,
   publicUrl: string,
   ttydUrl: string,
-  fileBrowserUrl: string
+  fileBrowserUrl: string,
+  editorUrl: string
 ): Promise<Sandbox> {
   logger.info(`Updating sandbox ${sandboxId} URLs`)
 
@@ -198,6 +200,7 @@ export async function updateSandboxUrls(
       publicUrl,
       ttydUrl,
       fileBrowserUrl,
+      editorUrl,
       updatedAt: new Date(),
     },
   })

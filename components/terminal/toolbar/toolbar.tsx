@@ -7,16 +7,27 @@
 'use client';
 
 import { useState } from 'react';
-import { MdLan } from 'react-icons/md';
+import { MdLan, MdPsychology } from 'react-icons/md';
 import type { Prisma } from '@prisma/client';
+import { useRouter } from 'next/navigation';
 
 import { AppRunner } from './app-runner';
 import { NetworkDialog } from './network-dialog';
+import { buildNetworkEndpoints } from './network-endpoints';
 import { type Tab,TerminalTabs } from './terminal-tabs';
+
+type Project = Prisma.ProjectGetPayload<{
+  include: {
+    sandboxes: true;
+    databases: true;
+  };
+}>;
 
 type Sandbox = Prisma.SandboxGetPayload<object>;
 
 export interface TerminalToolbarProps {
+  /** Project data */
+  project: Project;
   /** Sandbox data */
   sandbox: Sandbox | undefined;
   /** Terminal tabs */
@@ -34,12 +45,15 @@ export interface TerminalToolbarProps {
     username: string;
     password: string;
   };
+  /** Editor password (optional) */
+  editorPassword?: string;
 }
 
 /**
  * Terminal toolbar with tabs and operations
  */
 export function TerminalToolbar({
+  project,
   sandbox,
   tabs,
   activeTabId,
@@ -47,24 +61,16 @@ export function TerminalToolbar({
   onTabClose,
   onTabAdd,
   fileBrowserCredentials,
+  editorPassword,
 }: TerminalToolbarProps) {
   const [showNetworkDialog, setShowNetworkDialog] = useState(false);
+  const router = useRouter();
 
-  // Build network endpoints list, filtering out any without URLs
-  const allEndpoints = [
-    { domain: sandbox?.publicUrl, port: 3000, protocol: 'HTTPS', label: 'Application' },
-    { domain: sandbox?.ttydUrl, port: 7681, protocol: 'HTTPS', label: 'Terminal' },
-    {
-      domain: sandbox?.fileBrowserUrl,
-      port: 8080,
-      protocol: 'HTTPS',
-      label: 'File Browser',
-      hasCredentials: true,
-    },
-  ];
-
-  // Only show endpoints that have a valid domain URL
-  const networkEndpoints = allEndpoints.filter((endpoint) => endpoint.domain);
+  const networkEndpoints = buildNetworkEndpoints({
+    sandbox,
+    fileBrowserCredentials,
+    editorPassword,
+  });
 
   return (
     <>
@@ -81,6 +87,16 @@ export function TerminalToolbar({
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
           <AppRunner sandbox={sandbox} />
+
+          {/* Editor Button - navigates to embedded VS Code server */}
+          <button
+            onClick={() => router.push(`/projects/${project.id}/brain`)}
+            className="px-2 py-1 text-xs text-foreground font-semibold hover:text-white hover:bg-zinc-800 rounded transition-colors flex items-center gap-1"
+            title="Open Editor"
+          >
+            <MdPsychology className="h-3.5 w-3.5 text-purple-500" />
+            <span>Editor</span>
+          </button>
 
           {/* Network Button */}
           <button
@@ -99,7 +115,7 @@ export function TerminalToolbar({
         open={showNetworkDialog}
         onOpenChange={setShowNetworkDialog}
         endpoints={networkEndpoints}
-        fileBrowserCredentials={fileBrowserCredentials}
+        sandboxId={sandbox?.id}
       />
     </>
   );
