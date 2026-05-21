@@ -406,9 +406,9 @@ MIT License - See LICENSE file in the repository root
 
 ## Support
 
-- **Issues**: https://github.com/FullstackAgent/FullstackAgent/issues
-- **Discussions**: https://github.com/FullstackAgent/FullstackAgent/discussions
-- **Documentation**: https://github.com/FullstackAgent/FullstackAgent/tree/main/docs
+- **Issues**: https://github.com/FullAgent/fulling/issues
+- **Discussions**: https://github.com/FullAgent/fulling/discussions
+- **Repository documentation**: ../.qoder/repowiki
 
 ## Contributing
 
@@ -426,7 +426,8 @@ The CI/CD workflow will automatically validate your changes.
 
 ## Changelog
 
-See [docs/changelogs/](../docs/changelogs/) for version history and changes.
+See GitHub Releases for durable release history:
+https://github.com/FullAgent/fulling/releases
 
 ## Maintainers
 

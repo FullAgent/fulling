@@ -111,11 +111,10 @@ The repository now has clear long-lived lines:
 The v2 release is available at:
 
 - [Fulling v2.0.0 Release](https://github.com/FullAgent/fulling/releases/tag/v2.0.0)
-- [v2.0.0 Release Notes](./docs/releases/v2.0.0.md)
 
-The current project-state report is available at:
+Generated repository documentation lives under:
 
-- [Project Current State Report](./docs/reports/project-current-state.html)
+- [.qoder/repowiki](./.qoder/repowiki)
 
 ## Architecture Direction
 
@@ -210,15 +209,14 @@ npx prisma generate   # Generate Prisma client
 npx prisma db push    # Push schema to database
 ```
 
-## Key Documentation
+## Repository Documentation
 
-- [Architecture](./docs/architecture.md)
-- [Architecture Evolution](./docs/architecture-evolution.md)
-- [Development Guide](./docs/development.md)
-- [Operations Manual](./docs/operations.md)
-- [Troubleshooting](./docs/troubleshooting.md)
-- [v2.0.0 Release Notes](./docs/releases/v2.0.0.md)
-- [Project Current State Report](./docs/reports/project-current-state.html)
+This repository intentionally does not maintain a hand-written `docs/` tree on
+the active v3 line. Generated repository documentation is kept under
+[.qoder/repowiki](./.qoder/repowiki) and can be regenerated as the code changes.
+
+Durable release history lives in GitHub Releases, starting with
+[Fulling v2.0.0](https://github.com/FullAgent/fulling/releases/tag/v2.0.0).
 
 ## Security Model
 

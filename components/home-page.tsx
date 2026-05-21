@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
-import { MatrixRain } from '@/components/MatrixRain';
 import { Button } from '@/components/ui/button';
 import { authenticateWithSealos } from '@/lib/actions/sealos-auth';
 import { useSealos } from '@/provider/sealos';
@@ -85,9 +84,6 @@ export function HomePage() {
     <>
       {/* Base marketing page - always visible */}
       <div className="min-h-screen flex flex-col items-center justify-start pt-28">
-        {/* Matrix Background Effect */}
-        <MatrixRain />
-
         <div className="max-w-4xl mx-auto px-4 py-12 text-center flex flex-col items-center space-y-8 bg-card backdrop-blur-sm rounded-xl border border-border/20 shadow-2xl">
 
           {/* Hero Section: Logo and Title */}

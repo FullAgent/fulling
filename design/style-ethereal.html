@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fulling Design System Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --void: #050505;
+      --abyss: #0a0a0a;
+      --surface: #0f0f0f;
+      --surface-raised: #141414;
+      --ink: #e8e8e8;
+      --ink-dim: #737373;
+      --ink-faint: #404040;
+      --accent: #14b8a6;
+      --accent-glow: #2dd4bf;
+      --accent-dim: #0d9488;
+      --warm: #f59e0b;
+      --warm-glow: #fbbf24;
+      --border: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(255, 255, 255, 0.12);
+      --ease: cubic-bezier(0.32, 0.72, 0, 1);
+      --reveal: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--void);
+      color: var(--ink);
+      font-family: "Geist", system-ui, sans-serif;
+    }
+
+    body {
+      min-height: 100dvh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 15% 30%, rgba(20, 184, 166, 0.08), transparent 28rem),
+        radial-gradient(circle at 85% 70%, rgba(245, 158, 11, 0.05), transparent 30rem),
+        radial-gradient(circle at center, rgba(20, 184, 166, 0.03), transparent 38rem),
+        linear-gradient(135deg, #050505 0%, #090909 48%, #050505 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.18;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 72px 72px;
+      mask-image: radial-gradient(circle at center, black, transparent 74%);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .page {
+      position: relative;
+      min-height: 100dvh;
+      padding: 28px;
+    }
+
+    .nav {
+      position: sticky;
+      top: 24px;
+      z-index: 20;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 18px;
+      width: min(980px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.025);
+      box-shadow:
+        0 20px 70px rgba(0, 0, 0, 0.36),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(24px) saturate(1.2);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 14px 6px 8px;
+      border-radius: 999px;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      border: 1px solid rgba(20, 184, 166, 0.2);
+      border-radius: 10px;
+      background: rgba(20, 184, 166, 0.12);
+      color: var(--accent-glow);
+      font-family: "Geist Mono", monospace;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .brand-name {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-links {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .nav-links a {
+      min-height: 36px;
+      padding: 9px 15px;
+      border-radius: 999px;
+      color: var(--ink-dim);
+      font-size: 13px;
+      transition: color 260ms var(--ease), background 260ms var(--ease);
+    }
+
+    .nav-links a:hover {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-cta {
+      min-height: 40px;
+      padding: 0 17px;
+      border: 1px solid rgba(20, 184, 166, 0.18);
+      border-radius: 999px;
+      background: rgba(20, 184, 166, 0.09);
+      color: var(--accent-glow);
+      cursor: pointer;
+      transition: transform 260ms var(--ease), background 260ms var(--ease);
+    }
+
+    .nav-cta:hover {
+      transform: translateY(-1px);
+      background: rgba(20, 184, 166, 0.14);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+      gap: clamp(42px, 7vw, 96px);
+      align-items: center;
+      width: min(1180px, calc(100vw - 56px));
+      min-height: calc(100dvh - 112px);
+      margin: 0 auto;
+      padding: clamp(64px, 8vw, 112px) 0 72px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 22px;
+      color: var(--accent-glow);
+      font-family: "Geist Mono", monospace;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 26px rgba(20, 184, 166, 0.34);
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    h1 {
+      max-width: 760px;
+      margin: 0;
+      font-size: clamp(48px, 7vw, 76px);
+      line-height: 1.05;
+      letter-spacing: -0.055em;
+      font-weight: 800;
+    }
+
+    .hero-gradient {
+      color: transparent;
+      background: linear-gradient(115deg, var(--ink) 0%, var(--accent-glow) 48%, var(--warm-glow) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      text-shadow: 0 0 40px rgba(20, 184, 166, 0.17);
+    }
+
+    .subhead {
+      max-width: 620px;
+      margin: 26px 0 0;
+      color: rgba(232, 232, 232, 0.72);
+      font-size: 18px;
+      line-height: 1.75;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 34px;
+    }
+
+    .button {
+      display: inline-flex;
+      min-height: 48px;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 22px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform 260ms var(--ease), border-color 260ms var(--ease), background 260ms var(--ease), box-shadow 260ms var(--ease);
+    }
+
+    .button:active {
+      transform: scale(0.98);
+    }
+
+    .button-primary {
+      background: var(--accent);
+      color: var(--void);
+      box-shadow: 0 0 30px rgba(20, 184, 166, 0.2);
+    }
+
+    .button-primary:hover {
+      background: var(--accent-glow);
+      transform: translateY(-1px);
+      box-shadow: 0 14px 50px rgba(20, 184, 166, 0.2);
+    }
+
+    .button-secondary {
+      color: var(--ink);
+      border-color: var(--border);
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(18px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .button-secondary:hover {
+      transform: translateY(-1px);
+      border-color: rgba(20, 184, 166, 0.16);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.35fr;
+      gap: 12px;
+      max-width: 650px;
+      margin-top: 46px;
+    }
+
+    .stat-shell,
+    .terminal-shell,
+    .workspace-shell {
+      padding: 2px;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.03);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.38);
+    }
+
+    .stat-core,
+    .terminal-core,
+    .workspace-core {
+      height: 100%;
+      border-radius: 22px;
+      background: rgba(10, 10, 10, 0.8);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06);
+    }
+
+    .stat-core {
+      padding: 18px;
+    }
+
+    .stat-value {
+      color: var(--ink);
+      font-family: "Geist Mono", monospace;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .stat-label {
+      margin-top: 7px;
+      color: var(--ink-dim);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .hero-visual {
+      position: relative;
+      min-height: 560px;
+    }
+
+    .terminal-shell {
+      position: relative;
+      animation: float 7s ease-in-out infinite;
+    }
+
+    .terminal-core {
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 80% 10%, rgba(20, 184, 166, 0.1), transparent 14rem),
+        var(--abyss);
+    }
+
+    .chrome {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 15px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--ink-dim);
+      font-family: "Geist Mono", monospace;
+      font-size: 11px;
+    }
+
+    .dots {
+      display: flex;
+      gap: 7px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--ink-faint);
+    }
+
+    .dot:nth-child(1) {
+      background: var(--warm);
+    }
+
+    .dot:nth-child(2) {
+      background: var(--accent);
+    }
+
+    .terminal-body {
+      padding: 22px;
+      font-family: "Geist Mono", monospace;
+      font-size: 12px;
+      line-height: 1.9;
+    }
+
+    .line {
+      display: block;
+      color: var(--ink-dim);
+    }
+
+    .cmd {
+      color: var(--ink);
+    }
+
+    .signal {
+      color: var(--accent-glow);
+    }
+
+    .warn {
+      color: var(--warm-glow);
+    }
+
+    .success {
+      margin-top: 18px;
+      padding: 14px;
+      border: 1px solid rgba(20, 184, 166, 0.12);
+      border-radius: 16px;
+      background: rgba(20, 184, 166, 0.05);
+      color: rgba(232, 232, 232, 0.82);
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 14px;
+      margin-left: 3px;
+      border-bottom: 2px solid var(--accent-glow);
+      vertical-align: -2px;
+      animation: blink 1s step-end infinite;
+    }
+
+    .badge {
+      position: absolute;
+      display: grid;
+      gap: 3px;
+      padding: 13px 15px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.035);
+      box-shadow:
+        0 22px 60px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px);
+      animation: float 8s ease-in-out infinite;
+    }
+
+    .badge strong {
+      color: var(--ink);
+      font-family: "Geist Mono", monospace;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge span {
+      color: var(--ink-dim);
+      font-size: 11px;
+    }
+
+    .badge-a {
+      right: -28px;
+      top: 86px;
+    }
+
+    .badge-b {
+      left: -38px;
+      bottom: 118px;
+      animation-delay: 0.7s;
+    }
+
+    .orbital {
+      position: absolute;
+      right: 34px;
+      bottom: 14px;
+      width: 180px;
+      height: 180px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 999px;
+      opacity: 0.68;
+    }
+
+    .orbital::before,
+    .orbital::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+    }
+
+    .orbital::before {
+      inset: 34px;
+      border: 1px solid rgba(20, 184, 166, 0.13);
+    }
+
+    .orbital::after {
+      top: 24px;
+      left: 50%;
+      width: 10px;
+      height: 10px;
+      background: var(--warm);
+      box-shadow: 0 0 28px rgba(245, 158, 11, 0.34);
+      animation: orbit 9s linear infinite;
+      transform-origin: 0 66px;
+    }
+
+    .section {
+      width: min(1180px, calc(100vw - 56px));
+      margin: 0 auto;
+      padding: clamp(54px, 8vw, 96px) 0 80px;
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.75fr) minmax(280px, 0.45fr);
+      gap: 48px;
+      align-items: end;
+      margin-bottom: 30px;
+    }
+
+    h2 {
+      max-width: 660px;
+      margin: 0;
+      font-size: clamp(30px, 4vw, 42px);
+      line-height: 1.08;
+      letter-spacing: -0.04em;
+    }
+
+    .section-copy {
+      margin: 0;
+      color: var(--ink-dim);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .workspace-shell {
+      border-radius: 30px;
+    }
+
+    .workspace-core {
+      display: grid;
+      grid-template-columns: 230px minmax(0, 1fr);
+      min-height: 520px;
+      overflow: hidden;
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at 22% 12%, rgba(245, 158, 11, 0.035), transparent 18rem),
+        rgba(10, 10, 10, 0.82);
+    }
+
+    .sidebar {
+      padding: 20px;
+      border-right: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    .side-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      font-weight: 700;
+    }
+
+    .side-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      background: rgba(20, 184, 166, 0.12);
+      border: 1px solid rgba(20, 184, 166, 0.2);
+    }
+
+    .side-section {
+      margin-top: 24px;
+    }
+
+    .side-eyebrow {
+      margin: 0 0 10px 8px;
+      color: var(--ink-faint);
+      font-family: "Geist Mono", monospace;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .side-item {
+      display: flex;
+      min-height: 38px;
+      align-items: center;
+      gap: 10px;
+      padding: 0 10px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      color: var(--ink-dim);
+      font-size: 13px;
+      transition: background 260ms var(--ease), color 260ms var(--ease), border-color 260ms var(--ease);
+    }
+
+    .side-item.active {
+      color: var(--accent-glow);
+      border-color: rgba(20, 184, 166, 0.15);
+      background: rgba(20, 184, 166, 0.08);
+    }
+
+    .side-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .side-item.active .side-dot {
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .main {
+      padding: 26px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .topbar h3 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.1;
+      letter-spacing: -0.035em;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      min-height: 36px;
+      align-items: center;
+      gap: 9px;
+      padding: 0 13px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--ink-dim);
+      font-family: "Geist Mono", monospace;
+      font-size: 11px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(240px, 0.7fr);
+      gap: 16px;
+    }
+
+    .panel {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.02);
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(24px) saturate(1.2);
+    }
+
+    .panel.spotlight::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      background: radial-gradient(400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(20, 184, 166, 0.15), transparent 50%);
+      transition: opacity 400ms var(--ease);
+    }
+
+    .panel.spotlight:hover::before {
+      opacity: 1;
+    }
+
+    .panel-inner {
+      position: relative;
+      padding: 20px;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .panel-title strong {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .panel-title span {
+      color: var(--ink-dim);
+      font-family: "Geist Mono", monospace;
+      font-size: 11px;
+    }
+
+    .memory-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .memory-row {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .memory-icon {
+      display: grid;
+      width: 44px;
+      height: 44px;
+      place-items: center;
+      border-radius: 15px;
+      background: rgba(20, 184, 166, 0.08);
+      color: var(--accent-glow);
+      font-family: "Geist Mono", monospace;
+      font-size: 12px;
+      border: 1px solid rgba(20, 184, 166, 0.12);
+    }
+
+    .memory-row strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 13px;
+    }
+
+    .memory-row p {
+      margin: 0;
+      color: var(--ink-dim);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .tag {
+      padding: 6px 9px;
+      border: 1px solid rgba(245, 158, 11, 0.14);
+      border-radius: 999px;
+      color: var(--warm-glow);
+      font-family: "Geist Mono", monospace;
+      font-size: 10px;
+      background: rgba(245, 158, 11, 0.05);
+    }
+
+    .script-box {
+      min-height: 100%;
+      padding: 18px;
+      border-radius: 20px;
+      background: var(--abyss);
+      font-family: "Geist Mono", monospace;
+      font-size: 11px;
+      line-height: 1.8;
+      color: var(--ink-dim);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .task-grid {
+      display: grid;
+      grid-template-columns: 0.8fr 1.2fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .mini-metric {
+      min-height: 142px;
+    }
+
+    .metric-value {
+      margin-top: 14px;
+      color: var(--ink);
+      font-family: "Geist Mono", monospace;
+      font-size: 30px;
+      font-weight: 600;
+      letter-spacing: -0.04em;
+    }
+
+    .metric-copy {
+      margin: 8px 0 0;
+      color: var(--ink-dim);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 10px;
+    }
+
+    .timeline-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: center;
+      font-family: "Geist Mono", monospace;
+      font-size: 11px;
+      color: var(--ink-dim);
+    }
+
+    .timeline-line {
+      height: 1px;
+      background: linear-gradient(90deg, rgba(20, 184, 166, 0.45), rgba(255, 255, 255, 0.05));
+    }
+
+    .reveal {
+      animation: reveal 800ms var(--reveal) both;
+    }
+
+    .d1 {
+      animation-delay: 100ms;
+    }
+
+    .d2 {
+      animation-delay: 200ms;
+    }
+
+    .d3 {
+      animation-delay: 300ms;
+    }
+
+    @keyframes reveal {
+      from {
+        opacity: 0;
+        filter: blur(4px);
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        filter: blur(0);
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes float {
+      0%,
+      100% {
+        transform: translateY(0) rotate(0deg);
+      }
+
+      50% {
+        transform: translateY(-8px) rotate(0.5deg);
+      }
+    }
+
+    @keyframes pulse {
+      0%,
+      100% {
+        box-shadow: 0 0 0 rgba(20, 184, 166, 0.15);
+      }
+
+      50% {
+        box-shadow: 0 0 28px rgba(20, 184, 166, 0.3);
+      }
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    @keyframes orbit {
+      from {
+        transform: rotate(0deg) translateX(66px) rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg) translateX(66px) rotate(-360deg);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .page {
+        padding: 16px;
+      }
+
+      .nav {
+        position: relative;
+        top: 0;
+        grid-template-columns: 1fr auto;
+        width: 100%;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .hero,
+      .section {
+        width: 100%;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+        min-height: auto;
+        padding-top: 64px;
+      }
+
+      .stats,
+      .section-head,
+      .workspace-core,
+      .dashboard-grid,
+      .task-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-visual {
+        min-height: 500px;
+      }
+
+      .badge-a {
+        right: 12px;
+        top: 54px;
+      }
+
+      .badge-b {
+        left: 12px;
+        bottom: 58px;
+      }
+
+      .sidebar {
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
+    }
+
+    @media (max-width: 560px) {
+      .hero {
+        padding-top: 46px;
+      }
+
+      h1 {
+        font-size: clamp(40px, 13vw, 54px);
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .terminal-body {
+        padding: 18px;
+        font-size: 11px;
+      }
+
+      .memory-row {
+        grid-template-columns: 38px minmax(0, 1fr);
+      }
+
+      .tag {
+        justify-self: start;
+        grid-column: 2;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <nav class="nav reveal">
+      <a class="brand" href="#">
+        <span class="brand-mark">F</span>
+        <span class="brand-name">Fulling</span>
+      </a>
+      <div class="nav-links">
+        <a href="#workspace">Workspace</a>
+        <a href="#runtime">Runtime</a>
+        <a href="#memory">Memory</a>
+      </div>
+      <button class="nav-cta">Open Console</button>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow reveal d1">Persistent AI Workspace</div>
+        <h1 class="reveal d2">
+          Turn every working relationship into a
+          <span class="hero-gradient">durable environment.</span>
+        </h1>
+        <p class="subhead reveal d3">
+          Fulling organizes skills, files, memory, scripts, and runtime into one calm operating surface.
+          The result feels less like a chat window and more like a place where work can keep living.
+        </p>
+        <div class="actions reveal d3">
+          <button class="button button-primary">Create Workspace</button>
+          <button class="button button-secondary">Inspect Runtime</button>
+        </div>
+        <div class="stats reveal d3">
+          <div class="stat-shell">
+            <div class="stat-core">
+              <div class="stat-value">12m 47s</div>
+              <div class="stat-label">from blank profile to usable workspace</div>
+            </div>
+          </div>
+          <div class="stat-shell">
+            <div class="stat-core">
+              <div class="stat-value">34</div>
+              <div class="stat-label">workspace files indexed for context</div>
+            </div>
+          </div>
+          <div class="stat-shell">
+            <div class="stat-core">
+              <div class="stat-value">runtime: warm</div>
+              <div class="stat-label">scripts, terminal, and memory ready for the next session</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="terminal-shell reveal d2">
+          <div class="terminal-core">
+            <div class="chrome">
+              <div class="dots">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+              </div>
+              <span>workspace/runtime</span>
+              <span>active</span>
+            </div>
+            <div class="terminal-body">
+              <span class="line">$ <span class="cmd">fulling workspace init iris</span></span>
+              <span class="line"><span class="signal">◆</span> skills mounted: brief-writer, research-scan, deploy-check</span>
+              <span class="line"><span class="signal">◆</span> memory attached: project preferences, tone notes, file map</span>
+              <span class="line"><span class="warn">◆</span> runtime policy: ask before destructive shell operations</span>
+              <span class="line">$ <span class="cmd">run prepare-session</span></span>
+              <span class="line"><span class="signal">◆</span> scripts verified in isolated shell</span>
+              <div class="success">
+                Workspace ready. The environment can be resumed, edited, shared, or archived without rebuilding context.
+                <span class="cursor"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="badge badge-a">
+          <strong>memory.lock</strong>
+          <span>updated 18 minutes ago</span>
+        </div>
+        <div class="badge badge-b">
+          <strong>skill graph</strong>
+          <span>7 capabilities available</span>
+        </div>
+        <div class="orbital"></div>
+      </div>
+    </section>
+
+    <section id="workspace" class="section">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Control Surface</div>
+          <h2>The application view keeps the system quiet, inspectable, and ready for repeated use.</h2>
+        </div>
+        <p class="section-copy">
+          This is the same visual language applied to an app surface: sidebar navigation, segmented status,
+          asymmetric panels, live memory, and a small script console.
+        </p>
+      </div>
+
+      <div class="workspace-shell">
+        <div class="workspace-core">
+          <aside class="sidebar">
+            <div class="side-title">
+              <span class="side-mark"></span>
+              <span>Arden Studio</span>
+            </div>
+            <div class="side-section">
+              <p class="side-eyebrow">Workspace</p>
+              <a class="side-item active" href="#"><span class="side-dot"></span>Overview</a>
+              <a class="side-item" href="#"><span class="side-dot"></span>Skills</a>
+              <a class="side-item" href="#"><span class="side-dot"></span>Files</a>
+              <a class="side-item" href="#"><span class="side-dot"></span>Memory</a>
+            </div>
+            <div class="side-section">
+              <p class="side-eyebrow">Runtime</p>
+              <a class="side-item" href="#"><span class="side-dot"></span>Scripts</a>
+              <a class="side-item" href="#"><span class="side-dot"></span>Terminal</a>
+              <a class="side-item" href="#"><span class="side-dot"></span>Secrets</a>
+            </div>
+          </aside>
+
+          <div class="main">
+            <div class="topbar">
+              <div>
+                <div class="eyebrow" style="margin-bottom: 10px;">Session 04</div>
+                <h3>Workspace readiness</h3>
+              </div>
+              <div class="status-pill">
+                <span class="status-dot"></span>
+                synced 2m ago
+              </div>
+            </div>
+
+            <div class="dashboard-grid">
+              <section id="memory" class="panel spotlight">
+                <div class="panel-inner">
+                  <div class="panel-title">
+                    <strong>Memory and working files</strong>
+                    <span>34 files</span>
+                  </div>
+                  <div class="memory-list">
+                    <div class="memory-row">
+                      <div class="memory-icon">SK</div>
+                      <div>
+                        <strong>Research briefing skill</strong>
+                        <p>Reads notes, drafts structured summaries, and keeps citations attached.</p>
+                      </div>
+                      <span class="tag">skill</span>
+                    </div>
+                    <div class="memory-row">
+                      <div class="memory-icon">MM</div>
+                      <div>
+                        <strong>Personal working memory</strong>
+                        <p>Stores style preferences, project facts, and recurring review criteria.</p>
+                      </div>
+                      <span class="tag">memory</span>
+                    </div>
+                    <div class="memory-row">
+                      <div class="memory-icon">FS</div>
+                      <div>
+                        <strong>Workspace file map</strong>
+                        <p>Tracks active drafts, inputs, scripts, and generated artifacts.</p>
+                      </div>
+                      <span class="tag">files</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section id="runtime" class="panel">
+                <div class="panel-inner">
+                  <div class="panel-title">
+                    <strong>Script console</strong>
+                    <span>runtime</span>
+                  </div>
+                  <div class="script-box">
+                    <span class="line">$ ./scripts/check-context</span>
+                    <span class="line"><span class="signal">◆</span> memory graph consistent</span>
+                    <span class="line"><span class="signal">◆</span> file permissions verified</span>
+                    <span class="line"><span class="warn">◆</span> pending approval: publish report</span>
+                    <span class="line">$ ./scripts/start-session<span class="cursor"></span></span>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div class="task-grid">
+              <section class="panel mini-metric">
+                <div class="panel-inner">
+                  <div class="panel-title">
+                    <strong>Context load</strong>
+                    <span>active</span>
+                  </div>
+                  <div class="metric-value">47.2%</div>
+                  <p class="metric-copy">Current session uses prior memory without saturating the window.</p>
+                </div>
+              </section>
+
+              <section class="panel">
+                <div class="panel-inner">
+                  <div class="panel-title">
+                    <strong>Recent reconciliation</strong>
+                    <span>queue</span>
+                  </div>
+                  <div class="timeline">
+                    <div class="timeline-row"><span>10:34</span><span class="timeline-line"></span><span>skill mounted</span></div>
+                    <div class="timeline-row"><span>10:36</span><span class="timeline-line"></span><span>files indexed</span></div>
+                    <div class="timeline-row"><span>10:41</span><span class="timeline-line"></span><span>runtime warmed</span></div>
+                    <div class="timeline-row"><span>10:48</span><span class="timeline-line"></span><span>memory saved</span></div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    document.querySelectorAll('.spotlight').forEach((card) => {
+      card.addEventListener('pointermove', (event) => {
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty('--mouse-x', `${event.clientX - rect.left}px`);
+        card.style.setProperty('--mouse-y', `${event.clientY - rect.top}px`);
+      });
+    });
+  </script>
+</body>
+</html>

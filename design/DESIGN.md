@@ -1,4 +1,4 @@
-# Design System: Fulling v2 — Ethereal Glass
+# Design System: Fulling v3 — Ethereal Glass
 
 ## 1. Visual Theme & Atmosphere
 
@@ -219,7 +219,7 @@ The design philosophy centers on **"Double Bezel" (Doppelrand)** architecture �
 ## 8. File Structure & Implementation Notes
 
 ### Key Files
-- `style-ethereal.html` — Reference implementation (landing + dashboard)
+- `design/style-ethereal.html` — Reference implementation (landing + dashboard)
 - Tailwind CSS v4 via CDN for rapid prototyping
 - Geist + Geist Mono via Google Fonts CDN
 

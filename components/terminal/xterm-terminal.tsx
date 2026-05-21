@@ -468,7 +468,8 @@ export function XtermTerminal({
         // Send initial terminal size and AuthToken to ttyd
         // AuthToken is required when ttyd is started with -c parameter (HTTP Basic Auth)
         // The value is base64(username:password), same as the authorization URL parameter
-        // See: docs/technical-notes/TTYD_AUTHENTICATION.md
+        // ttyd expects the same base64(username:password) value that is passed
+        // through the authorization URL parameter.
         const initMsg = JSON.stringify({
           AuthToken: authorization,
           columns: terminal!.cols,
