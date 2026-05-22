@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { FaGithub } from 'react-icons/fa'
 import { MdCheck } from 'react-icons/md'
 import Image from 'next/image'
@@ -14,11 +14,7 @@ export function GitHubStatusCard() {
   const [isLoading, setIsLoading] = useState(true)
   const [installation, setInstallation] = useState<GitHubInstallation | null>(null)
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true)
     try {
       const installationsResult = await getInstallations()
@@ -31,7 +27,11 @@ export function GitHubStatusCard() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const handleInstallApp = () => {
     const appName = env.NEXT_PUBLIC_GITHUB_APP_NAME

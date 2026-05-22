@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FaGithub } from 'react-icons/fa';
 import { MdCode, MdSave, MdStorage, MdTerminal } from 'react-icons/md';
 import Image from 'next/image';
@@ -100,26 +100,7 @@ export default function SettingsDialog({
   const [showSystemPromptResetConfirm, setShowSystemPromptResetConfirm] = useState(false);
   const [showAnthropicConfirm, setShowAnthropicConfirm] = useState(false);
 
-  // Load data when dialog opens
-  useEffect(() => {
-    if (open) {
-      loadSystemPrompt();
-      if (!isSealos) {
-        loadKubeconfig();
-      }
-      loadAnthropicConfig();
-      loadGithubStatus();
-    }
-  }, [open, isSealos]);
-
-  // Set active tab when defaultTab changes
-  useEffect(() => {
-    if (open) {
-      setActiveTab(defaultTab);
-    }
-  }, [open, defaultTab]);
-
-  const loadSystemPrompt = async () => {
+  const loadSystemPrompt = useCallback(async () => {
     try {
       const data = await fetchClient.GET<{ systemPrompt: string | null }>(
         '/api/user/config/system-prompt'
@@ -131,9 +112,9 @@ export default function SettingsDialog({
     } finally {
       setIsSystemPromptInitialLoading(false);
     }
-  };
+  }, []);
 
-  const loadKubeconfig = async () => {
+  const loadKubeconfig = useCallback(async () => {
     try {
       const data = await fetchClient.GET<{ kubeconfig: string; namespace?: string | null }>(
         '/api/user/config/kc'
@@ -149,9 +130,9 @@ export default function SettingsDialog({
     } finally {
       setIsKubeconfigInitialLoading(false);
     }
-  };
+  }, []);
 
-  const loadAnthropicConfig = async () => {
+  const loadAnthropicConfig = useCallback(async () => {
     try {
       const data = await fetchClient.GET<{
         apiKey: string | null;
@@ -168,9 +149,9 @@ export default function SettingsDialog({
     } finally {
       setIsAnthropicInitialLoading(false);
     }
-  };
+  }, []);
 
-  const loadGithubStatus = async () => {
+  const loadGithubStatus = useCallback(async () => {
     try {
       const result = await getInstallations();
       if (result.success && result.data.length > 0) {
@@ -184,7 +165,26 @@ export default function SettingsDialog({
     } finally {
       setIsGithubInitialLoading(false);
     }
-  };
+  }, []);
+
+  // Load data when dialog opens
+  useEffect(() => {
+    if (open) {
+      loadSystemPrompt();
+      if (!isSealos) {
+        loadKubeconfig();
+      }
+      loadAnthropicConfig();
+      loadGithubStatus();
+    }
+  }, [open, isSealos, loadSystemPrompt, loadKubeconfig, loadAnthropicConfig, loadGithubStatus]);
+
+  // Set active tab when defaultTab changes
+  useEffect(() => {
+    if (open) {
+      setActiveTab(defaultTab);
+    }
+  }, [open, defaultTab]);
 
   const handleSaveSystemPrompt = () => {
     setShowSystemPromptConfirm(true);

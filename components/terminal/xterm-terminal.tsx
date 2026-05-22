@@ -32,7 +32,7 @@
 
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { MdArrowDownward } from 'react-icons/md';
 import type { ITerminalOptions, Terminal as ITerminal } from '@xterm/xterm';
 import { toast } from 'sonner';
@@ -140,6 +140,8 @@ export function XtermTerminal({
   enableFileUpload = true,
   isVisible = true,
 }: XtermTerminalProps) {
+  const reactId = useId();
+
   // =========================================================================
   // State & Refs
   // =========================================================================
@@ -159,7 +161,7 @@ export function XtermTerminal({
   const [newLineCount, setNewLineCount] = useState(0);
 
   // Terminal session ID for multi-terminal support
-  const terminalSessionId = useRef(`terminal-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const terminalSessionId = useRef(`terminal-${reactId.replace(/:/g, '')}`);
 
   // =========================================================================
   // File Upload Integration
