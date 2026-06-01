@@ -719,10 +719,10 @@ export default function SettingsDialog({
                       onChange={(e) => setMinimaxModel(e.target.value)}
                       disabled={isMinimaxInitialLoading}
                       className="bg-input border-border text-foreground placeholder:text-muted-foreground font-mono disabled:opacity-50 rounded-md focus:ring-2 focus:ring-ring focus:border-ring"
-                      placeholder="MiniMax-M2.7"
+                      placeholder="MiniMax-M3"
                     />
                     <p className="text-xs text-muted-foreground mt-0">
-                      Default model to use (e.g., MiniMax-M2.7, MiniMax-M2.5-highspeed). This will
+                      Default model to use (e.g., MiniMax-M3, MiniMax-M2.7). This will
                       be injected as MINIMAX_MODEL in sandboxes.
                     </p>
                   </div>

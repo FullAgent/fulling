@@ -10,7 +10,7 @@
  *   DATABASE_URL=... vitest run __tests__/integration/
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { beforeEach,describe, expect, it, vi } from 'vitest'
 
 // Mock prisma with in-memory store
 const configStore: Map<string, { key: string; value: string; category: string; isSecret: boolean }> =
@@ -104,7 +104,7 @@ vi.mock('@/lib/logger', () => ({
 }))
 
 vi.mock('@/lib/api-auth', () => ({
-  withAuth: (handler: Function) => {
+  withAuth: (handler: (req: Request, ctx: unknown, session: unknown) => Promise<Response>) => {
     return async (req: Request) => {
       const session = { user: { id: 'integration-test-user' } }
       return handler(req, { params: Promise.resolve({}) }, session)
@@ -126,7 +126,7 @@ describe('MiniMax Provider Integration', () => {
       body: JSON.stringify({
         apiBaseUrl: 'https://api.minimax.io/v1',
         apiKey: 'integration-test-key',
-        model: 'MiniMax-M2.7',
+        model: 'MiniMax-M3',
       }),
       headers: { 'Content-Type': 'application/json' },
     })
@@ -148,7 +148,7 @@ describe('MiniMax Provider Integration', () => {
 
     expect(getData.apiKey).toBe('integration-test-key')
     expect(getData.apiBaseUrl).toBe('https://api.minimax.io/v1')
-    expect(getData.model).toBe('MiniMax-M2.7')
+    expect(getData.model).toBe('MiniMax-M3')
   })
 
   it('should coexist with Anthropic config without interference', async () => {

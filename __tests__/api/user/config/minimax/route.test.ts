@@ -4,7 +4,7 @@
  * Tests the GET and POST endpoints at /api/user/config/minimax
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { beforeEach,describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies
 vi.mock('@/lib/db', () => ({
@@ -42,7 +42,7 @@ vi.mock('@/lib/logger', () => ({
 
 // Mock withAuth to pass through session
 vi.mock('@/lib/api-auth', () => ({
-  withAuth: (handler: Function) => {
+  withAuth: (handler: (req: Request, ctx: unknown, session: unknown) => Promise<Response>) => {
     return async (req: Request) => {
       const session = { user: { id: 'test-user-id' } }
       return handler(req, { params: Promise.resolve({}) }, session)
@@ -61,7 +61,7 @@ describe('GET /api/user/config/minimax', () => {
     const mockConfigs = [
       { key: 'MINIMAX_API_KEY', value: 'test-api-key' },
       { key: 'MINIMAX_API', value: 'https://api.minimax.io/v1' },
-      { key: 'MINIMAX_MODEL', value: 'MiniMax-M2.7' },
+      { key: 'MINIMAX_MODEL', value: 'MiniMax-M3' },
     ]
     vi.mocked(prisma.userConfig.findMany).mockResolvedValue(mockConfigs as never)
 
@@ -72,7 +72,7 @@ describe('GET /api/user/config/minimax', () => {
 
     expect(data.apiKey).toBe('test-api-key')
     expect(data.apiBaseUrl).toBe('https://api.minimax.io/v1')
-    expect(data.model).toBe('MiniMax-M2.7')
+    expect(data.model).toBe('MiniMax-M3')
   })
 
   it('should return nulls when no configs exist', async () => {
@@ -113,7 +113,7 @@ describe('POST /api/user/config/minimax', () => {
       body: JSON.stringify({
         apiBaseUrl: 'https://api.minimax.io/v1',
         apiKey: 'test-api-key',
-        model: 'MiniMax-M2.7',
+        model: 'MiniMax-M3',
       }),
       headers: { 'Content-Type': 'application/json' },
     })

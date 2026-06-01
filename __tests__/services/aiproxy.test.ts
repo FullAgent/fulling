@@ -4,7 +4,7 @@
  * Tests that MiniMax env vars are correctly loaded and mapped
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { beforeEach,describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies
 vi.mock('@/lib/db', () => ({
@@ -50,7 +50,7 @@ describe('loadEnvVarsForSandbox', () => {
       { key: 'ANTHROPIC_SMALL_FAST_MODEL', value: 'claude-3-5-haiku-20241022' },
       { key: 'MINIMAX_API_KEY', value: 'minimax-test-key' },
       { key: 'MINIMAX_API', value: 'https://api.minimax.io/v1' },
-      { key: 'MINIMAX_MODEL', value: 'MiniMax-M2.7' },
+      { key: 'MINIMAX_MODEL', value: 'MiniMax-M3' },
     ]
     vi.mocked(prisma.userConfig.findMany).mockResolvedValue(mockConfigs as never)
 
@@ -66,7 +66,7 @@ describe('loadEnvVarsForSandbox', () => {
     // MiniMax vars
     expect(envVars.MINIMAX_API_KEY).toBe('minimax-test-key')
     expect(envVars.MINIMAX_BASE_URL).toBe('https://api.minimax.io/v1')
-    expect(envVars.MINIMAX_MODEL).toBe('MiniMax-M2.7')
+    expect(envVars.MINIMAX_MODEL).toBe('MiniMax-M3')
   })
 
   it('should return only Anthropic vars when no MiniMax config exists', async () => {
@@ -89,7 +89,7 @@ describe('loadEnvVarsForSandbox', () => {
     const mockConfigs = [
       { key: 'MINIMAX_API_KEY', value: 'minimax-test-key' },
       { key: 'MINIMAX_API', value: 'https://api.minimax.io/v1' },
-      { key: 'MINIMAX_MODEL', value: 'MiniMax-M2.5-highspeed' },
+      { key: 'MINIMAX_MODEL', value: 'MiniMax-M2.7' },
     ]
     vi.mocked(prisma.userConfig.findMany).mockResolvedValue(mockConfigs as never)
 
@@ -99,7 +99,7 @@ describe('loadEnvVarsForSandbox', () => {
     expect(envVars.ANTHROPIC_AUTH_TOKEN).toBeUndefined()
     expect(envVars.MINIMAX_API_KEY).toBe('minimax-test-key')
     expect(envVars.MINIMAX_BASE_URL).toBe('https://api.minimax.io/v1')
-    expect(envVars.MINIMAX_MODEL).toBe('MiniMax-M2.5-highspeed')
+    expect(envVars.MINIMAX_MODEL).toBe('MiniMax-M2.7')
   })
 
   it('should return empty object when no configs exist', async () => {
