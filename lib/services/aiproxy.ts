@@ -86,14 +86,22 @@ export async function createAiproxyToken(
 /**
  * Load environment variables for sandbox from user config
  * @param userId - User ID
- * @returns Environment variables object with ANTHROPIC_BASE_URL, ANTHROPIC_AUTH_TOKEN, and model configs
+ * @returns Environment variables object with ANTHROPIC_BASE_URL, ANTHROPIC_AUTH_TOKEN, MiniMax configs, and model configs
  */
 export async function loadEnvVarsForSandbox(userId: string): Promise<Record<string, string>> {
   const userConfig = await prisma.userConfig.findMany({
     where: {
       userId,
       key: {
-        in: ['ANTHROPIC_API_KEY', 'ANTHROPIC_API', 'ANTHROPIC_MODEL', 'ANTHROPIC_SMALL_FAST_MODEL'],
+        in: [
+          'ANTHROPIC_API_KEY',
+          'ANTHROPIC_API',
+          'ANTHROPIC_MODEL',
+          'ANTHROPIC_SMALL_FAST_MODEL',
+          'MINIMAX_API_KEY',
+          'MINIMAX_API',
+          'MINIMAX_MODEL',
+        ],
       },
     },
   })
@@ -122,6 +130,24 @@ export async function loadEnvVarsForSandbox(userId: string): Promise<Record<stri
   const smallFastModel = userConfig.find((config) => config.key === 'ANTHROPIC_SMALL_FAST_MODEL')
   if (smallFastModel?.value) {
     envVars.ANTHROPIC_SMALL_FAST_MODEL = smallFastModel.value
+  }
+
+  // Find MINIMAX_API_KEY
+  const minimaxApiKey = userConfig.find((config) => config.key === 'MINIMAX_API_KEY')
+  if (minimaxApiKey?.value) {
+    envVars.MINIMAX_API_KEY = minimaxApiKey.value
+  }
+
+  // Find MINIMAX_API and map to MINIMAX_BASE_URL
+  const minimaxApiBaseUrl = userConfig.find((config) => config.key === 'MINIMAX_API')
+  if (minimaxApiBaseUrl?.value) {
+    envVars.MINIMAX_BASE_URL = minimaxApiBaseUrl.value
+  }
+
+  // Find MINIMAX_MODEL
+  const minimaxModel = userConfig.find((config) => config.key === 'MINIMAX_MODEL')
+  if (minimaxModel?.value) {
+    envVars.MINIMAX_MODEL = minimaxModel.value
   }
 
   return envVars
