@@ -17,10 +17,22 @@ import type { SealosAuthSession } from './types'
  */
 export async function getSealosSession(): Promise<SealosAuthSession> {
   const cleanupApp = createSealosApp()
-  const sealosSession = await sealosApp.getSession()
+  let sealosSession: Awaited<ReturnType<typeof sealosApp.getSession>>
+
+  try {
+    sealosSession = await sealosApp.getSession()
+  } catch (error) {
+    cleanupApp?.()
+    throw error
+  }
+
+  if (!sealosSession.token) {
+    cleanupApp?.()
+    throw new Error('Sealos session token is missing')
+  }
 
   return {
-    token: sealosSession.token as unknown as string,
+    token: sealosSession.token,
     kubeconfig: sealosSession.kubeconfig,
     user: sealosSession.user,
     namespaceId: sealosSession.user.nsid,

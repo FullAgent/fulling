@@ -74,9 +74,31 @@ describe('getSealosSession', () => {
 
   it('rethrows session loading errors from the SDK', async () => {
     const error = new Error('session unavailable')
-    createSealosApp.mockReturnValue(vi.fn())
+    const cleanup = vi.fn()
+    createSealosApp.mockReturnValue(cleanup)
     sealosApp.getSession.mockRejectedValue(error)
 
     await expect(getSealosSession()).rejects.toThrow(error)
+    expect(cleanup).toHaveBeenCalledTimes(1)
+  })
+
+  it('cleans up and throws a clear error when the session token is missing', async () => {
+    const cleanup = vi.fn()
+    createSealosApp.mockReturnValue(cleanup)
+    sealosApp.getSession.mockResolvedValue({
+      kubeconfig: 'apiVersion: v1',
+      user: {
+        id: 'user-id',
+        name: 'sealos-user',
+        avatar: '',
+        k8sUsername: 'k8s-user',
+        nsid: 'ns-user',
+      },
+    })
+
+    await expect(getSealosSession()).rejects.toThrow(
+      'Sealos session token is missing',
+    )
+    expect(cleanup).toHaveBeenCalledTimes(1)
   })
 })
