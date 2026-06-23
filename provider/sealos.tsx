@@ -35,14 +35,9 @@ export function SealosProvider({ children }: { children: React.ReactNode }) {
     sealosNs: null,
   });
 
-  const initializationRef = useRef(false);
   const cleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    // prevent multiple initialization
-    if (initializationRef.current) return;
-    initializationRef.current = true;
-
     let disposed = false;
 
     const initializeSealos = async () => {
@@ -112,6 +107,7 @@ export function SealosProvider({ children }: { children: React.ReactNode }) {
     return () => {
       disposed = true;
       cleanupRef.current?.();
+      cleanupRef.current = null;
     };
   }, []);
 
