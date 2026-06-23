@@ -43,6 +43,8 @@ export function SealosProvider({ children }: { children: React.ReactNode }) {
     if (initializationRef.current) return;
     initializationRef.current = true;
 
+    let disposed = false;
+
     const initializeSealos = async () => {
       try {
         setState((prev) => ({ ...prev, isLoading: true, error: null }));
@@ -69,6 +71,11 @@ export function SealosProvider({ children }: { children: React.ReactNode }) {
         console.info('Getting Sealos session...');
         const sealosSession = await getSealosSession();
 
+        if (disposed) {
+          sealosSession.cleanup();
+          return;
+        }
+
         setState({
           isInitialized: true,
           isLoading: false,
@@ -86,6 +93,8 @@ export function SealosProvider({ children }: { children: React.ReactNode }) {
           'Sealos SDK initialization failed, falling back to non-Sealos mode:',
           error
         );
+        if (disposed) return;
+
         setState((prev) => ({
           ...prev,
           isInitialized: true,
@@ -101,6 +110,7 @@ export function SealosProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
+      disposed = true;
       cleanupRef.current?.();
     };
   }, []);
