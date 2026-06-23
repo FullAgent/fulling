@@ -6,7 +6,7 @@ This file provides guidance to AI agents when working with code in this reposito
 
 **Fulling v3.0** is building **dedicated AI workspaces** — persistent, personalizable environments with skills, files, memory, scripts, and runtime. Think of it as an **out-of-the-box AI toolkit** that users can customize and share.
 
-Before making any UI changes, read [design/DESIGN.md](./design/DESIGN.md) for the complete design system specification.
+Read [docs/architecture.md](./docs/architecture.md) before product or architecture work. It is the source of truth for the v3 workspace model.
 
 ## Tech Stack
 
@@ -23,28 +23,26 @@ Before making any UI changes, read [design/DESIGN.md](./design/DESIGN.md) for th
 - Route-specific components in `_components/` directory
 - Shared components in top-level `components/`
 
-## Architecture Patterns
+## Current Implementation Context
 
-- **Asynchronous reconciliation**: API → Database → Reconciliation Job → Event → K8s Operation
+- Existing code still contains v2 project/resource abstractions. Do not treat them as v3 product architecture.
+- **Asynchronous reconciliation** exists in current code: API → Database → Reconciliation Job → Event → K8s Operation
 - **Always use user-specific K8s service**: `const k8sService = await getK8sServiceForUser(userId)`
 - **Optimistic locking** in Repository layer
 - **Non-blocking APIs**: endpoints only update DB, return immediately
 
-## Anti-Patterns (Never Do)
+## UI Direction
 
-- No emojis anywhere in the UI
-- No Inter font
-- No generic serif fonts
-- No pure black (`#000000`)
-- No purple/neon glows
-- No oversaturated accents
-- No 3-column equal card layouts
-- No centered Hero sections (use asymmetric splits)
-- No AI copywriting cliches ("Elevate", "Seamless", "Unleash")
+There is no active v3 design system in the repository. The previous design draft
+has been removed. Before substantial UI work, define or confirm the current
+visual direction instead of inheriting old visual rules.
+
+Avoid generic AI copywriting cliches such as "Elevate", "Seamless", and
+"Unleash".
 
 ## Key Files
 
-- [design/DESIGN.md](./design/DESIGN.md) — Design system (read before any UI work)
+- [docs/architecture.md](./docs/architecture.md) — v3 system architecture and product model
 - `lib/k8s/k8s-service-helper.ts` — User-specific K8s service
 - `lib/events/` + `lib/jobs/` — Reconciliation core
 - `instrumentation.ts` — Application startup
