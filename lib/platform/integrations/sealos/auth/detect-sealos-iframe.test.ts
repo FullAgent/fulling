@@ -45,6 +45,42 @@ describe('detectSealosIframe', () => {
     ).toBe(false)
   })
 
+  it('returns false for spoofed Sealos-like ancestor hosts', () => {
+    expect(
+      detectSealosIframe({
+        location: {
+          ancestorOrigins: ['https://sealos.io.evil.com'],
+        },
+      }),
+    ).toBe(false)
+
+    expect(
+      detectSealosIframe({
+        location: {
+          ancestorOrigins: ['https://evil-sealos.run.example'],
+        },
+      }),
+    ).toBe(false)
+
+    expect(
+      detectSealosIframe({
+        location: {
+          ancestorOrigins: ['https://example.com?next=sealos.io'],
+        },
+      }),
+    ).toBe(false)
+  })
+
+  it('returns false for malformed ancestor origin strings', () => {
+    expect(
+      detectSealosIframe({
+        location: {
+          ancestorOrigins: ['not a url with sealos.io'],
+        },
+      }),
+    ).toBe(false)
+  })
+
   it('returns false when ancestor origin access throws', () => {
     const browserWindow = {
       location: {

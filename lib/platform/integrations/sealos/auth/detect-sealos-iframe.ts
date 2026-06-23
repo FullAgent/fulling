@@ -24,7 +24,14 @@ export function detectSealosIframe(browserWindow?: BrowserWindowLike): boolean {
     const ancestorOrigin = browserWindow.location?.ancestorOrigins?.[0]
     if (!ancestorOrigin) return false
 
-    return ancestorOrigin.includes('sealos.io') || ancestorOrigin.includes('sealos.run')
+    const hostname = new URL(ancestorOrigin).hostname
+
+    return (
+      hostname === 'sealos.io' ||
+      hostname.endsWith('.sealos.io') ||
+      hostname === 'sealos.run' ||
+      hostname.endsWith('.sealos.run')
+    )
   } catch {
     return false
   }
