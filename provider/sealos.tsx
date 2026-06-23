@@ -1,35 +1,14 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { createSealosApp, sealosApp } from '@zjy365/sealos-desktop-sdk/app';
 
-interface SealosUserInfo {
-  id: string;
-  name: string;
-  avatar: string;
-  k8sUsername: string;
-  nsid: string;
-}
+import {
+  detectSealosIframe,
+  getSealosSession,
+  type SealosUserInfo,
+} from '@/lib/platform/integrations/sealos/auth';
 
 let sealosInitPromise: Promise<void> | null = null;
-
-/**
- * Detect if running inside Sealos iframe environment
- * Uses ancestorOrigins to check parent frame domain
- */
-function isSealosIframe(): boolean {
-  if (typeof window === 'undefined') return false;
-
-  try {
-    const ancestorOrigin = window.location.ancestorOrigins?.[0];
-    if (!ancestorOrigin) return false;
-
-    // Check if ancestor domain contains Sealos domains
-    return ancestorOrigin.includes('sealos.io') || ancestorOrigin.includes('sealos.run');
-  } catch {
-    return false;
-  }
-}
 
 interface SealosContextType {
   isInitialized: boolean;
@@ -68,8 +47,7 @@ export function SealosProvider({ children }: { children: React.ReactNode }) {
       try {
         setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-        // First, check if we're in Sealos iframe environment
-        const isInSealosIframe = isSealosIframe();
+        const isInSealosIframe = detectSealosIframe(window);
 
         if (!isInSealosIframe) {
           // Not in Sealos environment, skip SDK initialization
@@ -87,31 +65,22 @@ export function SealosProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        // In Sealos iframe, initialize SDK and get credentials
         console.info('Detected Sealos iframe environment, initializing SDK...');
-        const cleanupApp = createSealosApp();
-
-        // get session info
         console.info('Getting Sealos session...');
-        const sealosSession = await sealosApp.getSession();
-        const sealosToken = sealosSession.token as unknown as string;
-        const sealosNs = sealosSession.user.nsid;
+        const sealosSession = await getSealosSession();
 
         setState({
           isInitialized: true,
           isLoading: false,
           isSealos: true,
           error: null,
-          sealosToken,
+          sealosToken: sealosSession.token,
           sealosKubeconfig: sealosSession.kubeconfig,
           sealosUser: sealosSession.user,
-          sealosNs,
+          sealosNs: sealosSession.namespaceId,
         });
 
-        // cleanup
-        cleanupRef.current = () => {
-          cleanupApp?.();
-        };
+        cleanupRef.current = sealosSession.cleanup;
       } catch (error) {
         console.info(
           'Sealos SDK initialization failed, falling back to non-Sealos mode:',
