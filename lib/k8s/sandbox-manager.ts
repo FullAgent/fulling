@@ -641,10 +641,10 @@ export class SandboxManager {
           },
         },
         minReadySeconds: 10,
-        // Automatically delete PVCs when StatefulSet is deleted
-        // This prevents orphaned PVCs and storage costs
+        // Keep PVCs when StatefulSet is deleted to protect user data if external
+        // controllers recreate the StatefulSet. deleteSandbox explicitly deletes PVCs.
         persistentVolumeClaimRetentionPolicy: {
-          whenDeleted: 'Delete', // Delete PVCs when StatefulSet is deleted
+          whenDeleted: 'Retain', // Keep PVCs when StatefulSet is deleted
           whenScaled: 'Retain', // Keep PVCs when scaling down (for potential scale-up)
         },
         template: {
