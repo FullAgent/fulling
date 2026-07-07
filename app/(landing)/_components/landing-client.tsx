@@ -3,7 +3,6 @@
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-
 import { HeroSection } from './hero-section';
 import { LandingHeader } from './landing-header';
 import { TerminalDemo } from './terminal-demo';
