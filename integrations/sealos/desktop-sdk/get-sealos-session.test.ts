@@ -12,7 +12,7 @@ vi.mock('@zjy365/sealos-desktop-sdk/app', () => ({
   sealosApp,
 }))
 
-import { getSealosSession } from '@/lib/platform/integrations/sealos/auth/get-sealos-session'
+import { getSealosSession } from '@/integrations/sealos/desktop-sdk/get-sealos-session'
 
 describe('getSealosSession', () => {
   beforeEach(() => {

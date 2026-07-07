@@ -11,7 +11,7 @@ const { detectSealosIframe, getSealosSession } = vi.hoisted(() => ({
   getSealosSession: vi.fn(),
 }))
 
-vi.mock('@/lib/platform/integrations/sealos/auth', () => ({
+vi.mock('@/integrations/sealos/desktop-sdk', () => ({
   detectSealosIframe,
   getSealosSession,
 }))

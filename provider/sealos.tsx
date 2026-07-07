@@ -6,7 +6,7 @@ import {
   detectSealosIframe,
   getSealosSession,
   type SealosUserInfo,
-} from '@/lib/platform/integrations/sealos/auth';
+} from '@/integrations/sealos/desktop-sdk';
 
 let sealosInitPromise: Promise<void> | null = null;
 
