@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 
 import { Button } from '@/components/ui/button';
 
@@ -19,7 +18,6 @@ import { Button } from '@/components/ui/button';
  */
 export function HomePage() {
   const router = useRouter();
-  const { status } = useSession();
 
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -27,24 +25,12 @@ export function HomePage() {
   const handleGetStarted = async () => {
     // Clear previous errors on retry
     setAuthError(null);
-
-    // Already authenticated - go to projects
-    if (status === 'authenticated') {
-      router.push('/projects');
-      return;
-    }
-
     router.push('/login');
   };
 
-  const getButtonText = useCallback(() => {
-    if (status === 'authenticated') {
-      return 'Go to Projects';
-    }
-    return 'Get Started';
-  }, [status]);
+  const getButtonText = useCallback(() => 'Get Started', []);
 
-  const isButtonDisabled = status === 'loading';
+  const isButtonDisabled = false;
 
   return (
     <>
@@ -101,7 +87,7 @@ export function HomePage() {
               size="lg"
               onClick={handleGetStarted}
               disabled={isButtonDisabled}
-              aria-busy={status === 'loading'}
+              aria-busy={false}
               className="w-48"
             >
               {getButtonText()}

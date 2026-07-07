@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 
 
 import { HeroSection } from './hero-section';
@@ -27,39 +26,27 @@ interface LandingClientProps {
  */
 export function LandingClient({ starCount }: LandingClientProps) {
   const router = useRouter();
-  const { status } = useSession();
 
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Handle Get Started button click
   const handleGetStarted = useCallback(() => {
     setAuthError(null);
-
-    if (status === 'authenticated') {
-      router.push('/projects');
-      return;
-    }
-
     router.push('/login');
-  }, [status, router]);
+  }, [router]);
 
   // Handle Sign In button click
   const handleSignIn = useCallback(() => {
-    if (status === 'authenticated') {
-      router.push('/projects');
-      return;
-    }
-
     router.push('/login');
-  }, [status, router]);
+  }, [router]);
 
-  const isButtonLoading = status === 'loading';
-  const shouldShowGoToProjects = status === 'authenticated';
+  const isButtonLoading = false;
+  const shouldShowGoToProjects = false;
 
   return (
     <div className="h-screen overflow-hidden flex flex-col">
       <LandingHeader
-        isAuthenticated={status === 'authenticated'}
+        isAuthenticated={false}
         isSealos={false}
         onSignIn={handleSignIn}
         starCount={starCount}
