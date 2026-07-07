@@ -54,6 +54,8 @@ describe('detectSealosIframe', () => {
   it('returns false for non-Sealos ancestor origins', () => {
     expect(
       detectSealosIframe({
+        self: 'child-frame',
+        top: 'parent-frame',
         location: {
           ancestorOrigins: ['https://example.com'],
         },
@@ -64,6 +66,8 @@ describe('detectSealosIframe', () => {
   it('returns false for spoofed Sealos-like ancestor hosts', () => {
     expect(
       detectSealosIframe({
+        self: 'child-frame',
+        top: 'parent-frame',
         location: {
           ancestorOrigins: ['https://sealos.io.evil.com'],
         },
@@ -72,6 +76,8 @@ describe('detectSealosIframe', () => {
 
     expect(
       detectSealosIframe({
+        self: 'child-frame',
+        top: 'parent-frame',
         location: {
           ancestorOrigins: ['https://evil-sealos.run.example'],
         },
@@ -80,6 +86,8 @@ describe('detectSealosIframe', () => {
 
     expect(
       detectSealosIframe({
+        self: 'child-frame',
+        top: 'parent-frame',
         location: {
           ancestorOrigins: ['https://example.com?next=sealos.io'],
         },
@@ -90,6 +98,8 @@ describe('detectSealosIframe', () => {
   it('returns false for malformed ancestor origin strings', () => {
     expect(
       detectSealosIframe({
+        self: 'child-frame',
+        top: 'parent-frame',
         location: {
           ancestorOrigins: ['not a url with sealos.io'],
         },
@@ -99,6 +109,8 @@ describe('detectSealosIframe', () => {
 
   it('returns false when ancestor origin access throws', () => {
     const browserWindow = {
+      self: 'child-frame',
+      top: 'parent-frame',
       location: {
         get ancestorOrigins() {
           throw new Error('blocked')
