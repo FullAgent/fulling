@@ -7,8 +7,6 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
 import { Button } from '@/components/ui/button';
-import { authenticateWithSealos } from '@/lib/actions/sealos-auth';
-import { useSealos } from '@/provider/sealos';
 
 /**
  * Home page client component with unified rendering.
@@ -22,9 +20,7 @@ import { useSealos } from '@/provider/sealos';
 export function HomePage() {
   const router = useRouter();
   const { status } = useSession();
-  const { isInitialized, isLoading, isSealos, sealosToken, sealosKubeconfig } = useSealos();
 
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Determine button action based on environment and auth status
@@ -38,35 +34,7 @@ export function HomePage() {
       return;
     }
 
-    // Non-Sealos environment - go to login
-    if (!isSealos) {
-      router.push('/login');
-      return;
-    }
-
-    // Sealos environment + unauthenticated - trigger Sealos auth
-    if (!sealosToken || !sealosKubeconfig) {
-      setAuthError('Missing Sealos credentials');
-      return;
-    }
-
-    setIsAuthenticating(true);
-
-    try {
-      const result = await authenticateWithSealos(sealosToken, sealosKubeconfig);
-
-      if (result.success) {
-        // Authentication successful - redirect to projects
-        router.push('/projects');
-        router.refresh();
-      } else {
-        setAuthError(result.error || 'Authentication failed');
-        setIsAuthenticating(false);
-      }
-    } catch (error) {
-      setAuthError(error instanceof Error ? error.message : 'Unknown error');
-      setIsAuthenticating(false);
-    }
+    router.push('/login');
   };
 
   const getButtonText = useCallback(() => {
@@ -76,9 +44,7 @@ export function HomePage() {
     return 'Get Started';
   }, [status]);
 
-  // Show minimal loading during initialization
-  const isInitializing = !isInitialized || isLoading;
-  const isButtonDisabled = isInitializing || isAuthenticating;
+  const isButtonDisabled = status === 'loading';
 
   return (
     <>
@@ -135,7 +101,7 @@ export function HomePage() {
               size="lg"
               onClick={handleGetStarted}
               disabled={isButtonDisabled}
-              aria-busy={isAuthenticating}
+              aria-busy={status === 'loading'}
               className="w-48"
             >
               {getButtonText()}
@@ -153,21 +119,6 @@ export function HomePage() {
           </div>
         </div>
       </div>
-
-      {/* Authentication overlay - shown during Sealos auth process */}
-      {isAuthenticating && (
-        <div
-          className="fixed inset-0 bg-background/90 flex items-center justify-center z-50"
-          role="dialog"
-          aria-label="Authentication in progress"
-          aria-modal="true"
-        >
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-foreground mx-auto mb-4"></div>
-            <p className="text-muted-foreground text-sm">Authenticating with Sealos...</p>
-          </div>
-        </div>
-      )}
     </>
   );
 }

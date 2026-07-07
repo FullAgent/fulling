@@ -25,7 +25,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { getInstallations, type GitHubInstallation } from '@/lib/actions/github';
 import { env } from '@/lib/env';
 import * as fetchClient from '@/lib/fetch-client';
-import { useSealos } from '@/provider/sealos';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -68,7 +67,7 @@ export default function SettingsDialog({
   onOpenChange,
   defaultTab = 'kubeconfig',
 }: SettingsDialogProps) {
-  const { isSealos } = useSealos();
+  const isSealos = false;
   const [activeTab, setActiveTab] = useState<TabType>(defaultTab);
 
   // System Prompt state
