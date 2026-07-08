@@ -364,6 +364,11 @@
   --shadow-2xl: var(--shadow-2xl);
 }
 
+#devtools-indicator,
+[data-nextjs-dev-tools-button] {
+  display: none !important;
+}
+
 @layer base {
   * {
     @apply border-border;

@@ -18,9 +18,9 @@ const notoSans = Noto_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Fulling - AI-Powered Full-Stack Development',
+  title: 'Fulling - Dedicated AI Workspaces',
   description:
-    'Create or import full-stack projects in isolated browser sandboxes powered by Claude Code.',
+    'Build, run, and share dedicated AI workspaces as versioned, reliable products.',
 };
 
 export default function RootLayout({
