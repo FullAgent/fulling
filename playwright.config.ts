@@ -13,7 +13,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   webServer: {
-    command: 'corepack pnpm dev',
+    command: 'node node_modules/next/dist/bin/next dev -H 0.0.0.0 -p 3000',
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     env: {
