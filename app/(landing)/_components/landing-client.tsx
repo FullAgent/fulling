@@ -92,7 +92,7 @@ export function LandingClient({ ctaHref, githubStars }: LandingClientProps) {
               href={ctaHref}
               className="mt-14 inline-flex font-[family-name:var(--font-landing-mono)] text-[18px] font-medium text-[#303055] transition-colors hover:text-[#8844ae] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8844ae] lg:text-[22px] xl:mt-[76px]"
             >
-              &gt; npx fulling create
+              Join the v3 preview →
             </Link>
 
             <div id="workspace-model" className="mt-20 xl:mt-40">
