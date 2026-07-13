@@ -5,5 +5,18 @@ const isProd = process.env.NODE_ENV === 'production'
 
 export const logger = pino({
   level: process.env.LOG_LEVEL || (isProd ? 'info' : 'debug'),
-  redact: ['req.headers.authorization', 'password'],
+  redact: {
+    paths: [
+      'req.headers.authorization',
+      '*.accessToken',
+      '*.clientCertificateData',
+      '*.clientKeyData',
+      '*.content',
+      '*.idToken',
+      '*.password',
+      '*.refreshToken',
+      '*.token',
+    ],
+    censor: '[REDACTED]',
+  },
 })

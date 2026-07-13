@@ -13,6 +13,9 @@
 
 # testing
 /coverage
+/playwright-report/
+/test-results/
+/e2e/.auth/
 
 # next.js
 /.next/
@@ -42,8 +45,12 @@ yarn-error.log*
 *.pem
 *.crt
 *.pfx
-kubeconfig
-*kubeconfig*
+/kubeconfig
+/kubeconfig.yaml
+/kubeconfig.yml
+*.kubeconfig
+*.kubeconfig.yaml
+*.kubeconfig.yml
 credentials.json
 secrets.yaml
 secrets.yml

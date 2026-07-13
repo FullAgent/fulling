@@ -16,12 +16,31 @@ env:
   NODE_VERSION: "22.12.0"
   PNPM_VERSION: "10.20.0"
   NEXT_TELEMETRY_DISABLED: 1
-  SKIP_ENV_VALIDATION: 1
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fulling_test
+  BETTER_AUTH_URL: http://127.0.0.1:3000
+  BETTER_AUTH_SECRET: ci-better-auth-secret-at-least-32-characters
+  GITHUB_CLIENT_ID: test-github-client-id
+  GITHUB_CLIENT_SECRET: test-github-client-secret
 
 jobs:
   lint-test-build:
     name: Lint, Test, Build
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: fulling_test
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d fulling_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout code
@@ -41,11 +60,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Deploy database baseline
+        run: pnpm prisma:migrate
+
       - name: Run linter
         run: pnpm lint
 
       - name: Run tests
         run: pnpm test
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run browser tests
+        run: pnpm test:e2e
 
       - name: Build project
         run: pnpm build

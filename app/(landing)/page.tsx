@@ -1,8 +1,9 @@
-import { LandingClient } from './_components/landing-client';
+import { getSession } from '@/lib/auth/session'
 
-/**
- * Landing page — Server Component.
- */
+import { LandingClient } from './_components/landing-client'
+
 export default async function LandingPage() {
-  return <LandingClient />;
+  const session = await getSession()
+
+  return <LandingClient ctaHref={session ? '/workspace' : '/login'} />
 }

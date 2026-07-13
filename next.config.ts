@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   compress: true,
+  allowedDevOrigins: ['127.0.0.1'],
   serverExternalPackages: ['pino'],
   images: {
     remotePatterns: [

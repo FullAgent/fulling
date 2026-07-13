@@ -155,15 +155,11 @@
 - 外部协议通信
 - Provider-specific 逻辑
 
-### lib/platform/integrations/sealos/
+### lib/platform/integrations/<provider>/
 
-- auth
-- session
-- k8s
-- devbox
-- aiproxy
-- namespace
-- runtime adapter
+Provider-specific adapters belong here only when a Workspace capability requires
+them. Authentication providers and user-level Kubernetes credentials remain in
+their focused infrastructure boundaries and must not define the Workspace domain.
 
 ## 10. 关键流程目录
 

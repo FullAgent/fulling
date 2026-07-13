@@ -9,7 +9,7 @@ export default defineConfig({
     include: ['**/*.test.ts', '**/*.test.tsx'],
     env: {
       SKIP_ENV_VALIDATION: '1',
-      DATABASE_URL: 'https://example.com/fulling-test',
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/fulling_test',
     },
   },
 })

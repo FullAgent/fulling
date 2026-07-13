@@ -9,356 +9,74 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String      @id
+  name          String
+  email         String      @unique
+  emailVerified Boolean     @default(false)
+  image         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  kubeconfig    Kubeconfig?
 
-  // Relations
-  identities          UserIdentity[] // One-to-many: User has multiple authentication identities
-  projects            Project[] // One-to-many: User owns multiple projects
-  configs             UserConfig[] // One-to-many: User global configurations
-  skills              UserSkill[] // One-to-many: User has multiple globally enabled skills
-  githubInstallations GitHubAppInstallation[] // One-to-many: User's GitHub App installations
+  @@map("user")
 }
 
-model UserIdentity {
-  id             String       @id @default(cuid())
-  userId         String
-  provider       AuthProvider
-  providerUserId String // External provider's user ID (email for password, githubId for github)
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Store sensitive data like tokens, password hashes
-  // Example structures:
-  // { "token": "github_access_token", "scope": "repo read:user" }
-  // { "passwordHash": "bcrypt_hash", "needReset": false }
-  // { "sealosId": "xxaffeee", "sealosKubeconfig": "sealos_kubeconfig" }
-  metadata Json @default("{}")
-
-  isPrimary Boolean  @default(false) // Mark primary login method
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relation: Many-to-one to User (foreign key: userId)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerUserId], name: "unique_provider_user")
-  @@index([userId, provider], name: "idx_user_provider")
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("account")
 }
 
-// UserConfig: User-level global configuration
-// For settings like API keys, kubeconfig, etc. 
-model UserConfig {
-  id       String  @id @default(cuid())
-  userId   String
-  key      String // ANTHROPIC_AUTH_TOKEN, ANTHROPIC_BASE_URL, KUBECONFIG, etc.
-  value    String // Configuration value
-  category String? // anthropic, kc, github, general
-  isSecret Boolean @default(false) // Mark sensitive values (masked in UI)
-
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relation: Many-to-one to User (foreign key: userId)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, key])
-  @@index([userId, category])
-}
-
-// GitHubAppInstallation: Tracks GitHub App installations
-// Required for obtaining installation access tokens
-model GitHubAppInstallation {
-  id             String @id @default(cuid())
-  installationId Int    @unique // GitHub's numeric installation ID
-  userId         String
-
-  accountId        Int // GitHub account numeric ID
-  accountLogin     String // GitHub username or organization name
-  accountType      String // "User" or "Organization"
-  accountAvatarUrl String?
-
-  repositorySelection String // "all" or "selected"
-
-  permissions Json @default("{}") // App permissions
-  events      Json @default("[]") // Subscribed events
-
-  status      GitHubInstallationStatus @default(ACTIVE)
-  suspendedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  projects Project[] // Reverse relation: which projects use this installation
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([accountId])
+  @@map("session")
 }
 
-// Project: Abstract resource collection
-// Status is derived from child resources (databases, sandboxes, environments)
-model Project {
-  id          String  @id @default(cuid())
-  name        String // Display name
-  description String?
-  userId      String
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  /// @deprecated Use githubAppInstallation + githubRepoId + githubRepoFullName instead
-  githubRepo String? // Optional GitHub repository (legacy)
+  @@index([identifier])
+  @@map("verification")
+}
 
-  // GitHub App integration (Phase 1: Expand)
-  githubAppInstallationId String? // FK → GitHubAppInstallation
-  githubRepoId            Int? // GitHub repo numeric ID (stable across renames)
-  githubRepoFullName      String? // "owner/repo-name", for display
-  githubRepoDefaultBranch String? // Repository default branch for import workflow
-
-  // Aggregated status based on child resources
-  status ProjectStatus @default(CREATING)
-
+model Kubeconfig {
+  userId    String   @id
+  content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relations: Project is a collection of resources
-  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade) // Many-to-one: Project belongs to a User
-  environments          Environment[] // One-to-many: Configuration variables
-  databases             Database[] // One-to-many: Multiple database clusters
-  sandboxes             Sandbox[] // One-to-many: Multiple runtime containers
-  tasks                 ProjectTask[] // One-to-many: Project-level asynchronous tasks
-  githubAppInstallation GitHubAppInstallation? @relation(fields: [githubAppInstallationId], references: [id], onDelete: SetNull)
-
-  @@index([githubAppInstallationId])
-}
-
-// Environment: Configuration key-value pairs for the project
-// No status - just configuration data
-model Environment {
-  id        String   @id @default(cuid())
-  projectId String
-  key       String
-  value     String
-  category  String? // auth/payment/ttyd/secret/general for UI organization
-  isSecret  Boolean  @default(false) // Mark sensitive values (masked in UI)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relation: Many-to-one to Project (foreign key: projectId)
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@unique([projectId, key])
-  @@index([projectId])
-}
-
-// Database: Independent K8s resource (KubeBlocks PostgreSQL cluster)
-// Manages its own lifecycle and status
-model Database {
-  id        String @id @default(cuid())
-  projectId String
-  name      String // Human-readable name (e.g., "main", "analytics")
-
-  // K8s resource identifiers
-  k8sNamespace String
-  databaseName String // KubeBlocks database name
-
-  // Connection information
-  host          String?
-  port          Int?    @default(5432)
-  database      String? @default("postgres")
-  username      String?
-  password      String?
-  connectionUrl String? // Full connection string
-
-  // Resource status (managed independently)
-  status ResourceStatus @default(CREATING)
-
-  // Optimistic locking to prevent concurrent updates
-  lockedUntil DateTime? // Locked until this timestamp, null means unlocked
-
-  // Resource configuration
-  storageSize   String? @default("3Gi")
-  cpuRequest    String? @default("100m")
-  cpuLimit      String? @default("1000m")
-  memoryRequest String? @default("102Mi")
-  memoryLimit   String? @default("1024Mi")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relation: Many-to-one to Project (foreign key: projectId)
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@unique([projectId, name]) // Unique database name per project
-  @@unique([k8sNamespace, databaseName]) // Unique database name per namespace
-  @@index([projectId])
-  @@index([databaseName])
-}
-
-// Sandbox: Independent K8s resource (Deployment + Service + Ingresses)
-// Manages its own lifecycle and status
-model Sandbox {
-  id        String @id @default(cuid())
-  projectId String
-  name      String // Human-readable name (e.g., "dev", "staging")
-
-  // K8s resource identifiers
-  k8sNamespace String
-  sandboxName  String
-
-  // Ingress URLs
-  publicUrl      String? // App ingress (port 3000)
-  ttydUrl        String? // Terminal ingress (port 7681)
-  fileBrowserUrl String? // File browser ingress (port 8080)
-
-  // Resource status (managed independently)
-  status ResourceStatus @default(CREATING)
-
-  // Optimistic locking to prevent concurrent updates
-  // Reconcile job uses this to lock the sandbox and prevent concurrent updates
-  lockedUntil DateTime? // Locked until this timestamp, null means unlocked
-
-  // Runtime configuration
-  runtimeImage  String? // Docker image tag
-  cpuRequest    String? @default("100m")
-  cpuLimit      String? @default("2000m")
-  memoryRequest String? @default("200Mi")
-  memoryLimit   String? @default("4096Mi")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relation: Many-to-one to Project (foreign key: projectId)
-  project Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  tasks   ProjectTask[]
-
-  @@unique([projectId, name]) // Unique sandbox name per project
-  @@unique([k8sNamespace, sandboxName]) // Unique sandbox name per namespace
-  @@index([projectId])
-  @@index([sandboxName])
-}
-
-model UserSkill {
-  id             String   @id @default(cuid())
-  userId         String
-  skillId        String
-  installCommand String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tasks ProjectTask[]
-
-  @@unique([userId, skillId])
-  @@index([userId])
-  @@index([skillId])
-}
-
-model ProjectTask {
-  id            String                   @id @default(cuid())
-  projectId     String
-  sandboxId     String?
-  userSkillId   String?
-  skillId       String?
-  type          ProjectTaskType
-  status        ProjectTaskStatus        @default(PENDING)
-  triggerSource ProjectTaskTriggerSource
-  payload       Json?
-  result        Json?
-  error         String?
-  attemptCount  Int                      @default(0)
-  maxAttempts   Int                      @default(3)
-  lockedUntil   DateTime?
-  startedAt     DateTime?
-  finishedAt    DateTime?
-  createdAt     DateTime                 @default(now())
-  updatedAt     DateTime                 @updatedAt
-
-  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  sandbox   Sandbox?  @relation(fields: [sandboxId], references: [id], onDelete: SetNull)
-  userSkill UserSkill? @relation(fields: [userSkillId], references: [id], onDelete: SetNull)
-
-  @@index([projectId, status])
-  @@index([status, lockedUntil])
-  @@index([type, status])
-  @@index([projectId, skillId, type, status])
-  @@index([userSkillId])
-}
-
-// Project aggregated status based on child resources
-// Aggregation rules (priority order):
-// 1. ERROR: At least one resource has ERROR status
-// 2. CREATING: At least one resource has CREATING status (initial creation in progress)
-// 3. UPDATING: At least one resource has UPDATING status (environment variable changes)
-// 4. Pure states: All resources have the same status → Project uses that status
-// 5. Transition states (all resources in consistent transition):
-//    - STARTING: All resources ∈ {RUNNING, STARTING} (goal: RUNNING)
-//    - STOPPING: All resources ∈ {STOPPED, STOPPING} (goal: STOPPED)
-//    - TERMINATING: All resources ∈ {TERMINATED, TERMINATING} (goal: TERMINATED)
-// 6. PARTIAL: Mixed inconsistent states (e.g., some TERMINATING + some STARTING)
-//    This indicates manual intervention or error recovery is needed
-enum ProjectStatus {
-  // Stable states
-  RUNNING // All resources are RUNNING - fully operational
-  STOPPED // All resources are STOPPED - paused for cost saving
-  TERMINATED // All resources are TERMINATED - soft deleted
-
-  // Transition states (consistent progress toward a goal)
-  CREATING // At least one resource is CREATING - initial creation
-  UPDATING // At least one resource is UPDATING - configuration changes
-  STARTING // Resources ∈ {RUNNING, STARTING} - transitioning to RUNNING
-  STOPPING // Resources ∈ {STOPPED, STOPPING} - transitioning to STOPPED
-  TERMINATING // Resources ∈ {TERMINATED, TERMINATING} - transitioning to TERMINATED
-
-  // Special states
-  ERROR // At least one resource has ERROR - requires attention
-  PARTIAL // Inconsistent mixed states - manual intervention needed
-}
-
-enum ProjectTaskType {
-  CLONE_REPOSITORY
-  INSTALL_SKILL
-  UNINSTALL_SKILL
-  DEPLOY_PROJECT
-}
-
-enum ProjectTaskStatus {
-  PENDING
-  WAITING_FOR_PREREQUISITES
-  RUNNING
-  SUCCEEDED
-  FAILED
-  CANCELLED
-}
-
-enum ProjectTaskTriggerSource {
-  USER_ACTION
-  SYSTEM_EVENT
-  POLICY_ROLLOUT
-}
-
-// Individual resource status (Database and Sandbox)
-// Follows K8s resource lifecycle with transition states
-enum ResourceStatus {
-  CREATING // K8s resource is being created (initial state)
-  STARTING // Resource is transitioning from STOPPED to RUNNING
-  RUNNING // Resource is active and operational
-  STOPPING // Resource is transitioning from RUNNING to STOPPED
-  STOPPED // Resource is stopped (replicas=0 or cluster paused)
-  TERMINATING // Resource is being deleted from K8s
-  TERMINATED // Resource deleted from K8s (soft delete: keep record)
-  ERROR // Resource encountered an error
-  UPDATING // Resource is being updated
-}
-
-enum AuthProvider {
-  PASSWORD // Email/password authentication
-  GITHUB // GitHub OAuth
-  GOOGLE // Google OAuth (future)
-  SEALOS // Sealos OAuth
-}
-
-enum GitHubInstallationStatus {
-  ACTIVE // Installation is active and operational
-  SUSPENDED // Installation is suspended by GitHub
-  DELETED // Installation was deleted
+  @@map("kubeconfig")
 }
