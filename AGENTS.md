@@ -35,9 +35,11 @@ Read [docs/architecture.md](./docs/architecture.md) before product or architectu
 
 ## UI Direction
 
-There is no active v3 design system in the repository. The previous design draft
-has been removed. Before substantial UI work, define or confirm the current
-visual direction instead of inheriting old visual rules.
+The active v3 design system is defined in [docs/design.md](./docs/design.md).
+It derives from SST and is the source of truth for Fulling's visual language,
+tokens, typography, spacing, components, states, and responsive behavior. Read
+it before substantial UI work. Existing UI that conflicts with it is migration
+work, not design precedent.
 
 Avoid generic AI copywriting cliches such as "Elevate", "Seamless", and
 "Unleash".
@@ -45,6 +47,7 @@ Avoid generic AI copywriting cliches such as "Elevate", "Seamless", and
 ## Key Files
 
 - [docs/architecture.md](./docs/architecture.md) — v3 system architecture and product model
+- [docs/design.md](./docs/design.md) — active v3 design system and SST-derived style reference
 - `lib/auth/` — Better Auth and application session boundary
 - `lib/kubeconfig/` — User credential persistence
 - `lib/k8s/` — Validation and user-specific Kubernetes service
