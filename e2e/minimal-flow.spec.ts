@@ -9,7 +9,7 @@ test.describe('public and protected navigation', () => {
 
   test('landing opens the GitHub-only login page', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('link', { name: 'Sign in' }).first().click()
+    await page.getByRole('link', { name: 'Join the v3 preview →' }).click()
 
     await expect(page).toHaveURL(/\/login$/)
     await expect(page.getByRole('button', { name: 'Continue with GitHub' })).toBeVisible()
