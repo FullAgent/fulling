@@ -264,7 +264,7 @@
 }
 
 .capabilities {
-  margin-top: 158px;
+  margin-top: 144px;
   color: rgba(26, 26, 46, 0.3);
 }
 
@@ -463,9 +463,6 @@
     transform: translateY(-20px);
   }
 
-  .codeFigure {
-    margin-top: 39px;
-  }
 }
 
 @media (min-width: 1024px) and (max-height: 820px) {

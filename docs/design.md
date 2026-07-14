@@ -405,7 +405,7 @@ Do not use lifestyle photography, robots, brains, sparkles, glowing orbs, gradie
 
 Use the measured SST landing composition:
 
-- At `1024px` and wider, use a centered `408px / 400px` two-column grid with a `49px` gap. The code surface is `408 × 499px`; the display headline and supporting copy occupy the 400px right column.
+- At `1024px` and wider, use a centered `408px / 400px` two-column grid with a `49px` gap. The code surface is `408 × 499px`; the display headline and supporting copy occupy the 400px right column. Align both the top and bottom edges of the two content columns. When an announcement precedes the headline, the code surface aligns with the announcement rather than the headline; adjust the proof-strip spacing so its final row aligns with the code surface bottom.
 - Between `640px` and `1023px`, use a 56px fixed header, 48px top offset, a centered `408 × 499px` code surface first, then the 400px copy column after a 48px gap.
 - Below `640px`, use 16px page gutters and 24px top offset. Put the copy first and the code surface second. At a 390px viewport the code surface is `358 × 600px`.
 - Use a fixed translucent white header: 64px high on desktop and 56px below 1024px, with a 1px Lavender Mist bottom border. Desktop padding is `12px 12px 12px 16px`; narrower padding is `12px 16px`.
