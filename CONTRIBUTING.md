@@ -10,7 +10,7 @@ Requirements: Node.js 22.12+ with its bundled npm 10+, PostgreSQL, and GitHub
 OAuth credentials.
 
 ```bash
-npm install
+npm ci
 cp .env.template .env.local
 npm run prisma:migrate
 npm run dev

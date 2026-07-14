@@ -35,7 +35,7 @@ ${BETTER_AUTH_URL}/api/auth/callback/github
 ## Local Development
 
 ```bash
-npm install
+npm ci
 cp .env.template .env.local
 # Fill in the database, Better Auth, and GitHub values.
 npm run prisma:migrate
