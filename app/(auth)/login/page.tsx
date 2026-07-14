@@ -1,6 +1,6 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
+import { FullingBrand } from '@/components/fulling-brand'
 import { getSession } from '@/lib/auth/session'
 
 import { GitHubLoginButton } from './_components/github-login-button'
@@ -15,19 +15,21 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { error } = await searchParams
 
   return (
-    <main className="grid min-h-screen bg-[#f7f8f6] lg:grid-cols-[1fr_1.05fr]">
-      <section className="flex items-center px-6 py-12 sm:px-12 lg:px-20">
-        <div className="w-full max-w-md">
-          <Link
-            href="/"
-            className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[#101418]"
-          >
-            Fulling
-          </Link>
-          <h1 className="mt-14 text-4xl font-semibold text-[#101418]">
+    <main className="flex min-h-screen flex-col bg-background text-foreground">
+      <header className="flex h-16 shrink-0 items-center border-b border-border px-4 sm:px-6">
+        <FullingBrand />
+      </header>
+      <section className="flex flex-1 items-center justify-center px-4 py-12 sm:px-6">
+        <div className="w-full max-w-sm">
+          <p className="font-mono text-[length:var(--text-micro)] font-medium uppercase leading-[var(--leading-micro)] tracking-[0.056em] text-muted-foreground">
+            Workspace access
+          </p>
+          <h1 className="mt-3 text-xl font-semibold leading-[var(--leading-heading)]">
             Sign in to your workspace
           </h1>
-          <p className="mt-4 text-base text-[#66717d]">Use your GitHub account to continue.</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Use your GitHub account to continue to Fulling.
+          </p>
           {error === 'oauth' ? (
             <p role="alert" className="mt-5 text-sm text-destructive">
               GitHub sign-in could not be completed. Please try again.
@@ -36,9 +38,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <GitHubLoginButton />
         </div>
       </section>
-      <div className="relative hidden overflow-hidden border-l border-[#e1e5e8] bg-white lg:block">
-        <div className="absolute inset-10 bg-[url('/images/landing-workspace-concept.png')] bg-contain bg-center bg-no-repeat" />
-      </div>
+      <footer className="h-12 shrink-0 border-t border-border px-4 text-xs leading-[48px] text-muted-foreground sm:px-6">
+        Dedicated AI workspaces
+      </footer>
     </main>
   )
 }

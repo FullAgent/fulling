@@ -2,11 +2,11 @@
 
 > A dedicated AI workspace presented like a polished developer tool. The workspace configuration is the artwork; everything else is a clean white frame.
 
-**Version:** 1.1
+**Version:** 1.2
 
 **Theme:** light
 
-**Status:** active — live SST parity audited 2026-07-14
+**Status:** active — global foundation migrated and live SST parity audited 2026-07-14
 
 **Applies to:** public pages, authentication, creator workflows, recipient workflows, and shared product primitives
 
@@ -24,6 +24,8 @@ When sources disagree, use this order:
 4. The Refero SST Style Guide for upstream patterns not exposed by the live landing page.
 
 Any intentional visual deviation from SST must be documented here before it becomes a reusable pattern. Existing code that conflicts with this document is migration work, not precedent.
+
+`app/globals.css` is Fulling's only executable token source. Pages, CSS modules, and shared components must consume its custom properties or Tailwind semantic aliases; they must not redeclare palette, typography, shape, surface, elevation, or status values locally. This document is the human-readable specification and must be updated in the same change whenever the global source changes.
 
 ## Design language
 
@@ -69,14 +71,14 @@ The values below intentionally match the SST reference. Fulling changes only the
 
 SST's public style reference does not define a complete application status palette. Fulling may use the following semantic roles only where status cannot be communicated clearly through text and iconography alone:
 
-| Role | Token | Usage |
-|------|-------|-------|
-| Success | `--color-status-success` | Completed, healthy, connected, or ready states. |
-| Warning | `--color-status-warning` | Degraded, pending attention, or expiring states. |
-| Error | `--color-status-error` | Failed, invalid, disconnected, or destructive states. |
-| Info | `--color-status-info` | Neutral progress or informational state. |
+| Role | Value | Token | Usage |
+|------|-------|-------|-------|
+| Success | `#35654d` | `--color-status-success` | Completed, healthy, connected, or ready states. |
+| Warning | `#755c16` | `--color-status-warning` | Degraded, pending attention, or expiring states. |
+| Error | `#a13d3b` | `--color-status-error` | Failed, invalid, disconnected, or destructive states. |
+| Info | `#405f88` | `--color-status-info` | Neutral progress or informational state. |
 
-Exact status values must be contrast-tested before adoption. Do not reuse code syntax colors as shortcuts for product status.
+These values are the adopted light-theme status colors and are reserved for semantic feedback. Do not reuse code syntax colors as shortcuts for product status.
 
 ## Tokens — Typography
 
@@ -387,8 +389,8 @@ Use borders and spacing before adding another surface level. Additional elevatio
 
 ## Elevation
 
-- **Code block:** `0 0 0 1px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04)`
-- **Dialog:** minimal shadow only to separate the modal plane from its backdrop
+- **Code block:** use the source-matched `--shadow-code-block` token from `app/globals.css`
+- **Dialog:** use `--shadow-dialog` only to separate the modal plane from its backdrop
 - **Cards, buttons, navigation, rows, and routine panels:** no shadow
 
 ## Imagery
@@ -467,7 +469,9 @@ When generating or implementing Fulling UI, begin with:
 
 These brands are context only. SST remains the source to match.
 
-## Quick Start
+## Token inventory
+
+The following snippets show the selected canonical values for documentation and prompt context. They are not a second implementation source and must not be copied into page or component styles. Production code imports `app/globals.css` through the root layout and consumes those global tokens directly. Tailwind's active spacing, type, weight, radius, color, and font utilities are aliased back to the same root tokens there.
 
 ### CSS Custom Properties
 
@@ -488,6 +492,10 @@ These brands are context only. SST remains the source to match.
   --color-secondary-ink: rgba(26, 26, 46, 0.6);
   --color-quiet-ink: rgba(26, 26, 46, 0.38);
   --color-announcement-blue: #5196b3;
+  --color-status-success: #35654d;
+  --color-status-warning: #755c16;
+  --color-status-error: #a13d3b;
+  --color-status-info: #405f88;
 
   /* Typography — Font Families */
   --font-ibm-plex-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -556,85 +564,44 @@ These brands are context only. SST remains the source to match.
   --radius-code-blocks: 8px;
 
   /* Surfaces */
-  --surface-paper: #ffffff;
-  --surface-lavender-mist: #e8e8f2;
+  --surface-paper: var(--color-paper);
+  --surface-lavender-mist: var(--color-lavender-mist);
 
   /* Elevation */
-  --shadow-code-block: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.04);
+  --shadow-code-block:
+    rgba(199, 199, 199, 0.04) 0 1px 1.5px,
+    rgba(199, 199, 199, 0.08) 0.1px 12px 18px,
+    rgba(199, 199, 199, 0.08) 0.3px 26px 39px,
+    rgba(199, 199, 199, 0.1) 0.6px 55px 82.5px,
+    rgba(255, 255, 255, 0.9) 0 0 2px 1px inset;
 }
 ```
 
 ### Tailwind v4
 
 ```css
-@theme {
-  /* Colors */
-  --color-fulling-ink: #303055;
-  --color-code-plum: #8844ae;
-  --color-code-cobalt: #3b61b0;
-  --color-code-teal: #096e72;
-  --color-code-rust: #984e4d;
-  --color-slate: #403f53;
-  --color-fog: #767682;
-  --color-mist: #a8a8b0;
-  --color-obsidian: #111111;
-  --color-lavender-mist: #e8e8f2;
-  --color-paper: #ffffff;
-  --color-secondary-ink: rgba(26, 26, 46, 0.6);
-  --color-quiet-ink: rgba(26, 26, 46, 0.38);
-  --color-announcement-blue: #5196b3;
-
-  /* Typography */
-  --font-ibm-plex-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --font-rubik-variable: "Rubik Variable", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-
-  /* Typography — Scale */
-  --text-micro: 9px;
-  --leading-micro: 1.78;
-  --text-caption: 12px;
-  --leading-caption: 1.5;
-  --text-metadata: 13px;
-  --leading-metadata: 1.2;
-  --text-body: 14px;
-  --leading-body: 1.8;
-  --text-body-lg: 16px;
-  --leading-body-lg: 1.8;
-  --text-heading-sm: 18px;
-  --leading-heading-sm: 1.5;
-  --text-heading: 20px;
-  --leading-heading: 1.5;
-  --text-display: 48px;
-  --leading-display: 1.1;
-  --tracking-display: -1.01px;
-
-  /* Typography — Weights */
-  --font-weight-regular: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-
-  /* Spacing */
-  --spacing-4: 4px;
-  --spacing-8: 8px;
-  --spacing-12: 12px;
-  --spacing-16: 16px;
-  --spacing-24: 24px;
-  --spacing-32: 32px;
-  --spacing-40: 40px;
-  --spacing-48: 48px;
-  --spacing-64: 64px;
-  --spacing-72: 72px;
-
-  /* Border Radius */
-  --radius-sm: 1px;
-  --radius-md: 4px;
-  --radius-lg: 8px;
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-rubik-variable);
+  --font-mono: var(--font-ibm-plex-mono);
 }
 ```
 
 ## Implementation requirements
 
-- Use one versioned token source for all migrated Fulling surfaces.
+- Use `app/globals.css` as the one versioned executable token source for every Fulling surface.
 - Map shared components to semantic tokens; do not duplicate literal hex values across pages.
+- Load only Rubik Variable and IBM Plex Mono at the root; do not retain legacy font aliases.
+- Treat a hard-coded design color outside `app/globals.css` as a regression.
 - Remove legacy tokens and components after their migration is complete.
 - Review representative desktop and mobile screens against the SST source.
 - Add visual regression coverage for the application shell, workspace list, builder, runtime state, dialog, empty state, and public landing page.
@@ -644,3 +611,5 @@ These brands are context only. SST remains the source to match.
 ## Migration rule
 
 This document describes the target system. A page is migrated only when its typography, colors, spacing, borders, radii, controls, states, and responsive behavior use this shared foundation. Partial visual resemblance is not completion.
+
+There is no compatibility layer for the retired design system. When an old component conflicts with the global foundation, migrate or replace it rather than adding fallback tokens, aliases, or page-specific exceptions.

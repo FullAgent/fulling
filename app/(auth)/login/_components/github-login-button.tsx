@@ -25,9 +25,9 @@ export function GitHubLoginButton() {
   }
 
   return (
-    <div className="mt-8">
-      <Button type="button" size="lg" className="h-12 w-full bg-[#101418] text-white hover:bg-[#2a3037]" disabled={isPending} onClick={handleSignIn}>
-        {isPending ? <LoaderCircle className="size-5 animate-spin" /> : <Github className="size-5" />}
+    <div className="mt-8 border-t border-border pt-6">
+      <Button type="button" size="lg" className="w-full" disabled={isPending} onClick={handleSignIn}>
+        {isPending ? <LoaderCircle className="animate-spin" /> : <Github />}
         {isPending ? 'Connecting...' : 'Continue with GitHub'}
       </Button>
       {error ? <p role="alert" className="mt-3 text-sm text-destructive">{error}</p> : null}

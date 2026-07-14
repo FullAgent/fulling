@@ -111,11 +111,11 @@ export function KubeconfigForm() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-5 py-10 sm:px-8 sm:py-14">
-      <header className="border-b border-[#dce1e4] pb-8">
-        <p className="text-sm font-semibold text-[#287355]">Settings</p>
-        <h1 className="mt-2 text-3xl font-semibold text-[#171a1f]">Kubeconfig</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-[#5e6974]">
+    <main className="mx-auto w-full max-w-[var(--page-max-width)] px-4 py-10 sm:px-6 sm:py-12">
+      <header className="border-b border-border pb-8">
+        <p className="font-mono text-[length:var(--text-micro)] font-medium uppercase leading-[var(--leading-micro)] tracking-[0.056em] text-muted-foreground">Settings</p>
+        <h1 className="mt-2 text-xl font-semibold leading-[var(--leading-heading)]">Kubeconfig</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
           Fulling validates this credential against the selected Kubernetes cluster before storing
           it as plaintext. Saved content is never displayed again.
         </p>
@@ -127,7 +127,7 @@ export function KubeconfigForm() {
             <h2 id="status-heading" className="text-lg font-semibold">
               Saved credential
             </h2>
-            <p className="mt-1 text-sm text-[#5e6974]">
+            <p className="mt-1 text-sm text-muted-foreground">
               {isLoading
                 ? 'Loading status...'
                 : status?.configured
@@ -136,7 +136,7 @@ export function KubeconfigForm() {
             </p>
           </div>
           {status?.configured ? (
-            <div className="flex items-center gap-2 text-sm font-medium text-[#287355]">
+            <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-status-success)]">
               <CheckCircle2 className="size-5" aria-hidden="true" />
               Configured
             </div>
@@ -144,12 +144,12 @@ export function KubeconfigForm() {
         </div>
       </section>
 
-      <section className="border-t border-[#dce1e4] py-8" aria-labelledby="editor-heading">
+      <section className="border-t border-border py-8" aria-labelledby="editor-heading">
         <div className="max-w-3xl">
           <h2 id="editor-heading" className="text-lg font-semibold">
             {status?.configured ? 'Replace kubeconfig' : 'Configure kubeconfig'}
           </h2>
-          <p className="mt-2 text-sm leading-6 text-[#5e6974]">
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
             Paste the complete replacement. Existing content is intentionally not prefilled.
           </p>
           <Label htmlFor="kubeconfig" className="mt-6">
@@ -169,7 +169,7 @@ export function KubeconfigForm() {
           <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-h-5 text-sm" aria-live="polite">
               {error ? <p role="alert" className="text-destructive">{error}</p> : null}
-              {notice ? <p className="text-[#287355]">{notice}</p> : null}
+              {notice ? <p className="text-[var(--color-status-success)]">{notice}</p> : null}
             </div>
             <Button
               type="button"
@@ -184,11 +184,11 @@ export function KubeconfigForm() {
       </section>
 
       {status?.configured ? (
-        <section className="border-t border-[#dce1e4] py-8" aria-labelledby="delete-heading">
+        <section className="border-t border-border py-8" aria-labelledby="delete-heading">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 id="delete-heading" className="text-lg font-semibold">Delete kubeconfig</h2>
-              <p className="mt-1 text-sm text-[#5e6974]">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Your account and session remain active after deletion.
               </p>
             </div>
@@ -209,7 +209,7 @@ export function KubeconfigForm() {
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
-                    variant="destructive"
+                    variant="destructiveSolid"
                     onClick={() => void handleDelete()}
                   >
                     Delete kubeconfig
