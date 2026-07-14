@@ -22,8 +22,7 @@ ownership model.
 
 ## Requirements
 
-- Node.js 22.12 or later
-- pnpm 10.20.0
+- Node.js 22.12 or later, including its bundled npm 10 or later
 - PostgreSQL
 - a GitHub OAuth App
 
@@ -36,11 +35,11 @@ ${BETTER_AUTH_URL}/api/auth/callback/github
 ## Local Development
 
 ```bash
-corepack pnpm install
+npm install
 cp .env.template .env.local
 # Fill in the database, Better Auth, and GitHub values.
-corepack pnpm prisma:migrate
-corepack pnpm dev
+npm run prisma:migrate
+npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
@@ -51,14 +50,14 @@ explicitly reset database; it does not migrate v2 data.
 ## Commands
 
 ```bash
-corepack pnpm dev              # Start the development server
-corepack pnpm build            # Generate Prisma client and build
-corepack pnpm lint             # Run ESLint
-corepack pnpm test             # Run Vitest
-corepack pnpm test:e2e         # Run Playwright
-corepack pnpm prisma:format    # Format the Prisma schema
-corepack pnpm prisma:validate  # Validate the Prisma schema
-corepack pnpm prisma:migrate   # Deploy the baseline migration
+npm run dev              # Start the development server
+npm run build            # Generate Prisma client and build
+npm run lint             # Run ESLint
+npm test                 # Run Vitest
+npm run test:e2e         # Run Playwright
+npm run prisma:format    # Format the Prisma schema
+npm run prisma:validate  # Validate the Prisma schema
+npm run prisma:migrate   # Deploy the baseline migration
 ```
 
 ## Credential Boundary

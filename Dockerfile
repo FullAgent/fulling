@@ -1,21 +1,15 @@
 # Install dependencies only when needed
 FROM node:22-alpine AS deps
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat openssl && corepack enable && corepack prepare pnpm@10.20.0 --activate
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 # Copy package files and prisma schema
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json package-lock.json ./
 COPY prisma ./prisma
 
-# Install dependencies
-# Skip prepare script during install, we'll run it in the builder stage
-RUN \
-  if [ -f pnpm-lock.yaml ]; then \
-    pnpm install --frozen-lockfile --ignore-scripts; \
-  else \
-    echo "Lockfile not found." && exit 1; \
-  fi
+# Install dependencies without running package lifecycle scripts.
+RUN npm ci --ignore-scripts
 
 # Rebuild the source code only when needed
 FROM node:22-alpine AS builder
@@ -31,10 +25,8 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV SKIP_ENV_VALIDATION=1
 
-# Generate Prisma client before build
-RUN corepack enable && corepack prepare pnpm@10.20.0 --activate && \
-    pnpm prisma generate && \
-    pnpm run build
+# Generate Prisma Client and compile the Next.js application.
+RUN npm run build
 
 # Production image, copy all the files and run next
 FROM node:22-alpine AS runner

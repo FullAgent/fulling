@@ -1,0 +1,12 @@
+.git
+.next
+node_modules
+.env*
+coverage
+playwright-report
+test-results
+*.pem
+/kubeconfig
+/kubeconfig.yaml
+/kubeconfig.yml
+npm-debug.log*

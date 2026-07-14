@@ -14,7 +14,6 @@ concurrency:
 
 env:
   NODE_VERSION: "22.12.0"
-  PNPM_VERSION: "10.20.0"
   NEXT_TELEMETRY_DISABLED: 1
   DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fulling_test
   BETTER_AUTH_URL: http://127.0.0.1:3000
@@ -46,34 +45,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
+          cache: npm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Deploy database baseline
-        run: pnpm prisma:migrate
+        run: npm run prisma:migrate
 
       - name: Run linter
-        run: pnpm lint
+        run: npm run lint
 
       - name: Run tests
-        run: pnpm test
+        run: npm test
 
       - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
+        run: npm exec -- playwright install --with-deps chromium
 
       - name: Run browser tests
-        run: pnpm test:e2e
+        run: npm run test:e2e
 
       - name: Build project
-        run: pnpm build
+        run: npm run build

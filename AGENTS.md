@@ -95,10 +95,10 @@ Do not use ambiguous moving tags such as `main`, `stable`, `prod`, `release`,
 ## Development Commands
 
 ```bash
-corepack pnpm dev              # Start dev server
-corepack pnpm build            # Build for production
-corepack pnpm lint             # Run ESLint
-corepack pnpm test             # Run Vitest
-corepack pnpm test:e2e         # Run Playwright
-corepack pnpm prisma:migrate   # Deploy the baseline migration
+npm run dev              # Start dev server
+npm run build            # Build for production
+npm run lint             # Run ESLint
+npm test                 # Run Vitest
+npm run test:e2e         # Run Playwright
+npm run prisma:migrate   # Deploy the baseline migration
 ```

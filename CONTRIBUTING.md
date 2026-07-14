@@ -6,14 +6,14 @@ work.
 
 ## Development Setup
 
-Requirements: Node.js 22.12+, pnpm 10.20.0, PostgreSQL, and GitHub OAuth
-credentials.
+Requirements: Node.js 22.12+ with its bundled npm 10+, PostgreSQL, and GitHub
+OAuth credentials.
 
 ```bash
-corepack pnpm install
+npm install
 cp .env.template .env.local
-corepack pnpm prisma:migrate
-corepack pnpm dev
+npm run prisma:migrate
+npm run dev
 ```
 
 The baseline migration targets a new or explicitly reset database. There is no
@@ -21,10 +21,10 @@ v2 data migration.
 
 ## Before Submitting
 
-- `corepack pnpm lint`
-- `corepack pnpm test`
-- `corepack pnpm test:e2e`
-- `corepack pnpm build`
+- `npm run lint`
+- `npm test`
+- `npm run test:e2e`
+- `npm run build`
 - verify that no browser response or log includes kubeconfig content
 
 Commits use conventional prefixes such as `feat:`, `fix:`, `docs:`, `refactor:`,
