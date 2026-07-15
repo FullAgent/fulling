@@ -2,7 +2,7 @@ import { prismaAdapter } from '@better-auth/prisma-adapter'
 import { betterAuth } from 'better-auth'
 import { nextCookies } from 'better-auth/next-js'
 
-import { prisma } from '@/lib/db'
+import { getPrismaClient } from '@/lib/db'
 import { env } from '@/lib/env'
 
 function createAuth() {
@@ -17,6 +17,8 @@ function createAuth() {
   if (!baseURL || !secret || !databaseUrl || !clientId || !clientSecret) {
     return null
   }
+
+  const prisma = getPrismaClient()
 
   return betterAuth({
     baseURL,

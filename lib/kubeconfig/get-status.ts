@@ -1,8 +1,9 @@
-import { prisma } from '@/lib/db'
+import { getPrismaClient } from '@/lib/db'
 
 import type { KubeconfigStatus } from './errors'
 
 export async function getKubeconfigStatus(userId: string): Promise<KubeconfigStatus> {
+  const prisma = getPrismaClient()
   const kubeconfig = await prisma.kubeconfig.findUnique({
     where: { userId },
     select: { updatedAt: true },

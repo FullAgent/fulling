@@ -1,7 +1,5 @@
 # Install dependencies only when needed
 FROM node:24.18.0-alpine AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 # Copy package files and prisma schema
@@ -13,7 +11,6 @@ RUN npm ci --ignore-scripts
 
 # Rebuild the source code only when needed
 FROM node:24.18.0-alpine AS builder
-RUN apk add --no-cache openssl
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/prisma ./prisma
@@ -38,11 +35,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Install runtime dependencies including OpenSSL for Prisma
+# Install runtime dependencies used by health checks and outbound TLS.
 RUN apk add --no-cache \
     curl \
     ca-certificates \
-    openssl \
   && update-ca-certificates
 
 # Automatically leverage output traces to reduce image size
