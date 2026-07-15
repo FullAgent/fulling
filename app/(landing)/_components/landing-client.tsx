@@ -1,7 +1,8 @@
 import { FaLinkedinIn } from 'react-icons/fa6'
 import { SiDiscord, SiGithub, SiX, SiYoutube } from 'react-icons/si'
-import Image from 'next/image'
 import Link from 'next/link'
+
+import { FullingBrand } from '@/components/fulling-brand'
 
 import styles from './landing.module.css'
 
@@ -15,12 +16,7 @@ export function LandingClient({ ctaHref, githubStars }: LandingClientProps) {
     <div className={styles.page}>
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          <Link href="/" className={styles.brand} aria-label="Fulling home">
-            <span className={styles.brandMark} aria-hidden="true">
-              <Image src="/icon-transparent.svg" alt="" width={40} height={40} priority />
-            </span>
-            <span>Fulling</span>
-          </Link>
+          <FullingBrand />
 
           <nav className={styles.headerNav} aria-label="Primary navigation">
             <button type="button" disabled className={styles.blogLink} aria-label="Blog, coming soon">

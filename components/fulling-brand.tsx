@@ -13,7 +13,7 @@ export function FullingBrand({ className, href = '/' }: FullingBrandProps) {
     <Link
       href={href}
       className={cn(
-        'inline-flex w-max items-center gap-2 text-xl font-semibold leading-none text-foreground',
+        'inline-flex w-max items-center gap-2 text-[22px] font-semibold leading-6 tracking-[-0.5px] text-foreground',
         className,
       )}
       aria-label="Fulling home"
