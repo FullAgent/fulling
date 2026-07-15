@@ -54,6 +54,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Audit production dependencies
+        run: npm run audit:prod
+
+      - name: Audit all dependencies
+        run: npm run audit
+
       - name: Deploy database baseline
         run: npm run prisma:migrate
 

@@ -1,0 +1,85 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+    groups:
+      framework-patch-minor:
+        patterns:
+          - next
+          - react
+          - react-dom
+          - eslint-config-next
+          - "@types/react"
+          - "@types/react-dom"
+        update-types:
+          - minor
+          - patch
+      data-auth-patch-minor:
+        patterns:
+          - prisma
+          - "@prisma/*"
+          - better-auth
+          - "@better-auth/*"
+        update-types:
+          - minor
+          - patch
+      frontend-patch-minor:
+        patterns:
+          - tailwindcss
+          - "@tailwindcss/*"
+          - tailwind-merge
+          - radix-ui
+          - "@radix-ui/*"
+        update-types:
+          - minor
+          - patch
+      test-quality-patch-minor:
+        patterns:
+          - vitest
+          - "@playwright/test"
+          - eslint
+          - "eslint-*"
+          - typescript
+        update-types:
+          - minor
+          - patch
+      remaining-patch-minor:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    ignore:
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+      - dependency-name: eslint
+        update-types:
+          - version-update:semver-major
+      - dependency-name: eslint-plugin-simple-import-sort
+        update-types:
+          - version-update:semver-major
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:30"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: chore
+    groups:
+      github-actions:
+        patterns:
+          - "*"

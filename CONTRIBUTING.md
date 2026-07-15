@@ -29,3 +29,5 @@ v2 data migration.
 
 Commits use conventional prefixes such as `feat:`, `fix:`, `docs:`, `refactor:`,
 and `chore:`.
+
+Dependency updates follow [the dependency maintenance policy](./docs/dependency-maintenance.md).
