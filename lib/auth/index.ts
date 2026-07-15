@@ -1,4 +1,4 @@
-export { auth } from './config'
+export { auth, isAuthConfigured } from './config'
 export type { AppSession } from './session'
 export {
   getSession,

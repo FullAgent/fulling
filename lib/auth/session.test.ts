@@ -1,16 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { getSessionMock, headersMock, redirectMock } = vi.hoisted(() => ({
-  getSessionMock: vi.fn(),
-  headersMock: vi.fn(),
-  redirectMock: vi.fn(),
-}))
+const { authState, getSessionMock, headersMock, redirectMock } = vi.hoisted(() => {
+  const getSessionMock = vi.fn()
+  return {
+    authState: {
+      current: { api: { getSession: getSessionMock } } as null | {
+        api: { getSession: typeof getSessionMock }
+      },
+    },
+    getSessionMock,
+    headersMock: vi.fn(),
+    redirectMock: vi.fn(),
+  }
+})
 
 vi.mock('./config', () => ({
-  auth: {
-    api: {
-      getSession: getSessionMock,
-    },
+  get auth() {
+    return authState.current
   },
 }))
 
@@ -63,6 +69,15 @@ const appSession = {
 describe('session helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    authState.current = { api: { getSession: getSessionMock } }
+  })
+
+  it('returns null without reading request headers when auth is not configured', async () => {
+    authState.current = null
+
+    await expect(getSession()).resolves.toBeNull()
+    expect(headersMock).not.toHaveBeenCalled()
+    expect(getSessionMock).not.toHaveBeenCalled()
   })
 
   it('passes request headers and returns only application user fields', async () => {

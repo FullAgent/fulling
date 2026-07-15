@@ -22,6 +22,10 @@ export class UnauthorizedError extends Error {
 }
 
 export async function getSession(): Promise<AppSession | null> {
+  if (!auth) {
+    return null
+  }
+
   const session = await auth.api.getSession({
     headers: await headers(),
   })

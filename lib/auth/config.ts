@@ -5,22 +5,39 @@ import { nextCookies } from 'better-auth/next-js'
 import { prisma } from '@/lib/db'
 import { env } from '@/lib/env'
 
-export const auth = betterAuth({
-  baseURL: env.BETTER_AUTH_URL,
-  secret: env.BETTER_AUTH_SECRET,
-  database: prismaAdapter(prisma, {
-    provider: 'postgresql',
-  }),
-  session: {
-    cookieCache: {
-      enabled: false,
+function createAuth() {
+  const {
+    BETTER_AUTH_SECRET: secret,
+    BETTER_AUTH_URL: baseURL,
+    DATABASE_URL: databaseUrl,
+    GITHUB_CLIENT_ID: clientId,
+    GITHUB_CLIENT_SECRET: clientSecret,
+  } = env
+
+  if (!baseURL || !secret || !databaseUrl || !clientId || !clientSecret) {
+    return null
+  }
+
+  return betterAuth({
+    baseURL,
+    secret,
+    database: prismaAdapter(prisma, {
+      provider: 'postgresql',
+    }),
+    session: {
+      cookieCache: {
+        enabled: false,
+      },
     },
-  },
-  socialProviders: {
-    github: {
-      clientId: env.GITHUB_CLIENT_ID,
-      clientSecret: env.GITHUB_CLIENT_SECRET,
+    socialProviders: {
+      github: {
+        clientId,
+        clientSecret,
+      },
     },
-  },
-  plugins: [nextCookies()],
-})
+    plugins: [nextCookies()],
+  })
+}
+
+export const auth = createAuth()
+export const isAuthConfigured = auth !== null

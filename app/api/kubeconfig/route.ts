@@ -11,6 +11,8 @@ import {
 } from '@/lib/kubeconfig'
 import { logger } from '@/lib/logger'
 
+export const runtime = 'nodejs'
+
 const unauthorized = () =>
   NextResponse.json({ code: 'UNAUTHORIZED', message: 'Sign in to continue.' }, { status: 401 })
 

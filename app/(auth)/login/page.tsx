@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 
 import { FullingBrand } from '@/components/fulling-brand'
+import { isAuthConfigured } from '@/lib/auth'
 import { getSession } from '@/lib/auth/session'
 
 import { GitHubLoginButton } from './_components/github-login-button'
@@ -25,17 +26,19 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             Workspace access
           </p>
           <h1 className="mt-3 text-xl font-semibold leading-[var(--leading-heading)]">
-            Sign in to your workspace
+            {isAuthConfigured ? 'Sign in to your workspace' : 'Workspace access is being rebuilt'}
           </h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Use your GitHub account to continue to Fulling.
+            {isAuthConfigured
+              ? 'Use your GitHub account to continue to Fulling.'
+              : 'The public preview is available, but sign-in and workspace data are temporarily disabled.'}
           </p>
           {error === 'oauth' ? (
             <p role="alert" className="mt-5 text-sm text-destructive">
               GitHub sign-in could not be completed. Please try again.
             </p>
           ) : null}
-          <GitHubLoginButton />
+          <GitHubLoginButton enabled={isAuthConfigured} />
         </div>
       </section>
       <footer className="h-12 shrink-0 border-t border-border px-4 text-xs leading-[48px] text-muted-foreground sm:px-6">

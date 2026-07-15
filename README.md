@@ -22,9 +22,11 @@ ownership model.
 
 ## Requirements
 
-- Node.js 22.12 or later, including its bundled npm 10 or later
-- PostgreSQL
-- a GitHub OAuth App
+- Node.js 22, including its bundled npm 10 or later
+
+The public application does not require PostgreSQL or an OAuth provider. The
+legacy authenticated workspace additionally requires PostgreSQL and a GitHub
+OAuth App.
 
 Configure the GitHub OAuth callback as:
 
@@ -36,6 +38,13 @@ ${BETTER_AUTH_URL}/api/auth/callback/github
 
 ```bash
 npm ci
+npm run dev
+```
+
+This starts the public application with sign-in disabled. To exercise the legacy
+authenticated workspace instead:
+
+```bash
 cp .env.template .env.local
 # Fill in the database, Better Auth, and GitHub values.
 npm run prisma:migrate
@@ -81,3 +90,14 @@ Fulling database does not delete Kubernetes resources created by v2.
 
 Use [docs/github-oauth-verification.md](./docs/github-oauth-verification.md) to
 verify a real OAuth application before release.
+
+## Vercel Deployment
+
+Fulling can use Vercel's native Next.js deployment without a `vercel.json` file.
+The public application builds and starts without environment variables. The
+current GitHub sign-in, database-backed workspace, and kubeconfig flows remain
+disabled until their complete legacy configuration is present.
+
+Follow [docs/vercel-deployment.md](./docs/vercel-deployment.md) for the complete
+project setup, zero-configuration behavior, verification steps, and rollback
+procedure.
