@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: "22.12.0"
+  NODE_VERSION: "24.18.0"
   NEXT_TELEMETRY_DISABLED: 1
   DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fulling_test
   BETTER_AUTH_URL: http://127.0.0.1:3000

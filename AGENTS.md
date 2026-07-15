@@ -12,7 +12,7 @@ Read [docs/architecture.md](./docs/architecture.md) before product or architectu
 
 - Next.js 16 (App Router) + React 19 + TypeScript
 - Tailwind CSS v4 + Shadcn/UI
-- Node.js 22 + Prisma + Better Auth
+- Node.js 24 + Prisma + Better Auth
 - Kubernetes + PostgreSQL
 
 ## Code Conventions
