@@ -33,7 +33,7 @@
     "@prisma/client": "7.8.0",
     "@radix-ui/react-avatar": "^1.2.2",
     "@radix-ui/react-label": "^2.1.11",
-    "@t3-oss/env-nextjs": "^0.13.8",
+    "@t3-oss/env-nextjs": "^0.13.11",
     "better-auth": "1.6.23",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -42,7 +42,7 @@
     "lucide-react": "^0.545.0",
     "next": "16.2.10",
     "node-fetch": "2.7.0",
-    "pino": "^10.1.0",
+    "pino": "^10.3.1",
     "pg": "^8.22.0",
     "prisma": "7.8.0",
     "radix-ui": "^1.6.2",
@@ -50,7 +50,7 @@
     "react-dom": "19.2.7",
     "react-icons": "^5.7.0",
     "tailwind-merge": "^3.6.0",
-    "zod": "^4.1.12"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@playwright/test": "1.61.1",
