@@ -91,7 +91,14 @@ test('authenticated pages do not overflow the viewport', async ({ page }) => {
 
 test('sign-out returns the user to login', async ({ page }) => {
   await page.route('**/api/auth/sign-out', async (route) => {
-    await route.fulfill({ status: 200, json: { success: true } })
+    await route.fulfill({
+      status: 200,
+      headers: {
+        'set-cookie':
+          'better-auth.session_token=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax',
+      },
+      json: { success: true },
+    })
   })
   await page.goto('/workspace')
 

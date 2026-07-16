@@ -1,7 +1,8 @@
 import type { FullConfig } from '@playwright/test'
-import { PrismaClient } from '@prisma/client'
 import { createHmac } from 'node:crypto'
 import { mkdir, writeFile } from 'node:fs/promises'
+
+import { createPrismaClient } from '@/lib/db'
 
 export const E2E_USER_ID = 'e2e-user'
 export const E2E_SESSION_ID = 'e2e-session'
@@ -24,7 +25,7 @@ export default async function globalSetup(config: FullConfig) {
     throw new Error('Playwright requires a configured baseURL.')
   }
 
-  const prisma = new PrismaClient({ datasourceUrl: databaseUrl })
+  const prisma = createPrismaClient(databaseUrl)
   try {
     await prisma.kubeconfig.deleteMany({ where: { userId: E2E_USER_ID } })
     await prisma.session.deleteMany({ where: { userId: E2E_USER_ID } })

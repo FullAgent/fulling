@@ -14,7 +14,7 @@ Connect `FullAgent/fulling` to a Vercel project and keep these settings:
 - Install command: Vercel default (`npm install` from `package-lock.json`)
 - Build command: `npm run build`
 - Output directory: Vercel default
-- Node.js: 22.x, enforced by `package.json`
+- Node.js: 24.x, enforced by `package.json`
 - Production branch: `main`
 
 No `vercel.json` file or application environment variables are required for this

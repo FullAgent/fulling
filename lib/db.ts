@@ -1,16 +1,31 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+
+import { PrismaClient } from '@/lib/generated/prisma/client'
 
 declare global {
   var prisma: PrismaClient | undefined
 }
 
-const prismaClientSingleton = () =>
-  new PrismaClient({
+export function createPrismaClient(databaseUrl: string): PrismaClient {
+  const adapter = new PrismaPg({ connectionString: databaseUrl })
+
+  return new PrismaClient({
+    adapter,
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
   })
+}
 
-export const prisma = global.prisma || prismaClientSingleton()
+export function getPrismaClient(): PrismaClient {
+  const databaseUrl = process.env.DATABASE_URL
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL is required to initialize Prisma.')
+  }
 
-if (process.env.NODE_ENV !== 'production') {
-  global.prisma = prisma
+  const prisma = global.prisma ?? createPrismaClient(databaseUrl)
+
+  if (process.env.NODE_ENV !== 'production') {
+    global.prisma = prisma
+  }
+
+  return prisma
 }

@@ -22,7 +22,7 @@ ownership model.
 
 ## Requirements
 
-- Node.js 22, including its bundled npm 10 or later
+- Node.js 24, including its bundled npm 11
 
 The public application does not require PostgreSQL or an OAuth provider. The
 legacy authenticated workspace additionally requires PostgreSQL and a GitHub

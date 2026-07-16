@@ -6,7 +6,7 @@ work.
 
 ## Development Setup
 
-Requirements: Node.js 22.12+ with its bundled npm 10+, PostgreSQL, and GitHub
+Requirements: Node.js 24.18+ with its bundled npm 11, PostgreSQL, and GitHub
 OAuth credentials.
 
 ```bash
@@ -29,3 +29,5 @@ v2 data migration.
 
 Commits use conventional prefixes such as `feat:`, `fix:`, `docs:`, `refactor:`,
 and `chore:`.
+
+Dependency updates follow [the dependency maintenance policy](./docs/dependency-maintenance.md).
