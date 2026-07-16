@@ -39,7 +39,7 @@
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
     "js-yaml": "4.3.0",
-    "lucide-react": "^0.545.0",
+    "lucide-react": "^1.24.0",
     "next": "16.2.10",
     "node-fetch": "2.7.0",
     "pino": "^10.1.0",
