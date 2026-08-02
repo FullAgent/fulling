@@ -38,7 +38,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
-    "js-yaml": "4.3.0",
+    "js-yaml": "5.2.1",
     "lucide-react": "^0.545.0",
     "next": "16.2.10",
     "node-fetch": "2.7.0",
